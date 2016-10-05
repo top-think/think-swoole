@@ -1,0 +1,21 @@
+{
+    "name": "topthink/think-swoole",
+    "description": "Swoole extend for thinkphp5",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "liu21st",
+            "email": "liu21st@gmail.com"
+        }
+    ],
+    "require": {
+	"ext-swoole": ">=1.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "think\\swoole\\": "src"
+        },
+        "files": [
+        ]
+    }
+}
