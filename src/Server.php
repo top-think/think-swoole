@@ -22,11 +22,12 @@ abstract class Server
 {
     protected $swoole;
     protected $serverType;
-    protected $sockType;
-    protected $mode;
+    protected $sockType = SWOOLE_SOCK_TCP;
+    protected $mode = SWOOLE_PROCESS;
     protected $host   = '0.0.0.0';
     protected $port   = 9501;
     protected $option = [];
+    protected $eventList = [];
 
     /**
      * 架构函数
@@ -38,17 +39,17 @@ abstract class Server
         switch ($this->serverType) {
             case 'socket':
                 $this->swoole = new swoole_websocket_server($this->host, $this->port);
-                $eventList    = ['Open', 'Message', 'Close', 'HandShake'];
+                $eventList    = array_merge(['Open', 'Message', 'Close', 'HandShake'], $this->eventList);
                 break;
             case 'http':
                 $this->swoole = new swoole_http_server($this->host, $this->port);
-                $eventList    = ['Request'];
+                $eventList    = array_merge(['Request'], $this->eventList);
                 break;
             default:
                 $this->swoole = new swoole_server($this->host, $this->port, $this->mode, $this->sockType);
-                $eventList    = ['Start', 'ManagerStart', 'ManagerStop', 'PipeMessage', 'Task', 'Packet', 'Finish', 'Receive', 'Connect', 'Close', 'Timer', 'WorkerStart', 'WorkerStop', 'Shutdown', 'WorkerError'];
-
+                $eventList    = array_merge(['Start', 'ManagerStart', 'ManagerStop', 'PipeMessage', 'Task', 'Packet', 'Finish', 'Receive', 'Connect', 'Close', 'Timer', 'WorkerStart', 'WorkerStop', 'Shutdown', 'WorkerError'], $this->eventList);
         }
+
         // 设置参数
         if (!empty($this->option)) {
             $this->swoole->set($this->option);
