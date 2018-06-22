@@ -91,15 +91,15 @@ abstract class Server
             $this->swoole->set($this->option);
         }
 
-        // 初始化
-        $this->init();
-
         // 设置回调
         foreach ($this->event as $event) {
             if (method_exists($this, 'on' . $event)) {
                 $this->swoole->on($event, [$this, 'on' . $event]);
             }
         }
+
+        // 初始化
+        $this->init();
     }
 
     protected function init()
