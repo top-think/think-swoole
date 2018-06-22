@@ -76,7 +76,7 @@ class Swoole extends Server
         require __DIR__ . '/thinkphp/base.php';
 
         // 应用实例化
-        $this->app = new think\swoole\Applicatoin;
+        $this->app = new think\swoole\Application;
 
         // 应用初始化
         $this->app->initialize();
