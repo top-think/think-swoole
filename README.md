@@ -1,12 +1,14 @@
-ThinkPHP 5.0 Swoole 扩展
+ThinkPHP 5.1 Swoole 扩展
 ===============
 
 ## 安装
+
 首先按照Swoole官网说明安装swoole扩展
 然后使用
 composer require topthink/think-swoole
 
 ## 使用方法
+
 首先创建控制器类并继承 think\Swoole\Server，然后设置属性和添加回调方法
 
 ~~~

@@ -11,22 +11,62 @@
 
 namespace think\swoole;
 
-use swoole_http_server;
-use swoole_server;
-use swoole_websocket_server;
+use Swoole\Http\Server as HttpServer;
+use Swoole\Server as SwooleServer;
+use Swoole\Websocket\Server as Websocket;
 
 /**
- * Worker控制器扩展类
+ * Swoole Server扩展类
  */
 abstract class Server
 {
+    /**
+     * Swoole对象
+     * @var object
+     */
     protected $swoole;
-    protected $serverType;
+
+    /**
+     * SwooleServer类型
+     * @var string
+     */
+    protected $serverType = 'http';
+
+    /**
+     * Socket的类型
+     * @var int
+     */
     protected $sockType;
+
+    /**
+     * 运行模式
+     * @var int
+     */
     protected $mode;
-    protected $host   = '0.0.0.0';
-    protected $port   = 9501;
+
+    /**
+     * 监听地址
+     * @var string
+     */
+    protected $host = '0.0.0.0';
+
+    /**
+     * 监听端口
+     * @var int
+     */
+    protected $port = 9501;
+
+    /**
+     * 配置
+     * @var array
+     */
     protected $option = [];
+
+    /**
+     * 支持的响应事件
+     * @var array
+     */
+    protected $event = ['Start', 'Shutdown', 'WorkerStart', 'WorkerStop', 'WorkerExit', 'Connect', 'Receive', 'Packet', 'Close', 'BufferFull', 'BufferEmpty', 'Task', 'Finish', 'PipeMessage', 'WorkerError', 'ManagerStart', 'ManagerStop', 'Open', 'Message', 'HandShake', 'Request'];
 
     /**
      * 架构函数
@@ -37,27 +77,25 @@ abstract class Server
         // 实例化 Swoole 服务
         switch ($this->serverType) {
             case 'socket':
-                $this->swoole = new swoole_websocket_server($this->host, $this->port);
-                $eventList    = ['Open', 'Message', 'Close', 'HandShake'];
+                $this->swoole = new Websocket($this->host, $this->port);
                 break;
             case 'http':
-                $this->swoole = new swoole_http_server($this->host, $this->port);
-                $eventList    = ['Request'];
+                $this->swoole = new HttpServer($this->host, $this->port);
                 break;
             default:
-                $this->swoole = new swoole_server($this->host, $this->port, $this->mode, $this->sockType);
-                $eventList    = ['Start', 'ManagerStart', 'ManagerStop', 'PipeMessage', 'Task', 'Packet', 'Finish', 'Receive', 'Connect', 'Close', 'Timer', 'WorkerStart', 'WorkerStop', 'Shutdown', 'WorkerError'];
-
+                $this->swoole = new SwooleServer($this->host, $this->port, $this->mode, $this->sockType);
         }
+
         // 设置参数
         if (!empty($this->option)) {
             $this->swoole->set($this->option);
         }
+
         // 初始化
         $this->init();
 
         // 设置回调
-        foreach ($eventList as $event) {
+        foreach ($this->event as $event) {
             if (method_exists($this, 'on' . $event)) {
                 $this->swoole->on($event, [$this, 'on' . $event]);
             }
