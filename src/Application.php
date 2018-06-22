@@ -37,11 +37,11 @@ class Application extends App
         // 重新实例化请求对象 处理swoole请求数据
         $this->request->withHeader($request->header)
             ->withServer($request->server)
-            ->withGet($request->get)
-            ->withPost($request->post)
-            ->withCookie($request->cookie);
+            ->withGet($request->get ?: [])
+            ->withPost($request->post ?: [])
+            ->withCookie($request->cookie ?: []);
 
-        $_COOKIE = $request->cookie;
+        $_COOKIE = $request->cookie ?: [];
 
         // 更新请求对象实例
         $this->route->setRequest($this->request);
