@@ -50,6 +50,7 @@ php index.php index/Swoole/start
 
 ~~~
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 
 use think\Swoole\Server;
 
