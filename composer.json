@@ -9,7 +9,8 @@
         }
     ],
     "require": {
-	"ext-swoole": ">=1.8"
+	"ext-swoole": ">=1.8",
+	"topthink/framework": "5.1.*"
     },
     "autoload": {
         "psr-4": {
