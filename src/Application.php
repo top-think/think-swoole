@@ -12,6 +12,7 @@
 namespace think\swoole;
 
 use Swoole\Http\Request;
+use Swoole\Http\Response;
 use think\App;
 
 /**
@@ -23,29 +24,44 @@ class Application extends App
      * 处理Swoole请求 在run方法之前调用
      * @access public
      * @param  \Swoole\Http\Request    $request
-     * @param  $this
+     * @param  \Swoole\Http\Response   $response
+     * @param  void
      */
-    public function swoole(Request $request)
+    public function swoole(Request $request, Response $response)
     {
-        // 重置应用的开始时间和内存占用
-        $this->beginTime = microtime(true);
-        $this->beginMem  = memory_get_usage();
+        try {
+            ob_start();
 
-        // 销毁当前请求对象实例
-        $this->delete('think\Request');
+            // 重置应用的开始时间和内存占用
+            $this->beginTime = microtime(true);
+            $this->beginMem  = memory_get_usage();
 
-        // 重新实例化请求对象 处理swoole请求数据
-        $this->request->withHeader($request->header)
-            ->withServer($request->server)
-            ->withGet($request->get ?: [])
-            ->withPost($request->post ?: [])
-            ->withCookie($request->cookie ?: []);
+            // 销毁当前请求对象实例
+            $this->delete('think\Request');
 
-        $_COOKIE = $request->cookie ?: [];
+            // 重新实例化请求对象 处理swoole请求数据
+            $this->request->withHeader($request->header)
+                ->withServer($request->server)
+                ->withGet($request->get ?: [])
+                ->withPost($request->post ?: [])
+                ->withCookie($request->cookie ?: [])
+                ->setPathinfo($request->server['path_info']);
 
-        // 更新请求对象实例
-        $this->route->setRequest($this->request);
+            $_COOKIE = $request->cookie ?: [];
 
-        return $this;
+            // 更新请求对象实例
+            $this->route->setRequest($this->request);
+
+            $this->run()->send();
+
+            $content = ob_get_clean();
+
+            $response->end($content);
+        } catch (\Exception $e) {
+            $response->status(500);
+            $response->end($e->getMessage());
+
+            throw $e;
+        }
     }
 }
