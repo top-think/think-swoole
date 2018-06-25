@@ -53,7 +53,8 @@ php index.php index/Swoole/start
 // 加载框架基础文件
 require __DIR__ . '/thinkphp/base.php';
 
-use think\Swoole\Server;
+use think\swoole\Application;
+use think\swoole\Server;
 
 class Swoole extends Server
 {
@@ -75,7 +76,7 @@ class Swoole extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app = new think\swoole\Application;
+        $this->app = new Application;
 
         // 应用初始化
         $this->app->initialize();
