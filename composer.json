@@ -17,6 +17,7 @@
             "think\\swoole\\": "src"
         },
         "files": [
+            "src/config.php"
         ]
     }
 }

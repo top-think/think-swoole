@@ -101,3 +101,4 @@ class Swoole extends Server
 php server.php
 ~~~
 
+由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host
