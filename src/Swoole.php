@@ -2,7 +2,7 @@
 namespace think\swoole;
 
 use think\swoole\Application;
-use think\swoole\Server;
+use think\swoole\Server as HttpServer;
 
 class Swoole extends Server
 {

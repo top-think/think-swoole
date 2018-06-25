@@ -13,6 +13,8 @@ namespace think\swoole\command;
 
 use think\console\Command;
 use think\console\Input;
+use think\console\input\Argument;
+use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\swoole\Swoole as SwooleServer;
@@ -24,13 +26,11 @@ class Swoole extends Command
     public function configure()
     {
         $this->setName('swoole')
-            ->addArgument('run', Argument::REQUIRED, "The name of the class")
+            ->addArgument('run', Argument::REQUIRED, "start|stop")
             ->addOption('host', 'H', Option::VALUE_OPTIONAL,
                 'The host to server the application on', '0.0.0.0')
             ->addOption('port', 'r', Option::VALUE_OPTIONAL,
                 'The port to server the application on', 9501)
-            ->addOption('path', 'p', Option::VALUE_OPTIONAL,
-                'The document root of the application', App::getRootPath() . 'application')
             ->setDescription('Built-in Swoole HTTP Server for ThinkPHP');
     }
 
@@ -45,10 +45,10 @@ class Swoole extends Command
 
             $this->swoole = new SwooleServer($host, $port);
             $this->swoole->option($option);
-        }
 
-        $output->writeln(sprintf('SwooleServer is started On <http://%s:%s/>', $host, $port));
-        $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
+            $output->writeln(sprintf('SwooleServer is started On <http://%s:%s/>', $host, $port));
+            $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
+        }
 
         $run = $input->getArgument('run');
 
