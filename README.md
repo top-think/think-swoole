@@ -46,59 +46,9 @@ php index.php index/Swoole/start
 
 ### HttpServer
 
-在应用根目录下创建 server.php 文件
-
-~~~
-<?php
-// 加载框架基础文件
-require __DIR__ . '/thinkphp/base.php';
-
-use think\swoole\Application;
-use think\swoole\Server;
-
-class Swoole extends Server
-{
-	protected $host = '127.0.0.1';
-	protected $port = 9502;
-	protected $option = [ 
-		'worker_num'	=> 4,
-		'enable_static_handler'	=> true,
-		'document_root'         => "/var/www/tp.com/public",
-	];
-	protected $app;
-
-    /**
-     * 此事件在Worker进程/Task进程启动时发生,这里创建的对象可以在进程生命周期内使用
-     *
-     * @param $server
-     * @param $worker_id
-     */
-    public function onWorkerStart($server, $worker_id)
-    {
-        // 应用实例化
-        $this->app = new Application;
-
-        // 应用初始化
-        $this->app->initialize();
-    }
-
-    /**
-     * request回调
-     * @param $request
-     * @param $response
-     */
-    public function onRequest($request, $response)
-    {
-        // 执行应用并响应
-        $this->app->swoole($request,$response);
-    }
-}
-(new Swoole())->start();
-~~~
-
 命令行下启动服务端
 ~~~
-php server.php
+php think swoole
 ~~~
 
 由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host
