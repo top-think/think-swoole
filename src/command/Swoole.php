@@ -26,7 +26,7 @@ class Swoole extends Command
     public function configure()
     {
         $this->setName('swoole')
-            ->addArgument('run', Argument::REQUIRED, "start|stop")
+            ->addArgument('run', Argument::OPTIONAL, "start|stop", 'start')
             ->addOption('host', 'H', Option::VALUE_OPTIONAL,
                 'The host to server the application on', '0.0.0.0')
             ->addOption('port', 'r', Option::VALUE_OPTIONAL,
