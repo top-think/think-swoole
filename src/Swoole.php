@@ -15,21 +15,24 @@ class Swoole extends Server
     public function __construct($host, $port)
     {
         $this->swoole = new HttpServer($this->host, $this->port);
+    }
 
-        // 设置回调
+    public function option(array $option)
+    {
+        // 设置参数
+        if (!empty($option)) {
+            $this->swoole->set($option);
+        }
+
         foreach ($this->event as $event) {
-            if (method_exists($this, 'on' . $event)) {
+            // 自定义回调
+            if (!empty($option[$event])) {
+                $this->swoole->on($event, $option[$event]);
+            } elseif (method_exists($this, 'on' . $event)) {
                 $this->swoole->on($event, [$this, 'on' . $event]);
             }
         }
-    }
 
-    public function option($option)
-    {
-        // 设置参数
-        if (!empty($this->option)) {
-            $this->swoole->set($this->option);
-        }
     }
 
     /**
