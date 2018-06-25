@@ -45,7 +45,7 @@ class Application extends App
                 ->withGet($request->get ?: [])
                 ->withPost($request->post ?: [])
                 ->withCookie($request->cookie ?: [])
-                ->setPathinfo($request->server['path_info']);
+                ->setPathinfo(ltrim($request->server['path_info'], '/'));
 
             $_COOKIE = $request->cookie ?: [];
 
@@ -58,6 +58,11 @@ class Application extends App
 
             $response->end($content);
         } catch (\Exception $e) {
+            $response->status(500);
+            $response->end($e->getMessage());
+
+            throw $e;
+        } catch (\Throwable $e) {
             $response->status(500);
             $response->end($e->getMessage());
 

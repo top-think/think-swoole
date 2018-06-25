@@ -89,23 +89,7 @@ class Swoole extends Server
     public function onRequest($request, $response)
     {
         // 执行应用并响应
-        try {
-            ob_start();
-
-            $this->app
-                ->swoole($request)
-                ->run()
-                ->send();
-
-            $content = ob_get_clean();
-
-            $response->end($content);
-        } catch (\Exception $e) {
-            $response->status(500);
-            $response->end($e->getMessage());
-
-            throw $e;
-        }
+        $this->app->swoole($request,$response);
     }
 }
 (new Swoole())->start();
