@@ -10,7 +10,8 @@
 // +----------------------------------------------------------------------
 namespace think\swoole;
 
-use think\swoole\Server as HttpServer;
+use Swoole\Http\Server as HttpServer;
+use think\swoole\Server;
 
 /**
  * Swoole 命令行服务类
