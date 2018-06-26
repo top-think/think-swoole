@@ -1,9 +1,21 @@
 <?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK IT ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006-2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
 namespace think\swoole;
 
 use think\swoole\Application;
 use think\swoole\Server as HttpServer;
 
+/**
+ * Swoole 命令行服务类
+ */
 class Swoole extends Server
 {
     protected $app;

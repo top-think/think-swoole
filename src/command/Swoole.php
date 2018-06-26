@@ -2,11 +2,11 @@
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK IT ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006-2015 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006-2018 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
-// | Author: yunwuxin <448901948@qq.com>
+// | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
 namespace think\swoole\command;
@@ -17,12 +17,13 @@ use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use think\swoole\Swoole as SwooleServer;
+use think\swoole\facade\Swoole as SwooleServer;
 
+/**
+ * Swoole 命令行
+ */
 class Swoole extends Command
 {
-    protected $swoole;
-
     public function configure()
     {
         $this->setName('swoole')
@@ -36,23 +37,24 @@ class Swoole extends Command
 
     public function execute(Input $input, Output $output)
     {
-        if (!$this->swoole) {
-            $host    = $input->getOption('host');
-            $port    = $input->getOption('port');
-            $appPath = $input->getOption('path');
+        $run = $input->getArgument('run');
+
+        if ('start' == $run) {
+            $host = $input->getOption('host');
+            $port = $input->getOption('port');
 
             $option = Config::pull('swoole');
 
-            $this->swoole = new SwooleServer($host, $port);
-            $this->swoole->option($option);
+            $swoole = SwooleServer::instance($host, $port);
+            $swoole->option($option);
 
             $output->writeln(sprintf('SwooleServer is started On <http://%s:%s/>', $host, $port));
             $output->writeln(sprintf('You can exit with <info>`CTRL-C`</info>'));
+
+            $swoole->start();
+        } else {
+            SwooleServer::$run();
         }
-
-        $run = $input->getArgument('run');
-
-        $this->swoole->$run();
     }
 
 }

@@ -1,17 +1,25 @@
 <?php
 // +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK IT ]
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2006-2018 http://thinkphp.cn All rights reserved.
+// | Copyright (c) 2006~2018 http://thinkphp.cn All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-\think\Console::addDefaultCommands(['\\think\\swoole\\command\\Swoole']);
+namespace think\swoole\facade;
 
-\think\Facade::bind([
-    \think\swoole\facade\Application::class => \think\swoole\Application::class,
-    \think\swoole\facade\Swoole::class      => \think\swoole\Swoole::class,
-]);
+use think\Facade;
+
+/**
+ * @see \think\swoole\Swoole
+ * @mixin \think\swoole\Swoole
+ * @method void option(array $option) static 参数设置
+ * @method void start() static 启动服务
+ * @method void stop() static 停止服务
+ */
+class Swoole extends Facade
+{
+}
