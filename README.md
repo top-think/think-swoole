@@ -48,7 +48,7 @@ php index.php index/Swoole/start
 
 命令行下启动服务端
 ~~~
-php think swoole
+php think swoole [start|stop|reload|restart]
 ~~~
 
 由于onWorkerStart运行的时候没有HTTP_HOST，因此最好在应用配置文件中设置app_host
