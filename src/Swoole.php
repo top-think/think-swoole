@@ -11,6 +11,7 @@
 namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
+use think\facade\Cache;
 use think\swoole\Server;
 
 /**
@@ -60,6 +61,9 @@ class Swoole extends Server
 
         // 应用初始化
         $this->app->initialize();
+
+        // 获取管理进程pid
+        Cache::set('swoole_pid', $server->manager_pid);
     }
 
     /**
