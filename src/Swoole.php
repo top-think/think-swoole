@@ -24,9 +24,13 @@ class Swoole extends Server
      * 架构函数
      * @access public
      */
-    public function __construct($host, $port)
+    public function __construct($host, $port, $ssl = false)
     {
-        $this->swoole = new HttpServer($this->host, $this->port);
+        if ($ssl) {
+            $this->swoole = new HttpServer($host, $port, SWOOLE_PROCESS, SWOOLE_SOCK_TCP | SWOOLE_SSL);
+        } else {
+            $this->swoole = new HttpServer($host, $port);
+        }
     }
 
     public function option(array $option)

@@ -58,8 +58,9 @@ class Swoole extends Command
 
         $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
         $port = !empty($option['port']) ? $option['port'] : 9501;
+        $ssl  = !empty($option['open_http2_protocol']);
 
-        $swoole = new SwooleServer($host, $port);
+        $swoole = new SwooleServer($host, $port, $ssl);
         $swoole->option($option);
 
         $output->writeln("Swoole http server started: <http://{$host}:{$port}>");
