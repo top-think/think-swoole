@@ -12,7 +12,6 @@ namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
 use think\facade\Cache;
-use think\swoole\Server;
 
 /**
  * Swoole 命令行服务类
