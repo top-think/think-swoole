@@ -14,6 +14,7 @@ namespace think\swoole;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use think\App;
+use think\exception\HttpException;
 use think\response\Redirect;
 
 /**
@@ -70,16 +71,20 @@ class Application extends App
 
                 $response->end($content);
             }
+        } catch (HttpException $e) {
+            $this->exception($response, $e, 404);
         } catch (\Exception $e) {
-            $response->status(500);
-            $response->end($e->getMessage());
-
-            throw $e;
+            $this->exception($response, $e, 500);
         } catch (\Throwable $e) {
-            $response->status(500);
-            $response->end($e->getMessage());
-
-            throw $e;
+            $this->exception($response, $e, 500);
         }
+    }
+
+    protected function exception($response, $e, $code)
+    {
+        $response->status($code);
+        $response->end($e->getMessage());
+
+        throw $e;
     }
 }
