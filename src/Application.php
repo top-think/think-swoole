@@ -14,6 +14,7 @@ namespace think\swoole;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use think\App;
+use think\response\Redirect;
 
 /**
  * Swoole应用对象
@@ -52,11 +53,23 @@ class Application extends App
             // 更新请求对象实例
             $this->route->setRequest($this->request);
 
-            $this->run()->send();
+            $resp = $this->run();
+            $resp->send();
 
             $content = ob_get_clean();
+            $status  = $resp->getCode();
 
-            $response->end($content);
+            if ($resp instanceof Redirect) {
+                $response->redirect($resp->getTargetUrl(), $status);
+            } else {
+                $response->status($status);
+
+                foreach ($resp->getHeader() as $key => $val) {
+                    $response->header($key, $val);
+                }
+
+                $response->end($content);
+            }
         } catch (\Exception $e) {
             $response->status(500);
             $response->end($e->getMessage());
