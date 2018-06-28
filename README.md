@@ -17,7 +17,7 @@ composer require topthink/think-swoole
 <?php
 namespace app\index\controller;
 
-use think\Swoole\Server;
+use think\swoole\Server;
 
 class Swoole extends Server
 {
