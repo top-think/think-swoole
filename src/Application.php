@@ -49,7 +49,7 @@ class Application extends App
                 ->withCookie($request->cookie ?: [])
                 ->setPathinfo(ltrim($request->server['path_info'], '/'));
 
-            $_COOKIE = $request->cookie ?: [];
+            $_COOKIE = $request->cookie ?: $_COOKIE;
 
             // 更新请求对象实例
             $this->route->setRequest($this->request);
