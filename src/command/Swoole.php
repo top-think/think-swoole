@@ -141,6 +141,10 @@ class Swoole extends Command
 
     protected function isRunning($pid)
     {
+        if (empty($pid)) {
+            return false;
+        }
+
         Process::kill($pid, 0);
 
         return !swoole_errno();
