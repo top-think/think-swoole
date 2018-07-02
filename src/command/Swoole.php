@@ -16,7 +16,6 @@ use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
-use think\facade\Cache;
 use think\facade\Config;
 use think\swoole\Swoole as SwooleServer;
 
@@ -26,6 +25,9 @@ use think\swoole\Swoole as SwooleServer;
  */
 class Swoole extends Command
 {
+    protected $config = [];
+    protected $pid;
+
     public function configure()
     {
         $this->setName('swoole')
@@ -36,6 +38,8 @@ class Swoole extends Command
     public function execute(Input $input, Output $output)
     {
         $action = $input->getArgument('action');
+
+        $this->config = Config::pull('swoole');
 
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
             $this->$action($output);
@@ -54,14 +58,14 @@ class Swoole extends Command
         }
 
         $output->writeln('Starting swoole http server...');
-        $option = Config::pull('swoole');
 
-        $host = !empty($option['host']) ? $option['host'] : '0.0.0.0';
-        $port = !empty($option['port']) ? $option['port'] : 9501;
-        $ssl  = !empty($option['open_http2_protocol']);
+        $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+        $port = !empty($this->config['port']) ? $this->config['port'] : 9501;
+        $ssl  = !empty($this->config['open_http2_protocol']);
 
         $swoole = new SwooleServer($host, $port, $ssl);
-        $swoole->option($option);
+
+        $swoole->option($this->config);
 
         $output->writeln("Swoole http server started: <http://{$host}:{$port}>");
         $output->writeln('You can exit with <info>`CTRL-C`</info>');
@@ -113,12 +117,26 @@ class Swoole extends Command
 
     protected function getPid()
     {
-        return Cache::get('swoole_pid');
+        if ($this->pid) {
+            return $this->pid;
+        }
+
+        $pidFile = $this->config['pid_file'];
+
+        if (is_file($pidFile)) {
+            $this->pid = (int) file_get_contents($pidFile);
+        }
+
+        return $this->pid;
     }
 
     protected function removePid()
     {
-        Cache::rm('swoole_pid');
+        $pidFile = $this->config['pid_file'];
+
+        if (is_file($pidFile)) {
+            unlink($pidFile);
+        }
     }
 
     protected function isRunning($pid)

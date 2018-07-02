@@ -9,17 +9,9 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-use think\facade\Env;
+\think\Console::addDefaultCommands(['\\think\\swoole\\command\\Swoole']);
 
-// +----------------------------------------------------------------------
-// | Swoole设置 php think swoole命令行下有效
-// +----------------------------------------------------------------------
-return [
-    // 扩展自身配置
-    'host'     => '0.0.0.0', // 监听地址
-    'port'     => 9501, // 监听端口
-
-    // 可以支持swoole的所有配置参数
-    'pid_file' => Env::get('runtime_path') . 'swoole.pid',
-    'log_file' => Env::get('runtime_path') . 'swoole.log',
-];
+\think\Facade::bind([
+    \think\swoole\facade\Application::class => \think\swoole\Application::class,
+    \think\swoole\facade\Swoole::class      => \think\swoole\Swoole::class,
+]);
