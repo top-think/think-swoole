@@ -119,13 +119,17 @@ class Swoole extends Command
 
     protected function getMasterPid()
     {
+        $masterPid = Cache::get('swoole_master_pid');
+
+        if ($masterPid) {
+            return $masterPid;
+        }
+
         $pidFile = $this->config['pid_file'];
 
         if (is_file($pidFile)) {
             $masterPid = (int) file_get_contents($pidFile);
-            Cache::set('swoole_pid', $masterPid);
-        } else {
-            $masterPid = 0;
+            Cache::set('swoole_master_pid', $masterPid);
         }
 
         return $masterPid;
@@ -133,13 +137,17 @@ class Swoole extends Command
 
     protected function getManagerPid()
     {
+        $managerPid = Cache::get('swoole_manager_pid');
+
+        if ($managerPid) {
+            return $managerPid;
+        }
+
         $pidFile = dirname($this->config['pid_file']) . '/swoole_manager.pid';
 
         if (is_file($pidFile)) {
             $managerPid = (int) file_get_contents($pidFile);
             Cache::set('swoole_manager_pid', $managerPid);
-        } else {
-            $managerPid = 0;
         }
 
         return $managerPid;
@@ -158,6 +166,9 @@ class Swoole extends Command
         if (is_file($managerPid)) {
             unlink($managerPid);
         }
+
+        Cache::rm('swoole_master_pid');
+        Cache::rm('swoole_manager_pid');
     }
 
     protected function isRunning($pid)
