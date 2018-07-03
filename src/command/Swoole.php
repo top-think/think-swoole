@@ -15,6 +15,7 @@ use Swoole\Process;
 use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
+use think\console\input\Option;
 use think\console\Output;
 use think\facade\Cache;
 use think\facade\Config;
@@ -33,6 +34,7 @@ class Swoole extends Command
     {
         $this->setName('swoole')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
+            ->addOption('daemon', 'd', Option::VALUE_NONE, 'daemonize.')
             ->setDescription('Swoole HTTP Server for ThinkPHP');
     }
 
@@ -65,6 +67,10 @@ class Swoole extends Command
         $ssl  = !empty($this->config['open_http2_protocol']);
 
         $swoole = new SwooleServer($host, $port, $ssl);
+
+        if ($this->input->hasOption('daemon')) {
+            $this->config['daemonize'] = true;
+        }
 
         $swoole->option($this->config);
 
