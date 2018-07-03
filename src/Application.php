@@ -41,9 +41,6 @@ class Application extends App
             // 销毁当前请求对象实例
             $this->delete('think\Request');
 
-            // Session初始化
-            $this->session->inited();
-
             // 重新实例化请求对象 处理swoole请求数据
             $this->request->withHeader($request->header)
                 ->withServer($request->server)
