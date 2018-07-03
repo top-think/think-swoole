@@ -34,7 +34,7 @@ class Swoole extends Command
     {
         $this->setName('swoole')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
-            ->addOption('daemon', 'd', Option::VALUE_NONE, 'daemonize.')
+            ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the swoole server in daemon mode.')
             ->setDescription('Swoole HTTP Server for ThinkPHP');
     }
 
@@ -51,6 +51,11 @@ class Swoole extends Command
         }
     }
 
+    /**
+     * 启动server
+     * @access protected
+     * @return void
+     */
     protected function start()
     {
         $pid = $this->getMasterPid();
@@ -80,6 +85,11 @@ class Swoole extends Command
         $swoole->start();
     }
 
+    /**
+     * 柔性重启server
+     * @access protected
+     * @return void
+     */
     protected function reload()
     {
         // 柔性重启使用管理PID
@@ -95,6 +105,11 @@ class Swoole extends Command
         $this->output->writeln('> success');
     }
 
+    /**
+     * 停止server
+     * @access protected
+     * @return void
+     */
     protected function stop()
     {
         $pid = $this->getMasterPid();
@@ -112,6 +127,11 @@ class Swoole extends Command
         $this->output->writeln('> success');
     }
 
+    /**
+     * 重启server
+     * @access protected
+     * @return void
+     */
     protected function restart()
     {
         $pid = $this->getMasterPid();
@@ -123,6 +143,11 @@ class Swoole extends Command
         $this->start();
     }
 
+    /**
+     * 获取主进程PID
+     * @access protected
+     * @return int
+     */
     protected function getMasterPid()
     {
         $masterPid = Cache::get('swoole_master_pid');
@@ -141,6 +166,11 @@ class Swoole extends Command
         return $masterPid;
     }
 
+    /**
+     * 获取管理进程PID
+     * @access protected
+     * @return int
+     */
     protected function getManagerPid()
     {
         $managerPid = Cache::get('swoole_manager_pid');
@@ -159,6 +189,11 @@ class Swoole extends Command
         return $managerPid;
     }
 
+    /**
+     * 删除PID文件
+     * @access protected
+     * @return void
+     */
     protected function removePid()
     {
         $masterPid = $this->config['pid_file'];
@@ -177,6 +212,12 @@ class Swoole extends Command
         Cache::rm('swoole_manager_pid');
     }
 
+    /**
+     * 判断PID是否在运行
+     * @access protected
+     * @param  int $pid
+     * @return bool
+     */
     protected function isRunning($pid)
     {
         if (empty($pid)) {
