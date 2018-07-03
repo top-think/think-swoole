@@ -16,6 +16,7 @@ use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
+use think\facade\Cache;
 use think\facade\Config;
 use think\swoole\Swoole as SwooleServer;
 
@@ -42,22 +43,22 @@ class Swoole extends Command
         $this->config = Config::pull('swoole');
 
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
-            $this->$action($output);
+            $this->$action();
         } else {
             $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload .");
         }
     }
 
-    protected function start(Output $output)
+    protected function start()
     {
-        $pid = $this->getPid();
+        $pid = $this->getMasterPid();
 
         if ($this->isRunning($pid)) {
-            $output->writeln('swoole http server process is already running.');
+            $this->output->writeln('swoole http server process is already running.');
             exit(1);
         }
 
-        $output->writeln('Starting swoole http server...');
+        $this->output->writeln('Starting swoole http server...');
 
         $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
         $port = !empty($this->config['port']) ? $this->config['port'] : 9501;
@@ -67,75 +68,95 @@ class Swoole extends Command
 
         $swoole->option($this->config);
 
-        $output->writeln("Swoole http server started: <http://{$host}:{$port}>");
-        $output->writeln('You can exit with <info>`CTRL-C`</info>');
+        $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
+        $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
         $swoole->start();
     }
 
-    protected function reload(Output $output)
+    protected function reload()
     {
-        $pid = $this->getPid();
+        // 柔性重启使用管理PID
+        $pid = $this->getManagerPid();
 
         if (!$this->isRunning($pid)) {
-            $output->writeln('no swoole http server process running.');
+            $this->output->writeln('no swoole http server process running.');
             exit(1);
         }
 
-        $output->writeln('Reloading swoole_http_server...');
+        $this->output->writeln('Reloading swoole_http_server...');
         Process::kill($pid, SIGUSR1);
-        $output->writeln('> success');
+        $this->output->writeln('> success');
     }
 
-    protected function stop(Output $output)
+    protected function stop()
     {
-        $pid = $this->getPid();
+        $pid = $this->getMasterPid();
 
         if (!$this->isRunning($pid)) {
-            $output->writeln('no swoole http server process running.');
+            $this->output->writeln('no swoole http server process running.');
             exit(1);
         }
 
-        $output->writeln('Stopping swoole http server...');
+        $this->output->writeln('Stopping swoole http server...');
 
         Process::kill($pid, SIGTERM);
         $this->removePid();
 
-        $output->writeln('> success');
+        $this->output->writeln('> success');
     }
 
-    protected function restart(Output $output)
+    protected function restart()
     {
-        $pid = $this->getPid();
+        $pid = $this->getMasterPid();
 
-        if ($pid) {
-            $this->stop($output);
+        if ($this->isRunning($pid)) {
+            $this->stop();
         }
 
-        $this->start($output);
+        $this->start();
     }
 
-    protected function getPid()
+    protected function getMasterPid()
     {
-        if ($this->pid) {
-            return $this->pid;
-        }
-
         $pidFile = $this->config['pid_file'];
 
         if (is_file($pidFile)) {
-            $this->pid = (int) file_get_contents($pidFile);
+            $masterPid = (int) file_get_contents($pidFile);
+            Cache::set('swoole_pid', $masterPid);
+        } else {
+            $masterPid = 0;
         }
 
-        return $this->pid;
+        return $masterPid;
+    }
+
+    protected function getManagerPid()
+    {
+        $pidFile = dirname($this->config['pid_file']) . '/swoole_manager.pid';
+
+        if (is_file($pidFile)) {
+            $managerPid = (int) file_get_contents($pidFile);
+            Cache::set('swoole_manager_pid', $managerPid);
+        } else {
+            $managerPid = 0;
+        }
+
+        return $managerPid;
     }
 
     protected function removePid()
     {
-        $pidFile = $this->config['pid_file'];
+        $masterPid = $this->config['pid_file'];
 
-        if (is_file($pidFile)) {
-            unlink($pidFile);
+        if (is_file($masterPid)) {
+            unlink($masterPid);
+        }
+
+        $managerPid = dirname($this->config['pid_file']) . '/swoole_manager.pid';
+
+        if (is_file($managerPid)) {
+            unlink($managerPid);
         }
     }
 

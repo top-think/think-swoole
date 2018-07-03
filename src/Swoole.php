@@ -11,7 +11,6 @@
 namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
-use think\facade\Cache;
 
 /**
  * Swoole 命令行服务类
@@ -51,6 +50,14 @@ class Swoole extends Server
 
     }
 
+    public function onStart($server)
+    {
+        // 记录管理进程pid
+        $pidFile = $server->setting['pid_file'];
+
+        file_put_contents(dirname($pidFile) . '/swoole_manager.pid', $server->manager_pid);
+    }
+
     /**
      * 此事件在Worker进程/Task进程启动时发生,这里创建的对象可以在进程生命周期内使用
      *
@@ -64,9 +71,6 @@ class Swoole extends Server
 
         // 应用初始化
         $this->app->initialize();
-
-        // 获取管理进程pid
-        Cache::set('swoole_pid', $server->manager_pid);
     }
 
     /**
