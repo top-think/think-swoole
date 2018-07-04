@@ -19,6 +19,7 @@ use think\facade\Cache;
 class Swoole extends Server
 {
     protected $app;
+    protected $appPath;
 
     /**
      * 架构函数
@@ -31,6 +32,11 @@ class Swoole extends Server
         } else {
             $this->swoole = new HttpServer($host, $port);
         }
+    }
+
+    public function setAppPath($path)
+    {
+        $this->appPath = $path;
     }
 
     public function option(array $option)
@@ -72,7 +78,7 @@ class Swoole extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app = new Application;
+        $this->app = new Application($this->appPath);
 
         // 应用初始化
         $this->app->initialize();

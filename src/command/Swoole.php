@@ -73,10 +73,15 @@ class Swoole extends Command
 
         $swoole = new SwooleServer($host, $port, $ssl);
 
+        // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {
             $this->config['daemonize'] = true;
         }
 
+        // 设置应用目录
+        $swoole->setAppPath($this->config['app_path']);
+
+        // 设置服务器参数
         $swoole->option($this->config);
 
         $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
