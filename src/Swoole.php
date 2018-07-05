@@ -11,6 +11,7 @@
 namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
+use think\Facade;
 use think\facade\Cache;
 
 /**
@@ -80,8 +81,16 @@ class Swoole extends Server
         // 应用实例化
         $this->app = new Application($this->appPath);
 
+        Facade::bind([
+            'think\facade\Cookie' => Cookie::class,
+        ]);
+
         // 应用初始化
         $this->app->initialize();
+
+        $this->app->bindTo([
+            'cookie' => Cookie::class,
+        ]);
     }
 
     /**

@@ -41,6 +41,9 @@ class Application extends App
             // 销毁当前请求对象实例
             $this->delete('think\Request');
 
+            // 设置Cookie类Response
+            $this->cookie->setResponse($response);
+
             // 重新实例化请求对象 处理swoole请求数据
             $this->request->withHeader($request->header)
                 ->withServer($request->server)
@@ -63,8 +66,10 @@ class Application extends App
             if ($resp instanceof Redirect) {
                 $response->redirect($resp->getTargetUrl(), $status);
             } else {
+                // 发送状态码
                 $response->status($status);
 
+                // 发送Header
                 foreach ($resp->getHeader() as $key => $val) {
                     $response->header($key, $val);
                 }
