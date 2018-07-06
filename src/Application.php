@@ -15,7 +15,6 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 use think\App;
 use think\exception\HttpException;
-use think\response\Redirect;
 
 /**
  * Swoole应用对象
@@ -63,19 +62,15 @@ class Application extends App
             $content = ob_get_clean();
             $status  = $resp->getCode();
 
-            if ($resp instanceof Redirect) {
-                $response->redirect($resp->getTargetUrl(), $status);
-            } else {
-                // 发送状态码
-                $response->status($status);
+            // 发送状态码
+            $response->status($status);
 
-                // 发送Header
-                foreach ($resp->getHeader() as $key => $val) {
-                    $response->header($key, $val);
-                }
-
-                $response->end($content);
+            // 发送Header
+            foreach ($resp->getHeader() as $key => $val) {
+                $response->header($key, $val);
             }
+
+            $response->end($content);
         } catch (HttpException $e) {
             $this->exception($response, $e, 404);
         } catch (\Exception $e) {
