@@ -17,8 +17,8 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
-use think\facade\Cache;
 use think\facade\Config;
+use think\facade\Env;
 use think\swoole\Swoole as SwooleServer;
 
 /**
@@ -43,6 +43,10 @@ class Swoole extends Command
         $action = $input->getArgument('action');
 
         $this->config = Config::pull('swoole');
+
+        if (!isset($this->config['pid_file'])) {
+            $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
+        }
 
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
             $this->$action();
@@ -97,15 +101,14 @@ class Swoole extends Command
      */
     protected function reload()
     {
-        // 柔性重启使用管理PID
-        $pid = $this->getManagerPid();
+        $pid = $this->getMasterPid();
 
         if (!$this->isRunning($pid)) {
             $this->output->writeln('no swoole http server process running.');
             exit(1);
         }
 
-        $this->output->writeln('Reloading swoole_http_server...');
+        $this->output->writeln('Reloading swoole http server...');
         Process::kill($pid, SIGUSR1);
         $this->output->writeln('> success');
     }
@@ -155,43 +158,15 @@ class Swoole extends Command
      */
     protected function getMasterPid()
     {
-        $masterPid = Cache::get('swoole_master_pid');
-
-        if ($masterPid) {
-            return $masterPid;
-        }
-
         $pidFile = $this->config['pid_file'];
 
         if (is_file($pidFile)) {
             $masterPid = (int) file_get_contents($pidFile);
-            Cache::set('swoole_master_pid', $masterPid);
+        } else {
+            $masterPid = 0;
         }
 
         return $masterPid;
-    }
-
-    /**
-     * 获取管理进程PID
-     * @access protected
-     * @return int
-     */
-    protected function getManagerPid()
-    {
-        $managerPid = Cache::get('swoole_manager_pid');
-
-        if ($managerPid) {
-            return $managerPid;
-        }
-
-        $pidFile = dirname($this->config['pid_file']) . '/swoole_manager.pid';
-
-        if (is_file($pidFile)) {
-            $managerPid = (int) file_get_contents($pidFile);
-            Cache::set('swoole_manager_pid', $managerPid);
-        }
-
-        return $managerPid;
     }
 
     /**
@@ -206,15 +181,6 @@ class Swoole extends Command
         if (is_file($masterPid)) {
             unlink($masterPid);
         }
-
-        $managerPid = dirname($this->config['pid_file']) . '/swoole_manager.pid';
-
-        if (is_file($managerPid)) {
-            unlink($managerPid);
-        }
-
-        Cache::rm('swoole_master_pid');
-        Cache::rm('swoole_manager_pid');
     }
 
     /**
@@ -229,8 +195,6 @@ class Swoole extends Command
             return false;
         }
 
-        Process::kill($pid, 0);
-
-        return !swoole_errno();
+        return Process::kill($pid, 0);
     }
 }
