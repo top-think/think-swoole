@@ -51,7 +51,7 @@ class Swoole extends Command
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
             $this->$action();
         } else {
-            $output->writeln("Invalid argument action:{$action}, Expected start|stop|restart|reload .");
+            $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload .</error>");
         }
     }
 
@@ -65,7 +65,7 @@ class Swoole extends Command
         $pid = $this->getMasterPid();
 
         if ($this->isRunning($pid)) {
-            $this->output->writeln('swoole http server process is already running.');
+            $this->output->writeln('<error>swoole http server process is already running.</error>');
             exit(1);
         }
 
@@ -104,7 +104,7 @@ class Swoole extends Command
         $pid = $this->getMasterPid();
 
         if (!$this->isRunning($pid)) {
-            $this->output->writeln('no swoole http server process running.');
+            $this->output->writeln('<error>no swoole http server process running.</error>');
             exit(1);
         }
 
@@ -123,7 +123,7 @@ class Swoole extends Command
         $pid = $this->getMasterPid();
 
         if (!$this->isRunning($pid)) {
-            $this->output->writeln('no swoole http server process running.');
+            $this->output->writeln('<error>no swoole http server process running.</error>');
             exit(1);
         }
 
