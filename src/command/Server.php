@@ -15,7 +15,6 @@ use Swoole\Http\Server as HttpServer;
 use Swoole\Process;
 use Swoole\Server as SwooleServer;
 use Swoole\Websocket\Server as Websocket;
-use think\console\Command;
 use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
