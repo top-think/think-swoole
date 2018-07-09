@@ -9,7 +9,10 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-\think\Console::addDefaultCommands(['\\think\\swoole\\command\\Swoole']);
+\think\Console::addDefaultCommands([
+    '\\think\\swoole\\command\\Swoole',
+    '\\think\\swoole\\command\\Server',
+]);
 
 \think\Facade::bind([
     \think\swoole\facade\Application::class => \think\swoole\Application::class,
