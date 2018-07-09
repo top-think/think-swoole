@@ -21,6 +21,7 @@ use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
+use think\facade\Env;
 use think\swoole\Server as ThinkServer;
 
 /**
@@ -37,16 +38,12 @@ class Server extends Swoole
             ->setDescription('Swoole Server for ThinkPHP');
     }
 
-    public function execute(Input $input, Output $output)
+    protected function init()
     {
-        $action = $input->getArgument('action');
-
         $this->config = Config::pull('swoole_server');
 
-        if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
-            $this->$action();
-        } else {
-            $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload .</error>");
+        if (!empty($this->config['pid_file'])) {
+            $this->config['pid_file'] = Env::get('runtime_path') . 'swoole_server.pid';
         }
     }
 

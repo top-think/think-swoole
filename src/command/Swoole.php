@@ -28,7 +28,6 @@ use think\swoole\Swoole as SwooleServer;
 class Swoole extends Command
 {
     protected $config = [];
-    protected $pid;
 
     public function configure()
     {
@@ -42,16 +41,21 @@ class Swoole extends Command
     {
         $action = $input->getArgument('action');
 
-        $this->config = Config::pull('swoole');
-
-        if (!isset($this->config['pid_file'])) {
-            $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
-        }
+        $this->init();
 
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
             $this->$action();
         } else {
             $output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload .</error>");
+        }
+    }
+
+    protected function init()
+    {
+        $this->config = Config::pull('swoole');
+
+        if (!empty($this->config['pid_file'])) {
+            $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
         }
     }
 
@@ -66,7 +70,7 @@ class Swoole extends Command
 
         if ($this->isRunning($pid)) {
             $this->output->writeln('<error>swoole http server process is already running.</error>');
-            exit(1);
+            return false;
         }
 
         $this->output->writeln('Starting swoole http server...');
@@ -105,7 +109,7 @@ class Swoole extends Command
 
         if (!$this->isRunning($pid)) {
             $this->output->writeln('<error>no swoole http server process running.</error>');
-            exit(1);
+            return false;
         }
 
         $this->output->writeln('Reloading swoole http server...');
@@ -124,7 +128,7 @@ class Swoole extends Command
 
         if (!$this->isRunning($pid)) {
             $this->output->writeln('<error>no swoole http server process running.</error>');
-            exit(1);
+            return false;
         }
 
         $this->output->writeln('Stopping swoole http server...');

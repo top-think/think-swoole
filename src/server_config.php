@@ -25,7 +25,7 @@ return [
 
     // 可以支持swoole的所有配置参数
     'daemonize'    => false,
-    'pid_file'     => Env::get('runtime_path') . 'swoole_master.pid',
+    'pid_file'     => Env::get('runtime_path') . 'swoole_server.pid',
     'log_file'     => Env::get('runtime_path') . 'swoole_server.log',
 
     // 事件回调定义
