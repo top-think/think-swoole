@@ -100,21 +100,13 @@ abstract class Server
 
         // 初始化
         $this->init();
+
+        // 启动服务
+        $this->swoole->start();
     }
 
     protected function init()
     {
-    }
-
-    public function start()
-    {
-        // Run worker
-        $this->swoole->start();
-    }
-
-    public function stop()
-    {
-        $this->swoole->stop();
     }
 
     /**

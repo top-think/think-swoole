@@ -16,11 +16,33 @@ use think\facade\Env;
 // +----------------------------------------------------------------------
 return [
     // 扩展自身配置
-    'host'     => '0.0.0.0', // 监听地址
-    'port'     => 9501, // 监听端口
-    'app_path' => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
+    'host'         => '0.0.0.0', // 监听地址
+    'port'         => 9501, // 监听端口
+    'type'         => 'socket', // 服务类型 支持 socket http server
+    'mode'         => SWOOLE_PROCESS,
+    'socket_type'  => SWOOLE_SOCK_TCP,
+    'server_class' => '', // 自定义服务类名称
 
     // 可以支持swoole的所有配置参数
-    'pid_file' => Env::get('runtime_path') . 'swoole.pid',
-    'log_file' => Env::get('runtime_path') . 'swoole.log',
+    'daemonize'    => false,
+    'pid_file'     => Env::get('runtime_path') . 'swoole_master.pid',
+    'log_file'     => Env::get('runtime_path') . 'swoole_server.log',
+
+    // 事件回调定义
+    'onOpen'       => function ($server, $request) {
+        echo "server: handshake success with fd{$request->fd}\n";
+    },
+
+    'onMessage'    => function ($server, $frame) {
+        echo "receive from {$frame->fd}:{$frame->data},opcode:{$frame->opcode},fin:{$frame->finish}\n";
+        $server->push($frame->fd, "this is server");
+    },
+
+    'onRequest'    => function ($request, $response) {
+        $response->end("<h1>Hello Swoole. #" . rand(1000, 9999) . "</h1>");
+    },
+
+    'onClose'      => function ($ser, $fd) {
+        echo "client {$fd} closed\n";
+    },
 ];

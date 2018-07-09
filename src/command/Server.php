@@ -34,9 +34,6 @@ class Server extends Swoole
         $this->setName('swoole:server')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the swoole server in daemon mode.')
-            ->addOption('type', 't', Option::VALUE_OPTIONAL, 'The swoole server type', 'socket')
-            ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'The host to swoole server', '0.0.0.0')
-            ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'The port to swoole server', 9501)
             ->setDescription('Swoole Server for ThinkPHP');
     }
 
@@ -83,9 +80,9 @@ class Server extends Swoole
                 return false;
             }
         } else {
-            $host = $this->input->getOption('host');
-            $port = $this->input->getOption('port');
-            $type = $this->input->getOption('type');
+            $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+            $port = !empty($this->config['port']) ? $this->config['port'] : 9508;
+            $type = !empty($this->config['type']) ? $this->config['type'] : 'socket';
 
             switch ($type) {
                 case 'socket':
@@ -115,9 +112,10 @@ class Server extends Swoole
 
             $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
             $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
-        }
 
-        $swoole->start();
+            // 启动服务
+            $swoole->start();
+        }
     }
 
     /**
