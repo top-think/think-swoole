@@ -63,17 +63,17 @@ class Server extends Swoole
 
         $this->output->writeln('Starting swoole server...');
 
-        if (!empty($this->config['server_class'])) {
-            $class = $this->config['server_class'];
+        if (!empty($this->config['swoole_class'])) {
+            $class = $this->config['swoole_class'];
 
             if (class_exists($class)) {
                 $swoole = new $class;
                 if (!$swoole instanceof ThinkServer) {
-                    $this->output->writeln("<error>Server Class Must extends \\think\\swoole\\Server</error>");
+                    $this->output->writeln("<error>Swoole Server Class Must extends \\think\\swoole\\Server</error>");
                     return false;
                 }
             } else {
-                $this->output->writeln("<error>Server Class Not Exists : {$class}</error>");
+                $this->output->writeln("<error>Swoole Server Class Not Exists : {$class}</error>");
                 return false;
             }
         } else {

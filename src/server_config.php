@@ -21,7 +21,7 @@ return [
     'type'         => 'socket', // 服务类型 支持 socket http server
     'mode'         => SWOOLE_PROCESS,
     'socket_type'  => SWOOLE_SOCK_TCP,
-    'server_class' => '', // 自定义服务类名称
+    'swoole_class' => '', // 自定义服务类名称
 
     // 可以支持swoole的所有配置参数
     'daemonize'    => false,
