@@ -14,6 +14,7 @@ namespace think\swoole;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use think\App;
+use think\Error;
 use think\exception\HttpException;
 
 /**
@@ -82,10 +83,20 @@ class Application extends App
         }
     }
 
+    protected function getErrorMessage($e)
+    {
+        $handler = Error::getExceptionHandler();
+        $handler->report($e);
+
+        return $handler->render($e)->getContent();
+    }
+
     protected function exception($response, $e, $code)
     {
+        $content = $this->getErrorMessage($e);
+
         $response->status($code);
-        $response->end($e->getMessage());
+        $response->end($content);
 
         throw $e;
     }
