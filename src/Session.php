@@ -83,12 +83,13 @@ class Session extends BaseSession
     /**
      * session_id设置
      * @access public
-     * @param  string        $id session_id
+     * @param  string     $id session_id
+     * @param  int        $expire Session有效期
      * @return void
      */
-    public function setId($id)
+    public function setId($id, $expire = null)
     {
-        Cookie::set($this->sessionKey, $id);
+        Cookie::set($this->sessionKey, $id, $expire);
     }
 
     /**
