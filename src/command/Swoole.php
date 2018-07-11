@@ -54,7 +54,7 @@ class Swoole extends Command
     {
         $this->config = Config::pull('swoole');
 
-        if (!empty($this->config['pid_file'])) {
+        if (empty($this->config['pid_file'])) {
             $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
         }
     }

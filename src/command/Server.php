@@ -39,7 +39,7 @@ class Server extends Swoole
     {
         $this->config = Config::pull('swoole_server');
 
-        if (!empty($this->config['pid_file'])) {
+        if (empty($this->config['pid_file'])) {
             $this->config['pid_file'] = Env::get('runtime_path') . 'swoole_server.pid';
         }
     }
