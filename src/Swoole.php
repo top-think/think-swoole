@@ -68,14 +68,16 @@ class Swoole extends Server
         $this->app = new Application($this->appPath);
 
         Facade::bind([
-            'think\facade\Cookie' => Cookie::class,
+            'think\facade\Cookie'  => Cookie::class,
+            'think\facade\Session' => Session::class,
         ]);
 
         // 应用初始化
         $this->app->initialize();
 
         $this->app->bindTo([
-            'cookie' => Cookie::class,
+            'cookie'  => Cookie::class,
+            'session' => Session::class,
         ]);
     }
 

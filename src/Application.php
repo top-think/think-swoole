@@ -75,28 +75,30 @@ class Application extends App
 
             $response->end($content);
         } catch (HttpException $e) {
-            $this->exception($response, $e, 404);
+            $this->exception($response, $e);
         } catch (\Exception $e) {
-            $this->exception($response, $e, 500);
+            $this->exception($response, $e);
         } catch (\Throwable $e) {
-            $this->exception($response, $e, 500);
+            $this->exception($response, $e);
         }
     }
 
-    protected function getErrorMessage($e)
+    protected function exception($response, $e)
     {
-        $handler = Error::getExceptionHandler();
-        $handler->report($e);
+        if ($e instanceof \Exception) {
+            $handler = Error::getExceptionHandler();
+            $handler->report($e);
 
-        return $handler->render($e)->getContent();
-    }
+            $resp    = $handler->render($e);
+            $content = $resp->getContent();
+            $code    = $resp->getCode();
 
-    protected function exception($response, $e, $code)
-    {
-        $content = $this->getErrorMessage($e);
-
-        $response->status($code);
-        $response->end($content);
+            $response->status($code);
+            $response->end($content);
+        } else {
+            $response->status(500);
+            $response->end($e->getMessage());
+        }
 
         throw $e;
     }
