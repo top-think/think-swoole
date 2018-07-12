@@ -58,7 +58,7 @@ class Swoole extends Server
         $this->table = new Table($size);
 
         foreach ($option['column'] as $field => $type) {
-            $lenght = null;
+            $length = null;
 
             if (is_array($type)) {
                 list($type, $length) = $type;
