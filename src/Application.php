@@ -60,10 +60,16 @@ class Application extends App
             $this->route->setRequest($this->request);
 
             $resp = $this->run();
+
             $resp->send();
 
             $content = ob_get_clean();
             $status  = $resp->getCode();
+
+            // Trace调试注入
+            if ($this->env->get('app_trace', $this->config->get('app_trace'))) {
+                $this->debug->inject($resp, $content);
+            }
 
             // 发送状态码
             $response->status($status);
