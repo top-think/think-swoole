@@ -89,6 +89,12 @@ class Swoole extends Command
         // 设置应用目录
         $swoole->setAppPath($this->config['app_path']);
 
+        // 创建内存表
+        if (!empty($this->config['table'])) {
+            $swoole->table($this->config['table']);
+            unset($this->config['table']);
+        }
+
         // 设置服务器参数
         $swoole->option($this->config);
 

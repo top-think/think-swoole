@@ -11,6 +11,7 @@
 namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
+use Swoole\Table;
 use think\Facade;
 
 /**
@@ -20,6 +21,18 @@ class Swoole extends Server
 {
     protected $app;
     protected $appPath;
+    protected $table;
+    protected $fieldType = [
+        'int'    => Table::TYPE_INT,
+        'string' => Table::TYPE_STRING,
+        'float'  => Table::TYPE_FLOAT,
+    ];
+
+    protected $fieldSize = [
+        Table::TYPE_INT    => 4,
+        Table::TYPE_STRING => 32,
+        Table::TYPE_FLOAT  => 8,
+    ];
 
     /**
      * 架构函数
@@ -37,6 +50,28 @@ class Swoole extends Server
     public function setAppPath($path)
     {
         $this->appPath = $path;
+    }
+
+    public function table(array $option)
+    {
+        $size        = !empty($option['size']) ? $option['size'] : 1024;
+        $this->table = new Table($size);
+
+        foreach ($option['column'] as $field => $type) {
+            $lenght = null;
+
+            if (is_array($type)) {
+                list($type, $length) = $type;
+            }
+
+            if (isset($this->fieldType[$type])) {
+                $type = $this->fieldType[$type];
+            }
+
+            $this->table->column($field, $type, isset($length) ? $length : $this->fieldSize[$type]);
+        }
+
+        $this->table->create();
     }
 
     public function option(array $option)
@@ -66,6 +101,10 @@ class Swoole extends Server
     {
         // 应用实例化
         $this->app = new Application($this->appPath);
+
+        if ($this->table) {
+            $this->app['swoole_table'] = $this->table;
+        }
 
         Facade::bind([
             'think\facade\Cookie'  => Cookie::class,

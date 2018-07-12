@@ -10,6 +10,9 @@
 // +----------------------------------------------------------------------
 namespace think\swoole;
 
+use Swoole\Table;
+use think\Container;
+use think\facade\Cache;
 use think\facade\Cookie;
 use think\Session as BaseSession;
 
@@ -25,15 +28,22 @@ class Session extends BaseSession
     protected $data = [];
 
     /**
-     * 记录Session的Key 保存在Cookie中
+     * 记录Session name
      * @var string
      */
-    protected $sessionKey = 'session_id';
+    protected $sessionName = 'PHPSESSID';
 
-    public function __construct(array $config = [])
-    {
-        $this->config = $config;
-    }
+    /**
+     * Session有效期
+     * @var int
+     */
+    protected $expire = 0;
+
+    /**
+     * Swoole_table对象
+     * @var Table
+     */
+    protected $swooleTable;
 
     /**
      * session初始化
@@ -46,8 +56,12 @@ class Session extends BaseSession
     {
         $config = $config ?: $this->config;
 
-        if (isset($config['prefix'])) {
-            $this->prefix = $config['prefix'];
+        if (!empty($config['name'])) {
+            $this->sessionName = $config['name'];
+        }
+
+        if (!empty($config['expire'])) {
+            $this->expire = $config['expire'];
         }
 
         if (!empty($config['auto_start'])) {
@@ -75,9 +89,9 @@ class Session extends BaseSession
         }
     }
 
-    public function setKey($key)
+    public function name($name)
     {
-        $this->sessionKey = $key;
+        $this->sessionName = $name;
     }
 
     /**
@@ -89,7 +103,7 @@ class Session extends BaseSession
      */
     public function setId($id, $expire = null)
     {
-        Cookie::set($this->sessionKey, $id, $expire);
+        Cookie::set($this->sessionName, $id, $expire);
     }
 
     /**
@@ -99,37 +113,7 @@ class Session extends BaseSession
      */
     public function getId()
     {
-        return Cookie::get($this->sessionKey) ?: '';
-    }
-
-    /**
-     * 设置或者获取session作用域（前缀）
-     * @access public
-     * @param  string $prefix
-     * @return string|void
-     */
-    public function prefix($prefix = '')
-    {
-        if (empty($prefix) && null !== $prefix) {
-            return $this->prefix;
-        } else {
-            $this->prefix = $prefix;
-        }
-    }
-
-    /**
-     * 配置
-     * @access public
-     * @param  array $config
-     * @return void
-     */
-    public function setConfig(array $config = [])
-    {
-        $this->config = array_merge($this->config, array_change_key_case($config));
-
-        if (isset($config['prefix'])) {
-            $this->prefix = $config['prefix'];
-        }
+        return Cookie::get($this->sessionName) ?: '';
     }
 
     /**
@@ -137,7 +121,6 @@ class Session extends BaseSession
      * @access public
      * @param  string        $name session名称
      * @param  mixed         $value session值
-     * @param  string|null   $prefix 作用域（前缀）
      * @return void
      */
     public function set($name, $value, $prefix = null)
@@ -147,8 +130,7 @@ class Session extends BaseSession
         $sessionId = $this->getId();
 
         if ($sessionId) {
-            $prefix = !is_null($prefix) ? $prefix : $this->prefix;
-            $this->setSession($sessionId, $name, $value, $prefix);
+            $this->setSession($sessionId, $name, $value);
         }
     }
 
@@ -161,28 +143,25 @@ class Session extends BaseSession
      * @param  string|null   $prefix 作用域（前缀）
      * @return void
      */
-    protected function setSession($sessionId, $name, $value, $prefix = null)
+    protected function setSession($sessionId, $name, $value)
     {
         if (strpos($name, '.')) {
             // 二维数组赋值
             list($name1, $name2) = explode('.', $name);
-            if ($prefix) {
-                $this->data[$sessionId][$prefix][$name1][$name2] = $value;
-            } else {
-                $this->data[$sessionId][$name1][$name2] = $value;
-            }
-        } elseif ($prefix) {
-            $this->data[$sessionId][$prefix][$name] = $value;
+
+            $this->data[$sessionId][$name1][$name2] = $value;
         } else {
             $this->data[$sessionId][$name] = $value;
         }
+
+        // 持久化session数据
+        $this->writeSessionData($sessionId);
     }
 
     /**
      * session获取
      * @access public
      * @param  string        $name session名称
-     * @param  string|null   $prefix 作用域（前缀）
      * @return mixed
      */
     public function get($name = '', $prefix = null)
@@ -192,11 +171,8 @@ class Session extends BaseSession
         $sessionId = $this->getId();
 
         if ($sessionId) {
-            $prefix = !is_null($prefix) ? $prefix : $this->prefix;
-            return $this->readSession($sessionId, $name, $prefix);
+            return $this->readSession($sessionId, $name);
         }
-        return;
-
     }
 
     /**
@@ -204,16 +180,11 @@ class Session extends BaseSession
      * @access protected
      * @param  string        $sessionId session_id
      * @param  string        $name session名称
-     * @param  string|null   $prefix 作用域（前缀）
      * @return mixed
      */
-    protected function readSession($sessionId, $name = '', $prefix = null)
+    protected function readSession($sessionId, $name = '')
     {
-        if ($prefix) {
-            $value = !empty($this->data[$sessionId][$prefix]) ? $this->data[$sessionId][$prefix] : [];
-        } else {
-            $value = isset($this->data[$sessionId]) ? $this->data[$sessionId] : [];
-        }
+        $value = isset($this->data[$sessionId]) ? $this->data[$sessionId] : [];
 
         if (!is_array($value)) {
             $value = [];
@@ -239,7 +210,6 @@ class Session extends BaseSession
      * 删除session数据
      * @access public
      * @param  string|array  $name session名称
-     * @param  string|null   $prefix 作用域（前缀）
      * @return void
      */
     public function delete($name, $prefix = null)
@@ -249,8 +219,10 @@ class Session extends BaseSession
         $sessionId = $this->getId();
 
         if ($sessionId) {
-            $prefix = !is_null($prefix) ? $prefix : $this->prefix;
-            $this->deleteSession($sessionId, $name, $prefix);
+            $this->deleteSession($sessionId, $name);
+
+            // 持久化session数据
+            $this->writeSessionData($sessionId);
         }
     }
 
@@ -259,35 +231,37 @@ class Session extends BaseSession
      * @access protected
      * @param  string        $sessionId session_id
      * @param  string|array  $name session名称
-     * @param  string|null   $prefix 作用域（前缀）
      * @return void
      */
-    protected function deleteSession($sessionId, $name, $prefix = null)
+    protected function deleteSession($sessionId, $name)
     {
         if (is_array($name)) {
             foreach ($name as $key) {
-                $this->delete($key, $prefix);
+                $this->deleteSession($sessionId, $key);
             }
         } elseif (strpos($name, '.')) {
             list($name1, $name2) = explode('.', $name);
-            if ($prefix) {
-                unset($this->data[$sessionId][$prefix][$name1][$name2]);
-            } else {
-                unset($this->data[$sessionId][$name1][$name2]);
-            }
+            unset($this->data[$sessionId][$name1][$name2]);
         } else {
-            if ($prefix) {
-                unset($this->data[$sessionId][$prefix][$name]);
-            } else {
-                unset($this->data[$sessionId][$name]);
-            }
+            unset($this->data[$sessionId][$name]);
+        }
+    }
+
+    protected function writeSessionData($sessionId)
+    {
+        if ($this->swooleTable) {
+            $this->swooleTable->set('sess_' . $sessionId, [
+                'data'   => json_encode($this->data[$sessionId]),
+                'expire' => time() + $this->expire,
+            ]);
+        } else {
+            Cache::set('sess_' . $sessionId, $this->data[$sessionId], $this->expire);
         }
     }
 
     /**
      * 清空session数据
      * @access public
-     * @param  string|null   $prefix 作用域（前缀）
      * @return void
      */
     public function clear($prefix = null)
@@ -297,8 +271,7 @@ class Session extends BaseSession
         $sessionId = $this->getId();
 
         if ($sessionId) {
-            $prefix = !is_null($prefix) ? $prefix : $this->prefix;
-            $this->clearSession($sessionId, $prefix);
+            $this->clearSession($sessionId);
         }
 
     }
@@ -307,15 +280,16 @@ class Session extends BaseSession
      * 清空session数据
      * @access protected
      * @param  string        $sessionId session_id
-     * @param  string|null   $prefix 作用域（前缀）
      * @return void
      */
-    protected function clearSession($sessionId, $prefix)
+    protected function clearSession($sessionId)
     {
-        if ($prefix) {
-            unset($this->data[$sessionId][$prefix]);
+        $this->data[$sessionId] = [];
+
+        if ($this->swooleTable) {
+            $this->swooleTable->del('sess_' . $sessionId);
         } else {
-            unset($this->data[$sessionId]);
+            Cache::rm('sess_' . $sessionId);
         }
     }
 
@@ -323,7 +297,6 @@ class Session extends BaseSession
      * 判断session数据
      * @access public
      * @param  string        $name session名称
-     * @param  string|null   $prefix
      * @return bool
      */
     public function has($name, $prefix = null)
@@ -332,8 +305,7 @@ class Session extends BaseSession
         $sessionId = $this->getId();
 
         if ($sessionId) {
-            $prefix = !is_null($prefix) ? $prefix : $this->prefix;
-            return $this->hasSession($sessionId, $name, $prefix);
+            return $this->hasSession($sessionId, $name);
         }
 
         return false;
@@ -344,12 +316,11 @@ class Session extends BaseSession
      * @access protected
      * @param  string        $sessionId session_id
      * @param  string        $name session名称
-     * @param  string|null   $prefix
      * @return bool
      */
-    protected function hasSession($sessionId, $name, $prefix = null)
+    protected function hasSession($sessionId, $name)
     {
-        $value = $prefix ? (!empty($this->data[$sessionId][$prefix]) ? $this->data[$sessionId][$prefix] : []) : $this->data[$sessionId];
+        $value = isset($this->data[$sessionId]) ? $this->data[$sessionId] : [];
 
         $name = explode('.', $name);
 
@@ -374,7 +345,26 @@ class Session extends BaseSession
         $sessionId = $this->getId();
 
         if (!$sessionId) {
-            $this->regenerate();
+            $sessionId = $this->regenerate();
+        }
+
+        // 读取缓存数据
+        if (empty($this->data[$sessionId])) {
+            if (!empty($this->config['use_swoole_table'])) {
+                $this->swooleTable = Container::get('swoole_table');
+
+                $result = $this->swooleTable->get('sess_' . $sessionId);
+
+                if (0 == $result['expire'] || time() <= $result['expire']) {
+                    $data = $result['data'];
+                }
+            } else {
+                $data = Cache::get('sess_' . $sessionId);
+            }
+
+            if (!empty($data)) {
+                $this->data[$sessionId] = $data;
+            }
         }
 
         $this->init = true;
@@ -406,14 +396,20 @@ class Session extends BaseSession
     {
         if (isset($this->data[$sessionId])) {
             unset($this->data[$sessionId]);
+
+            if ($this->swooleTable) {
+                $this->swooleTable->del('sess_' . $sessionId);
+            } else {
+                Cache::rm('sess_' . $sessionId);
+            }
         }
     }
 
     /**
-     * 重新生成session_id
+     * 生成session_id
      * @access public
      * @param  bool $delete 是否删除关联会话文件
-     * @return void
+     * @return string
      */
     public function regenerate($delete = false)
     {
@@ -421,9 +417,11 @@ class Session extends BaseSession
             $this->destroy();
         }
 
-        $sessionId = password_hash(uniqid(), PASSWORD_DEFAULT);
+        $sessionId = md5(microtime(true) . uniqid());
 
         $this->setId($sessionId);
+
+        return $sessoinId;
     }
 
     /**
