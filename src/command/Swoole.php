@@ -77,7 +77,7 @@ class Swoole extends Command
 
         $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
         $port = !empty($this->config['port']) ? $this->config['port'] : 9501;
-        $ssl  = !empty($this->config['open_http2_protocol']);
+        $ssl  = !empty($this->config['ssl']) || !empty($this->config['open_http2_protocol']);
 
         $swoole = new SwooleServer($host, $port, $ssl);
 
