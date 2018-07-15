@@ -19,7 +19,7 @@ use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
 use think\facade\Env;
-use think\swoole\Swoole as SwooleServer;
+use think\swoole\Http as HttpServer;
 
 /**
  * Swoole 命令行，支持操作：start|stop|restart|reload
@@ -77,9 +77,15 @@ class Swoole extends Command
 
         $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
         $port = !empty($this->config['port']) ? $this->config['port'] : 9501;
-        $ssl  = !empty($this->config['ssl']) || !empty($this->config['open_http2_protocol']);
+        $mode = !empty($this->config['mode']) ? $this->config['mode'] : SWOOLE_PROCESS;
+        $type = !empty($this->config['sock_type']) ? $this->config['sock_type'] : SWOOLE_SOCK_TCP;
 
-        $swoole = new SwooleServer($host, $port, $ssl);
+        $ssl = !empty($this->config['ssl']) || !empty($this->config['open_http2_protocol']);
+        if ($ssl) {
+            $type = SWOOLE_SOCK_TCP | SWOOLE_SSL;
+        }
+
+        $swoole = new HttpServer($host, $port, $mode, $type);
 
         // 开启守护进程模式
         if ($this->input->hasOption('daemon')) {

@@ -36,13 +36,13 @@ abstract class Server
      * Socket的类型
      * @var int
      */
-    protected $sockType;
+    protected $sockType = SWOOLE_SOCK_TCP;
 
     /**
      * 运行模式
      * @var int
      */
-    protected $mode;
+    protected $mode = SWOOLE_PROCESS;
 
     /**
      * 监听地址
@@ -77,10 +77,10 @@ abstract class Server
         // 实例化 Swoole 服务
         switch ($this->serverType) {
             case 'socket':
-                $this->swoole = new Websocket($this->host, $this->port);
+                $this->swoole = new Websocket($this->host, $this->port, $this->mode, $this->sockType);
                 break;
             case 'http':
-                $this->swoole = new HttpServer($this->host, $this->port);
+                $this->swoole = new HttpServer($this->host, $this->port, $this->mode, $this->sockType);
                 break;
             default:
                 $this->swoole = new SwooleServer($this->host, $this->port, $this->mode, $this->sockType);

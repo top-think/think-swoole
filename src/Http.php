@@ -15,9 +15,9 @@ use Swoole\Table;
 use think\Facade;
 
 /**
- * Swoole 命令行服务类
+ * Swoole Http Server 命令行服务类
  */
-class Swoole extends Server
+class Http extends Server
 {
     protected $app;
     protected $appPath;
@@ -38,13 +38,9 @@ class Swoole extends Server
      * 架构函数
      * @access public
      */
-    public function __construct($host, $port, $ssl = false)
+    public function __construct($host, $port, $mode = SWOOLE_PROCESS, $sockType = SWOOLE_SOCK_TCP)
     {
-        if ($ssl) {
-            $this->swoole = new HttpServer($host, $port, SWOOLE_PROCESS, SWOOLE_SOCK_TCP | SWOOLE_SSL);
-        } else {
-            $this->swoole = new HttpServer($host, $port);
-        }
+        $this->swoole = new HttpServer($host, $port, $mode, $sockType);
     }
 
     public function setAppPath($path)

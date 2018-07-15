@@ -11,10 +11,7 @@
 
 namespace think\swoole\command;
 
-use Swoole\Http\Server as HttpServer;
 use Swoole\Process;
-use Swoole\Server as SwooleServer;
-use Swoole\Websocket\Server as Websocket;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\facade\Config;
@@ -74,20 +71,24 @@ class Server extends Swoole
                 return false;
             }
         } else {
-            $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
-            $port = !empty($this->config['port']) ? $this->config['port'] : 9508;
-            $type = !empty($this->config['type']) ? $this->config['type'] : 'socket';
+            $host     = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+            $port     = !empty($this->config['port']) ? $this->config['port'] : 9508;
+            $type     = !empty($this->config['type']) ? $this->config['type'] : 'socket';
+            $mode     = !empty($this->config['mode']) ? $this->config['mode'] : SWOOLE_PROCESS;
+            $sockType = !empty($this->config['sock_type']) ? $this->config['sock_type'] : SWOOLE_SOCK_TCP;
 
             switch ($type) {
                 case 'socket':
-                    $swoole = new Websocket($host, $port);
+                    $swooleClass = 'Swoole\Websocket\Server';
                     break;
                 case 'http':
-                    $swoole = new HttpServer($host, $port);
+                    $swooleClass = 'Swoole\Http\Server';
                     break;
                 default:
-                    $swoole = new SwooleServer($host, $port, $this->config['mode'], $this->config['sockType']);
+                    $swooleClass = 'Swoole\Server';
             }
+
+            $swoole = new $swooleClass($host, $port, $mode, $sockType);
 
             // 开启守护进程模式
             if ($this->input->hasOption('daemon')) {

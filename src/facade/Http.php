@@ -14,12 +14,12 @@ namespace think\swoole\facade;
 use think\Facade;
 
 /**
- * @see \think\swoole\Swoole
- * @mixin \think\swoole\Swoole
+ * @see \think\swoole\Http
+ * @mixin \think\swoole\Http
  * @method void option(array $option) static 参数设置
  * @method void start() static 启动服务
  * @method void stop() static 停止服务
  */
-class Swoole extends Facade
+class Http extends Facade
 {
 }

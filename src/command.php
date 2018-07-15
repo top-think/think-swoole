@@ -16,5 +16,5 @@
 
 \think\Facade::bind([
     \think\swoole\facade\Application::class => \think\swoole\Application::class,
-    \think\swoole\facade\Swoole::class      => \think\swoole\Swoole::class,
+    \think\swoole\facade\Http::class        => \think\swoole\Http::class,
 ]);

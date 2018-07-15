@@ -56,7 +56,7 @@ type| 服务类型
 host | 监听地址
 port | 监听端口
 mode | 运行模式
-socket_type | Socket type
+sock_type | Socket type
 
 
 并且支持swoole所有的参数。
