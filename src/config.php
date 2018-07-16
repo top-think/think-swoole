@@ -16,13 +16,13 @@ use think\facade\Env;
 // +----------------------------------------------------------------------
 return [
     // 扩展自身配置
-    'host'        => '0.0.0.0', // 监听地址
-    'port'        => 9501, // 监听端口
-    'app_path'    => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
+    'host'      => '0.0.0.0', // 监听地址
+    'port'      => 9501, // 监听端口
+    'app_path'  => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
 
     // 可以支持swoole的所有配置参数
-    'mode'        => SWOOLE_PROCESS,
-    'socket_type' => SWOOLE_SOCK_TCP,
-    'pid_file'    => Env::get('runtime_path') . 'swoole.pid',
-    'log_file'    => Env::get('runtime_path') . 'swoole.log',
+    'mode'      => SWOOLE_PROCESS,
+    'sock_type' => SWOOLE_SOCK_TCP,
+    'pid_file'  => Env::get('runtime_path') . 'swoole.pid',
+    'log_file'  => Env::get('runtime_path') . 'swoole.log',
 ];
