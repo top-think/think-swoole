@@ -421,7 +421,7 @@ class Session extends BaseSession
 
         $this->setId($sessionId);
 
-        return $sessoinId;
+        return $sessionId;
     }
 
     /**
