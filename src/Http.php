@@ -129,6 +129,11 @@ class Http extends Server
         }
     }
 
+    /**
+     * 文件监控
+     *
+     * @param $server
+     */
     protected function monitor($server)
     {
         $paths = $this->monitor['path'] ?: [$this->app->getAppPath(), $this->app->getConfigPath()];
