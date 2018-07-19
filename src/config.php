@@ -18,8 +18,8 @@ return [
     // 扩展自身配置
     'host'                  => '0.0.0.0', // 监听地址
     'port'                  => 9501, // 监听端口
-    'mode'                  => SWOOLE_PROCESS, // 运行模式
-    'sock_type'             => SWOOLE_SOCK_TCP, // sock type
+    'mode'                  => '', // 运行模式 默认为SWOOLE_PROCESS
+    'sock_type'             => '', // sock type 默认为SWOOLE_SOCK_TCP
     'app_path'              => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
     'monitor'               => false, // 是否开启PHP文件更改监控（调试模式下自动开启）
     'monitor_interval'      => 2, // 文件变化监控检测时间间隔（秒）
