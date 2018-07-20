@@ -21,9 +21,9 @@ return [
     'mode'                  => '', // 运行模式 默认为SWOOLE_PROCESS
     'sock_type'             => '', // sock type 默认为SWOOLE_SOCK_TCP
     'app_path'              => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
-    'monitor'               => false, // 是否开启PHP文件更改监控（调试模式下自动开启）
-    'monitor_interval'      => 2, // 文件变化监控检测时间间隔（秒）
-    'monitor_path'          => [], // 文件监控目录 默认监控application和config目录
+    'file_monitor'          => false, // 是否开启PHP文件更改监控（调试模式下自动开启）
+    'file_monitor_interval' => 2, // 文件变化监控检测时间间隔（秒）
+    'file_monitor_path'     => [], // 文件监控目录 默认监控application和config目录
 
     // 可以支持swoole的所有配置参数
     'pid_file'              => Env::get('runtime_path') . 'swoole.pid',

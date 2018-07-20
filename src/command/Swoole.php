@@ -102,11 +102,11 @@ class Swoole extends Command
         }
 
         // 设置文件监控 调试模式自动开启
-        if (Env::get('app_debug') || !empty($this->config['monitor'])) {
-            $interval = isset($this->config['monitor_interval']) ? $this->config['monitor_interval'] : 2;
-            $paths    = isset($this->config['monitor_path']) ? $this->config['monitor_path'] : [];
+        if (Env::get('app_debug') || !empty($this->config['file_monitor'])) {
+            $interval = isset($this->config['file_monitor_interval']) ? $this->config['file_monitor_interval'] : 2;
+            $paths    = isset($this->config['file_monitor_path']) ? $this->config['file_monitor_path'] : [];
             $swoole->setMonitor($interval, $paths);
-            unset($this->config['monitor'], $this->config['monitor_interval'], $this->config['monitor_path']);
+            unset($this->config['file_monitor'], $this->config['file_monitor_interval'], $this->config['file_monitor_path']);
         }
 
         // 设置服务器参数
