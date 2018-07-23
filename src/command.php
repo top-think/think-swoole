@@ -9,12 +9,21 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-\think\Console::addDefaultCommands([
+namespace think;
+
+// 注册命令行指令
+Console::addDefaultCommands([
     '\\think\\swoole\\command\\Swoole',
     '\\think\\swoole\\command\\Server',
 ]);
 
-\think\Facade::bind([
-    \think\swoole\facade\Application::class => \think\swoole\Application::class,
-    \think\swoole\facade\Http::class        => \think\swoole\Http::class,
+// 绑定Facade
+Facade::bind([
+    swoole\facade\Application::class => swoole\Application::class,
+    swoole\facade\Http::class        => swoole\Http::class,
+]);
+
+// 指定日志类驱动
+Loader::addClassMap([
+    'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
 ]);

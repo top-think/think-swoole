@@ -52,6 +52,7 @@ class Application extends App
                 ->withCookie($request->cookie ?: [])
                 ->withInput($request->rawContent())
                 ->withFiles($request->files ?: [])
+                ->setHost($request->header['host'])
                 ->setPathinfo(ltrim($request->server['path_info'], '/'));
 
             $_COOKIE = $request->cookie ?: $_COOKIE;
