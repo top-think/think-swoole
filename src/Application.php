@@ -44,18 +44,24 @@ class Application extends App
             // 设置Cookie类Response
             $this->cookie->setResponse($response);
 
+            $_COOKIE = $request->cookie ?: $_COOKIE;
+            $_GET    = $request->get ?: [];
+            $_POST   = $request->post ?: [];
+            $_FILES  = $request->files ?: [];
+            $_SERVER = array_change_key_case($request->server, CASE_UPPER);
+
             // 重新实例化请求对象 处理swoole请求数据
             $this->request->withHeader($request->header)
-                ->withServer($request->server)
-                ->withGet($request->get ?: [])
-                ->withPost($request->post ?: [])
-                ->withCookie($request->cookie ?: [])
+                ->withServer($_SERVER)
+                ->withGet($_GET)
+                ->withPost($_POST)
+                ->withCookie($_COOKIE)
                 ->withInput($request->rawContent())
-                ->withFiles($request->files ?: [])
+                ->withFiles($_FILES)
+                ->setBaseUrl($request->server['request_uri'])
+                ->setUrl($request->server['request_uri'] . (!empty($request->server['query_string']) ? '&' . $request->server['query_string'] : ''))
                 ->setHost($request->header['host'])
                 ->setPathinfo(ltrim($request->server['path_info'], '/'));
-
-            $_COOKIE = $request->cookie ?: $_COOKIE;
 
             // 更新请求对象实例
             $this->route->setRequest($this->request);
