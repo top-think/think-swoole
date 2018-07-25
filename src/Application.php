@@ -44,7 +44,7 @@ class Application extends App
             // 设置Cookie类Response
             $this->cookie->setResponse($response);
 
-            $_COOKIE = $request->cookie ?: $_COOKIE;
+            $_COOKIE = $request->cookie ?: [];
             $_GET    = $request->get ?: [];
             $_POST   = $request->post ?: [];
             $_FILES  = $request->files ?: [];
@@ -67,7 +67,6 @@ class Application extends App
             $this->route->setRequest($this->request);
 
             $resp = $this->run();
-
             $resp->send();
 
             $content = ob_get_clean();
