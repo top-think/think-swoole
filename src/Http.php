@@ -13,6 +13,7 @@ namespace think\swoole;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Table;
 use think\Facade;
+use think\Loader;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -110,6 +111,11 @@ class Http extends Server
         if ($this->table) {
             $this->app['swoole_table'] = $this->table;
         }
+
+        // 指定日志类驱动
+        Loader::addClassMap([
+            'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
+        ]);
 
         Facade::bind([
             'think\facade\Cookie'  => Cookie::class,

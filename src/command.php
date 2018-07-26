@@ -22,8 +22,3 @@ Facade::bind([
     swoole\facade\Application::class => swoole\Application::class,
     swoole\facade\Http::class        => swoole\Http::class,
 ]);
-
-// 指定日志类驱动
-Loader::addClassMap([
-    'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
-]);
