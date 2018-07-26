@@ -9,10 +9,8 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-namespace think;
-
 // 注册命令行指令
-Console::addDefaultCommands([
+\think\Console::addDefaultCommands([
     '\\think\\swoole\\command\\Swoole',
     '\\think\\swoole\\command\\Server',
 ]);
