@@ -118,8 +118,10 @@ class Http extends Server
         ]);
 
         Facade::bind([
-            'think\facade\Cookie'  => Cookie::class,
-            'think\facade\Session' => Session::class,
+            'think\facade\Cookie'     => Cookie::class,
+            'think\facade\Session'    => Session::class,
+            facade\Application::class => Application::class,
+            facade\Http::class        => Http::class,
         ]);
 
         // 应用初始化

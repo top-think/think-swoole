@@ -16,9 +16,3 @@ Console::addDefaultCommands([
     '\\think\\swoole\\command\\Swoole',
     '\\think\\swoole\\command\\Server',
 ]);
-
-// 绑定Facade
-Facade::bind([
-    swoole\facade\Application::class => swoole\Application::class,
-    swoole\facade\Http::class        => swoole\Http::class,
-]);
