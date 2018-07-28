@@ -22,7 +22,7 @@ use think\facade\Env;
 use think\swoole\Http as HttpServer;
 
 /**
- * Swoole 命令行，支持操作：start|stop|restart|reload
+ * Swoole HTTP 命令行，支持操作：start|stop|restart|reload
  * 支持应用配置目录下的swoole.php文件进行参数配置
  */
 class Swoole extends Command

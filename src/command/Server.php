@@ -20,7 +20,7 @@ use think\swoole\Server as ThinkServer;
 
 /**
  * Swoole 命令行，支持操作：start|stop|restart|reload
- * 支持应用配置目录下的swoole.php文件进行参数配置
+ * 支持应用配置目录下的swoole_server.php文件进行参数配置
  */
 class Server extends Swoole
 {
@@ -105,7 +105,7 @@ class Server extends Swoole
             // 设置服务器参数
             $swoole->set($this->config);
 
-            $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
+            $this->output->writeln("Swoole {$type} server started: <{$host}:{$port}>");
             $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
             // 启动服务
