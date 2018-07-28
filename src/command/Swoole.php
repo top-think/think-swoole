@@ -60,7 +60,7 @@ class Swoole extends Command
             $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
         }
 
-        // 避免pid混淆
+        // 避免pid混乱
         $this->config['pid_file'] .= '_' . $this->getPort();
     }
 
