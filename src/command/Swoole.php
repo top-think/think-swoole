@@ -22,7 +22,7 @@ use think\facade\Env;
 use think\swoole\Http as HttpServer;
 
 /**
- * Swoole 命令行，支持操作：start|stop|restart|reload
+ * Swoole HTTP 命令行，支持操作：start|stop|restart|reload
  * 支持应用配置目录下的swoole.php文件进行参数配置
  */
 class Swoole extends Command
@@ -33,6 +33,8 @@ class Swoole extends Command
     {
         $this->setName('swoole')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
+            ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of swoole server.', null)
+            ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of swoole server.', null)
             ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the swoole server in daemon mode.')
             ->setDescription('Swoole HTTP Server for ThinkPHP');
     }
@@ -57,6 +59,31 @@ class Swoole extends Command
         if (empty($this->config['pid_file'])) {
             $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
         }
+
+        // 避免pid混乱
+        $this->config['pid_file'] .= '_' . $this->getPort();
+    }
+
+    protected function getHost()
+    {
+        if ($this->input->hasOption('host')) {
+            $host = $this->input->getOption('host');
+        } else {
+            $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
+        }
+
+        return $host;
+    }
+
+    protected function getPort()
+    {
+        if ($this->input->hasOption('port')) {
+            $port = $this->input->getOption('port');
+        } else {
+            $port = !empty($this->config['port']) ? $this->config['port'] : 9501;
+        }
+
+        return $port;
     }
 
     /**
@@ -75,8 +102,8 @@ class Swoole extends Command
 
         $this->output->writeln('Starting swoole http server...');
 
-        $host = !empty($this->config['host']) ? $this->config['host'] : '0.0.0.0';
-        $port = !empty($this->config['port']) ? $this->config['port'] : 9501;
+        $host = $this->getHost();
+        $port = $this->getPort();
         $mode = !empty($this->config['mode']) ? $this->config['mode'] : SWOOLE_PROCESS;
         $type = !empty($this->config['sock_type']) ? $this->config['sock_type'] : SWOOLE_SOCK_TCP;
 
@@ -110,6 +137,9 @@ class Swoole extends Command
         }
 
         // 设置服务器参数
+        if (isset($this->config['pid_file'])) {
+
+        }
         $swoole->option($this->config);
 
         $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
