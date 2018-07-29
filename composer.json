@@ -24,8 +24,8 @@
     },
     "extra": {
         "think-config": {
-        "swoole": "src/config.php",
-	    "swoole_server":"src/server_config.php"
+        "swoole": "src/config/swoole.php",
+	    "swoole_server":"src/config/server.php"
         }
     }
 }
