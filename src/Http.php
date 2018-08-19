@@ -14,6 +14,9 @@ use Swoole\Http\Server as HttpServer;
 use Swoole\Table;
 use think\Facade;
 use think\Loader;
+use think\facade\Config;
+use think\swoole\facade\Timer as TimerF;
+use think\swoole\facade\Task as TaskF;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -54,7 +57,7 @@ class Http extends Server
     public function setMonitor($interval = 2, $path = [])
     {
         $this->monitor['interval'] = $interval;
-        $this->monitor['path']     = (array) $path;
+        $this->monitor['path']     = (array)$path;
     }
 
     public function table(array $option)
@@ -105,7 +108,8 @@ class Http extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app       = new Application($this->appPath);
+        $this->app = new Application($this->appPath);
+        $this->app->setServer($server);
         $this->lastMtime = time();
 
         if ($this->table) {
@@ -122,6 +126,8 @@ class Http extends Server
             'think\facade\Session'    => Session::class,
             facade\Application::class => Application::class,
             facade\Http::class        => Http::class,
+            facade\Task::class        => Task::class,
+            facade\Timer::class       => Timer::class,
         ]);
 
         // 应用初始化
@@ -134,6 +140,10 @@ class Http extends Server
 
         if (0 == $worker_id && $this->monitor) {
             $this->monitor($server);
+        }
+        //只在一个进程内执行定时任务
+        if (0 == $worker_id) {
+            $this->timer($server);
         }
     }
 
@@ -169,6 +179,24 @@ class Http extends Server
     }
 
     /**
+     * 系统定时器
+     *
+     * @param $server
+     */
+    public function timer($server)
+    {
+        $timer    = Config::get('swoole.timer');
+        $interval = intval(Config::get('swoole.interval'));
+        if ($timer) {
+            $interval = $interval > 0 ? $interval : 1000;
+            $server->tick($interval, function () use ($server) {
+                TimerF::run($server);
+            });
+        }
+    }
+
+
+    /**
      * request回调
      * @param $request
      * @param $response
@@ -178,4 +206,49 @@ class Http extends Server
         // 执行应用并响应
         $this->app->swoole($request, $response);
     }
+
+    /**
+     * 任务投递
+     * @param HttpServer $serv
+     * @param $task_id
+     * @param $fromWorkerId
+     * @param $data
+     * @return mixed|null
+     */
+    public function onTask(HttpServer $serv, $task_id, $fromWorkerId,$data)
+    {
+        if(is_string($data) && class_exists($data)){
+            $taskObj = new $data;
+            if (method_exists($taskObj,'run')){
+                $taskObj->run($serv, $task_id, $fromWorkerId);
+                unset($taskObj);
+            }
+        }
+
+        if (is_object($data)&&method_exists($data,'run')){
+            $data->run($serv, $task_id, $fromWorkerId);
+            unset($data);
+        }
+
+        if($data instanceof SuperClosure){
+            return $data($serv,  $task_id,  $data);
+        }else{
+            $serv->finish($data);
+        }
+
+    }
+
+    /**
+     * 任务结束，如果有自定义任务结束回调方法则不会触发该方法
+     * @param HttpServer $serv
+     * @param $task_id
+     * @param $data
+     */
+    public function onFinish(HttpServer $serv,  $task_id,  $data)
+    {
+        if($data instanceof SuperClosure){
+            $data($serv,  $task_id,  $data);
+        }
+    }
+
 }
