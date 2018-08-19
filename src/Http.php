@@ -222,12 +222,14 @@ class Http extends Server
             if (method_exists($taskObj,'run')){
                 $taskObj->run($serv, $task_id, $fromWorkerId);
                 unset($taskObj);
+                return true;
             }
         }
 
         if (is_object($data)&&method_exists($data,'run')){
             $data->run($serv, $task_id, $fromWorkerId);
             unset($data);
+            return true;
         }
 
         if($data instanceof SuperClosure){

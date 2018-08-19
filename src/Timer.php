@@ -43,7 +43,6 @@ class Timer
             $this->startTask();
         } else {
             $this->initimerlists();
-            var_dump(self::$timerlists);
         }
 
     }

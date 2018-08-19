@@ -34,7 +34,6 @@ class Task
             }
         }
 
-        //var_dump(\think\swoole\Application::getServer());
         Application::getServer()->task($task, $taskWorkerId, $finishCallback);
     }
 }
