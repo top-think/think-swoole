@@ -39,7 +39,7 @@ class SuperClosure
         return Invoker::callUserFuncArray($this->closure, $args);
     }
 
-    final function call(...$args)
+    final public function call(...$args)
     {
         return Invoker::callUserFuncArray($this->closure, $args);
     }
