@@ -16,7 +16,6 @@ use think\Facade;
 use think\Loader;
 use think\facade\Config;
 use think\swoole\facade\Timer as TimerF;
-use think\swoole\facade\Task as TaskF;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -57,7 +56,7 @@ class Http extends Server
     public function setMonitor($interval = 2, $path = [])
     {
         $this->monitor['interval'] = $interval;
-        $this->monitor['path']     = (array)$path;
+        $this->monitor['path']     = (array) $path;
     }
 
     public function table(array $option)

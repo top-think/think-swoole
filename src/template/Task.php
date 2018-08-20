@@ -19,4 +19,5 @@ abstract class Task
     abstract protected function _initialize(...$arg);
 
     abstract protected function run($serv, $task_id, $fromWorkerId);
+    
 }

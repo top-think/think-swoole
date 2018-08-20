@@ -18,6 +18,7 @@ use think\swoole\facade\Task as TaskF;
  * 可以执行回调函数，同时可以执行定时器模板
  * @package xavier\swoole
  */
+
 class Timer
 {
     private static $timerlists = [];
@@ -31,7 +32,6 @@ class Timer
             $this->config = [];
         }
     }
-
 
     /**
      *开始执行定时器任务
@@ -145,4 +145,5 @@ class Timer
     {
         return SwooleTimer::clear($timer_id);
     }
+
 }

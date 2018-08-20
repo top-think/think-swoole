@@ -34,7 +34,6 @@ class SuperClosure
 
     final public function __invoke()
     {
-        // TODO: Implement __invoke() method.
         $args = func_get_args();
         return Invoker::callUserFuncArray($this->closure, $args);
     }
@@ -43,4 +42,5 @@ class SuperClosure
     {
         return Invoker::callUserFuncArray($this->closure, $args);
     }
+
 }

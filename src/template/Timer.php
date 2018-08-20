@@ -23,4 +23,5 @@ abstract class Timer
     abstract protected function _initialize(...$arg);
 
     abstract protected function run();
+
 }

@@ -14,15 +14,15 @@ class Invoker
         if (SWOOLE_VERSION > 1) {
             if ($callable instanceof \Closure) {
                 return $callable(...$params);
-            } else if (is_array($callable) && is_object($callable[0])) {
+            } elseif (is_array($callable) && is_object($callable[0])) {
                 $class  = $callable[0];
                 $method = $callable[1];
                 return $class->$method(...$params);
-            } else if (is_array($callable) && is_string($callable[0])) {
+            } elseif (is_array($callable) && is_string($callable[0])) {
                 $class  = $callable[0];
                 $method = $callable[1];
                 return $class::$method(...$params);
-            } else if (is_string($callable)) {
+            } elseif (is_string($callable)) {
                 return $callable(...$params);
             } else {
                 return null;
@@ -37,15 +37,15 @@ class Invoker
         if (SWOOLE_VERSION > 1) {
             if ($callable instanceof \Closure) {
                 return $callable(...$params);
-            } else if (is_array($callable) && is_object($callable[0])) {
+            } elseif (is_array($callable) && is_object($callable[0])) {
                 $class  = $callable[0];
                 $method = $callable[1];
                 return $class->$method(...$params);
-            } else if (is_array($callable) && is_string($callable[0])) {
+            } elseif (is_array($callable) && is_string($callable[0])) {
                 $class  = $callable[0];
                 $method = $callable[1];
                 return $class::$method(...$params);
-            } else if (is_string($callable)) {
+            } elseif (is_string($callable)) {
                 return $callable(...$params);
             } else {
                 return null;
