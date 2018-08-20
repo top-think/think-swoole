@@ -8,7 +8,6 @@
 
 namespace think\swoole;
 
-use think\swoole\Application;
 use think\Container;
 
 class Task
