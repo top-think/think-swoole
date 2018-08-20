@@ -108,6 +108,9 @@ class Http extends Server
         $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
 
+        // Swoole Server保存到容器
+        $this->app->swoole = $server;
+
         if ($this->table) {
             $this->app['swoole_table'] = $this->table;
         }
