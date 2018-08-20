@@ -18,7 +18,6 @@ abstract class Timer
     {
         $this->arg = $arg;
         $this->_initialize(...$arg);
-
     }
 
     abstract protected function _initialize(...$arg);

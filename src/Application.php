@@ -22,12 +22,13 @@ use think\exception\HttpException;
  */
 class Application extends App
 {
-    private static $swoole=null;
+    private static $swoole = null;
+
     /**
      * 处理Swoole请求
      * @access public
-     * @param  \Swoole\Http\Request    $request
-     * @param  \Swoole\Http\Response   $response
+     * @param  \Swoole\Http\Request $request
+     * @param  \Swoole\Http\Response $response
      * @param  void
      */
     public function swoole(Request $request, Response $response)
@@ -118,7 +119,7 @@ class Application extends App
 
     public function setServer($swoole)
     {
-        self::$swoole=$swoole;
+        self::$swoole = $swoole;
     }
 
     public static function getServer()
