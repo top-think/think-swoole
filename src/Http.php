@@ -108,7 +108,6 @@ class Http extends Server
     {
         // 应用实例化
         $this->app = new Application($this->appPath);
-        $this->app->setServer($server);
         $this->lastMtime = time();
 
         // Swoole Server保存到容器
