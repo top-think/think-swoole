@@ -109,7 +109,7 @@ class Timer
     {
         if ($callback instanceof \Closure) {
             return SwooleTimer::tick($time, $callback);
-        } else if (is_object($callback) && method_exists($callback, 'run')) {
+        } elseif (is_object($callback) && method_exists($callback, 'run')) {
             return SwooleTimer::tick($time, function () use ($callback) {
                 $callback->run();
             });
@@ -127,7 +127,7 @@ class Timer
     {
         if ($callback instanceof \Closure) {
             return SwooleTimer::after($time, $callback);
-        } else if (is_object($callback) && method_exists($callback, 'run')) {
+        } elseif (is_object($callback) && method_exists($callback, 'run')) {
             return SwooleTimer::after($time, function () use ($callback) {
                 $callback->run();
                 unset($callback);
