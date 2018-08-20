@@ -6,7 +6,6 @@
 
 namespace think\swoole;
 
-
 class Invoker
 {
     public static function callUserFunc(callable $callable, ...$params)

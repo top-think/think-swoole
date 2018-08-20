@@ -8,7 +8,6 @@
 
 namespace think\swoole\template;
 
-
 abstract class Timer
 {
     protected $arg = null;
