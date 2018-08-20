@@ -25,8 +25,8 @@ class Application extends App
     /**
      * 处理Swoole请求
      * @access public
-     * @param  \Swoole\Http\Request    $request
-     * @param  \Swoole\Http\Response   $response
+     * @param  \Swoole\Http\Request $request
+     * @param  \Swoole\Http\Response $response
      * @param  void
      */
     public function swoole(Request $request, Response $response)

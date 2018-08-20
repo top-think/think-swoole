@@ -12,15 +12,15 @@
 use think\facade\Env;
 
 // +----------------------------------------------------------------------
-// | Swoole设置 php think swoole:server 命令行下有效
+// | Swoole设置 php think swoole命令行下有效
 // +----------------------------------------------------------------------
 return [
     // 扩展自身配置
     'host'         => '0.0.0.0', // 监听地址
     'port'         => 9508, // 监听端口
     'type'         => 'socket', // 服务类型 支持 socket http server
-    'mode'         => '', // 运行模式 默认为SWOOLE_PROCESS
-    'sock_type'    => '', // sock type 默认为SWOOLE_SOCK_TCP
+    'mode'         => SWOOLE_PROCESS,
+    'socket_type'  => SWOOLE_SOCK_TCP,
     'swoole_class' => '', // 自定义服务类名称
 
     // 可以支持swoole的所有配置参数
