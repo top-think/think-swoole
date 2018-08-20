@@ -196,8 +196,7 @@ class Http extends Server
             });
         }
     }
-
-
+    
     /**
      * request回调
      * @param $request

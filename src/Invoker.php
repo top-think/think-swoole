@@ -25,7 +25,7 @@ class Invoker
             } elseif (is_string($callable)) {
                 return $callable(...$params);
             } else {
-                return null;
+                return;
             }
         } else {
             return call_user_func($callable, ...$params);
@@ -48,7 +48,7 @@ class Invoker
             } elseif (is_string($callable)) {
                 return $callable(...$params);
             } else {
-                return null;
+                return;
             }
         } else {
             return call_user_func_array($callable, $params);

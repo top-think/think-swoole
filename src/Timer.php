@@ -145,5 +145,4 @@ class Timer
     {
         return SwooleTimer::clear($timer_id);
     }
-
 }
