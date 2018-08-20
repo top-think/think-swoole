@@ -9,6 +9,7 @@
 namespace think\swoole;
 
 use think\swoole\Application;
+use think\Container;
 
 class Task
 {
@@ -33,7 +34,6 @@ class Task
                 return false;
             }
         }
-
-        Application::getServer()->task($task, $taskWorkerId, $finishCallback);
+        Container::get('swoole')->task($task, $taskWorkerId, $finishCallback);
     }
 }

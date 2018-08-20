@@ -112,6 +112,9 @@ class Http extends Server
         $this->app->setServer($server);
         $this->lastMtime = time();
 
+        // Swoole Server保存到容器
+        $this->app->swoole = $server;
+
         if ($this->table) {
             $this->app['swoole_table'] = $this->table;
         }
@@ -215,26 +218,26 @@ class Http extends Server
      * @param $data
      * @return mixed|null
      */
-    public function onTask(HttpServer $serv, $task_id, $fromWorkerId,$data)
+    public function onTask(HttpServer $serv, $task_id, $fromWorkerId, $data)
     {
-        if(is_string($data) && class_exists($data)){
+        if (is_string($data) && class_exists($data)) {
             $taskObj = new $data;
-            if (method_exists($taskObj,'run')){
+            if (method_exists($taskObj, 'run')) {
                 $taskObj->run($serv, $task_id, $fromWorkerId);
                 unset($taskObj);
                 return true;
             }
         }
 
-        if (is_object($data)&&method_exists($data,'run')){
+        if (is_object($data) && method_exists($data, 'run')) {
             $data->run($serv, $task_id, $fromWorkerId);
             unset($data);
             return true;
         }
 
-        if($data instanceof SuperClosure){
-            return $data($serv,  $task_id,  $data);
-        }else{
+        if ($data instanceof SuperClosure) {
+            return $data($serv, $task_id, $data);
+        } else {
             $serv->finish($data);
         }
 
@@ -246,10 +249,10 @@ class Http extends Server
      * @param $task_id
      * @param $data
      */
-    public function onFinish(HttpServer $serv,  $task_id,  $data)
+    public function onFinish(HttpServer $serv, $task_id, $data)
     {
-        if($data instanceof SuperClosure){
-            $data($serv,  $task_id,  $data);
+        if ($data instanceof SuperClosure) {
+            $data($serv, $task_id, $data);
         }
     }
 
