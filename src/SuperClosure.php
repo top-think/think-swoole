@@ -13,14 +13,14 @@ class SuperClosure
     private $closure;
     private $serialized;
 
-    function __construct(\Closure $closure)
+    public function __construct(\Closure $closure)
     {
         $this->closure = $closure;
     }
 
     final public function __sleep()
     {
-        $serializer = new Serializer();
+        $serializer       = new Serializer();
         $this->serialized = $serializer->serialize($this->closure);
         unset($this->closure);
         return ['serialized'];
@@ -28,7 +28,7 @@ class SuperClosure
 
     final public function __wakeup()
     {
-        $serializer = new Serializer();
+        $serializer    = new Serializer();
         $this->closure = $serializer->unserialize($this->serialized);
     }
 
@@ -36,11 +36,11 @@ class SuperClosure
     {
         // TODO: Implement __invoke() method.
         $args = func_get_args();
-        return Invoker::callUserFuncArray($this->closure,$args);
+        return Invoker::callUserFuncArray($this->closure, $args);
     }
 
     final function call(...$args)
     {
-        return Invoker::callUserFuncArray($this->closure,$args);
+        return Invoker::callUserFuncArray($this->closure, $args);
     }
 }
