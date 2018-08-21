@@ -30,4 +30,7 @@ return [
     'log_file'              => Env::get('runtime_path') . 'swoole.log',
     'document_root'         => Env::get('root_path') . 'public',
     'enable_static_handler' => true,
+    'timer'                 => true,//是否开启系统定时器
+    'interval'              => 500,//系统定时器 时间间隔
+    'task_worker_num'       => 1,//swoole 任务工作进程数量
 ];
