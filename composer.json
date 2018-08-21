@@ -29,7 +29,7 @@
         "think-config": {
         "swoole": "src/config/swoole.php",
         "swoole_server":"src/config/server.php",
-        "timer":"src/config/timer_config.php"
+        "timer":"src/config/timer.php"
         }
     }
 }
