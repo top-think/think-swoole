@@ -13,7 +13,6 @@
 	"ext-swoole": ">=1.9.5",
 	"topthink/think-installer": "^2.0",
     "topthink/framework": "~5.1.20",
-    "guzzlehttp/guzzle": "^6.3",
     "jeremeamia/superclosure": "^2.4",
     "xavier/xcron-expression": "^0.11"
     },
