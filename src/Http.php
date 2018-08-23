@@ -56,7 +56,7 @@ class Http extends Server
     public function setMonitor($interval = 2, $path = [])
     {
         $this->monitor['interval'] = $interval;
-        $this->monitor['path']     = (array) $path;
+        $this->monitor['path']     = (array)$path;
     }
 
     public function table(array $option)
@@ -139,12 +139,33 @@ class Http extends Server
             'session' => Session::class,
         ]);
 
+        $this->initServer($server, $worker_id);
+
         if (0 == $worker_id && $this->monitor) {
             $this->monitor($server);
         }
         //只在一个进程内执行定时任务
         if (0 == $worker_id) {
             $this->timer($server);
+        }
+    }
+
+    /**
+     * 自定义初始化Swoole
+     * @param $server
+     * @param $worker_id
+     */
+    public function initServer($server, $worker_id)
+    {
+        $wokerStart = Config::get('swoole.wokerstart');
+        if ($wokerStart) {
+            if (is_string($wokerStart) && class_exists($wokerStart)) {
+                $obj = new $wokerStart($server, $worker_id);
+                $obj->run();
+                unset($obj);
+            } elseif ($wokerStart instanceof \Closure) {
+                $wokerStart($server, $worker_id);
+            }
         }
     }
 

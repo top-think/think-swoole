@@ -346,3 +346,57 @@ class Index
     }
 }
 ```
+
+
+### 自定义服务启动
+
+如果需要在Swoole启动的时候创建一些服务，可以按照如下方法进行自定义
+
+在swoole.php中配置配置
+
+//闭包方式
+```php
+'wokerstart'=>function($server, $worker_id){
+    //如果只在一个进程处理 则可以这样
+
+    if (0==$woker_id){
+        //这样只会在第一个woker进程处理
+    }
+}
+```
+
+如果需要实现Workerstart的接口，可以这样实现
+
+```php
+<?php
+/**
+ * Created by PhpStorm.
+ * User: xavier
+ * Date: 2018/8/23
+ * Time: 下午5:27
+ * Email:499873958@qq.com
+ */
+
+namespace app\lib;
+
+use think\swoole\template\WorkerStart as Woker;
+class WorkStart extends Woker
+{
+    public function _initialize($server, $worker_id)
+    {
+        // TODO: Implement _initialize() method.
+    }
+
+    public function run()
+    {
+        var_dump(1);
+    }
+}
+```
+
+配置文件
+
+```php
+'wokerstart'=>'\\app\\lib\\WorkStart'
+```
+
