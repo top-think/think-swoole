@@ -9,7 +9,6 @@
 
 namespace think\swoole\template;
 
-
 abstract class WorkerStart
 {
     private $server;
