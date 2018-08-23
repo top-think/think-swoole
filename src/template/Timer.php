@@ -10,8 +10,8 @@ namespace think\swoole\template;
 
 abstract class Timer
 {
-    protected $arg = null;
-    protected $lock=false;
+    protected $arg  = null;
+    protected $lock = false;
 
     public function __construct(...$arg)
     {
@@ -22,5 +22,4 @@ abstract class Timer
     abstract protected function _initialize(...$arg);
 
     abstract protected function run();
-
 }

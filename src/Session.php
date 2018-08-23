@@ -13,7 +13,7 @@ namespace think\swoole;
 use Swoole\Table;
 use think\Container;
 use think\facade\Cache;
-use think\facade\Cookie;
+use think\facade\Cookie as ThinkCookie;
 use think\Session as BaseSession;
 
 /**
@@ -103,7 +103,7 @@ class Session extends BaseSession
      */
     public function setId($id, $expire = null)
     {
-        Cookie::set($this->sessionName, $id, $expire);
+        ThinkCookie::set($this->sessionName, $id, $expire);
     }
 
     /**
@@ -113,7 +113,7 @@ class Session extends BaseSession
      */
     public function getId()
     {
-        return Cookie::get($this->sessionName) ?: '';
+        return ThinkCookie::get($this->sessionName) ?: '';
     }
 
     /**

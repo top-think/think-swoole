@@ -9,9 +9,9 @@
 namespace think\swoole;
 
 use Swoole\Timer as SwooleTimer;
-use XCron\CronExpression;
 use think\facade\Config;
 use think\swoole\facade\Task as TaskF;
+use XCron\CronExpression;
 
 /**
  * Class Timer
@@ -22,7 +22,7 @@ use think\swoole\facade\Task as TaskF;
 class Timer
 {
     private static $timerlists = [];
-    private $config = [];
+    private $config            = [];
 
     public function __construct()
     {
@@ -71,8 +71,9 @@ class Timer
         $i = 0;
         foreach ($this->config as $key => $val) {
             try {
-                $cron                             = CronExpression::factory($key);
-                $time                             = $cron->getNextRunDate()->getTimestamp();
+                $cron = CronExpression::factory($key);
+                $time = $cron->getNextRunDate()->getTimestamp();
+
                 self::$timerlists[$i]['key']      = $key;
                 self::$timerlists[$i]['val']      = $val;
                 self::$timerlists[$i]['nexttime'] = $time;
