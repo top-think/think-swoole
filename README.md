@@ -329,3 +329,20 @@ class Index
     }
 }
 ```
+
+### 获取Server
+
+获取Swoole实例对象
+
+```php
+<?php
+namespace app\index\controller;
+use think\Container;
+class Index
+{
+    public function hello()
+    {
+        $swoole=Container::get('swoole');//获取swoole实例
+    }
+}
+```
