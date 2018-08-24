@@ -359,7 +359,7 @@ class Index
 'wokerstart'=>function($server, $worker_id){
     //如果只在一个进程处理 则可以这样
 
-    if (0==$woker_id){
+    if (0==$worker_id){
         //这样只会在第一个woker进程处理
     }
 }
