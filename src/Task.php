@@ -12,16 +12,12 @@ use think\Container;
 
 class Task
 {
-    public function __construct()
-    {
-    }
-
     /**
      * 异步投递任务
-     * @param $task  任务，可以是闭包可以是任务模板
-     * @param null $finishCallback 任务执行完成回调 可以为空
-     * @param int $taskWorkerId 指定task worker 来执行任务，不指定，自动分配
-     * @return bool
+     * @param mixed     $task  任务，可以是闭包可以是任务模板
+     * @param mixed     $finishCallback 任务执行完成回调 可以为空
+     * @param int       $taskWorkerId 指定task worker 来执行任务，不指定，自动分配
+     * @return mixed
      */
     public function async($task, $finishCallback = null, $taskWorkerId = -1)
     {
@@ -33,6 +29,7 @@ class Task
                 return false;
             }
         }
-        Container::get('swoole')->task($task, $taskWorkerId, $finishCallback);
+
+        return Container::get('swoole')->task($task, $taskWorkerId, $finishCallback);
     }
 }

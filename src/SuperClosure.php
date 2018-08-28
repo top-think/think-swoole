@@ -7,6 +7,7 @@
 namespace think\swoole;
 
 use SuperClosure\Serializer;
+use think\Container;
 
 class SuperClosure
 {
@@ -23,6 +24,7 @@ class SuperClosure
         $serializer       = new Serializer();
         $this->serialized = $serializer->serialize($this->closure);
         unset($this->closure);
+
         return ['serialized'];
     }
 
@@ -32,14 +34,13 @@ class SuperClosure
         $this->closure = $serializer->unserialize($this->serialized);
     }
 
-    final public function __invoke()
+    final public function __invoke(...$args)
     {
-        $args = func_get_args();
-        return Invoker::callUserFuncArray($this->closure, $args);
+        return Container::getInstance()->invokeFunction($this->closure, $args);
     }
 
     final public function call(...$args)
     {
-        return Invoker::callUserFuncArray($this->closure, $args);
+        return Container::getInstance()->invokeFunction($this->closure, $args);
     }
 }

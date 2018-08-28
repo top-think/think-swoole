@@ -28,13 +28,14 @@ class Timer
     {
         //获取配置信息
         $this->config = Config::pull('timer');
+
         if (empty($this->config)) {
             $this->config = [];
         }
     }
 
     /**
-     *开始执行定时器任务
+     * 开始执行定时器任务
      * @param $serv 服务对象
      */
     public function run($serv)
@@ -44,7 +45,6 @@ class Timer
         } else {
             $this->initimerlists();
         }
-
     }
 
     /**
@@ -53,9 +53,11 @@ class Timer
     public function startTask()
     {
         foreach (self::$timerlists as &$one) {
-            if ($one['nexttime'] <= time()) {
-                $cron            = CronExpression::factory($one['key']);
-                $one['nexttime'] = $cron->getNextRunDate()->getTimestamp();
+            if ($one['next_time'] <= time()) {
+                $cron = CronExpression::factory($one['key']);
+
+                $one['next_time'] = $cron->getNextRunDate()->getTimestamp();
+
                 $this->syncTask($one['val']);
             }
         }
@@ -74,9 +76,9 @@ class Timer
                 $cron = CronExpression::factory($key);
                 $time = $cron->getNextRunDate()->getTimestamp();
 
-                self::$timerlists[$i]['key']      = $key;
-                self::$timerlists[$i]['val']      = $val;
-                self::$timerlists[$i]['nexttime'] = $time;
+                self::$timerlists[$i]['key']       = $key;
+                self::$timerlists[$i]['val']       = $val;
+                self::$timerlists[$i]['next_time'] = $time;
             } catch (\Exception $e) {
                 var_dump($e);
                 throw new \Exception("定时器异常");
@@ -87,7 +89,7 @@ class Timer
 
     /**
      * 异步投递任务到task worker
-     * @param $class
+     * @param string $class
      */
     public function syncTask($class)
     {
@@ -102,11 +104,11 @@ class Timer
 
     /**
      * 每隔固定时间执行一次
-     * @param int $time 间隔时间
-     * @param $callback 可以是回调 可以是定时器任务模板
+     * @param int       $time       间隔时间
+     * @param mixed     $callback   可以是回调 可以是定时器任务模板
      * @return bool
      */
-    public function tick(int $time, $callback)
+    public function tick($time, $callback)
     {
         if ($callback instanceof \Closure) {
             return SwooleTimer::tick($time, $callback);
@@ -115,16 +117,17 @@ class Timer
                 $callback->run();
             });
         }
+
         return false;
     }
 
     /**
      * 延迟执行
-     * @param int $time 间隔时间
-     * @param $callback 可以是回调 可以是定时器任务模板
+     * @param int       $time       间隔时间
+     * @param mixed     $callback   可以是回调 可以是定时器任务模板
      * @return bool
      */
-    public function after(int $time, $callback)
+    public function after($time, $callback)
     {
         if ($callback instanceof \Closure) {
             return SwooleTimer::after($time, $callback);
@@ -134,16 +137,17 @@ class Timer
                 unset($callback);
             });
         }
+
         return false;
     }
 
     /**
      * 清除定时器
-     * @param int $timer_id
-     * @return mixed
+     * @param int $timerId
+     * @return bool
      */
-    public function clear(int $timer_id)
+    public function clear($timerId)
     {
-        return SwooleTimer::clear($timer_id);
+        return SwooleTimer::clear($timerId);
     }
 }
