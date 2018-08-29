@@ -77,6 +77,9 @@ class Application extends App
                 $this->debug->inject($resp, $content);
             }
 
+            // 清除中间件数据
+            $this->middleware->clear();
+
             // 发送状态码
             $response->status($status);
 

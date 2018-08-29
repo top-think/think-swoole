@@ -13,8 +13,8 @@ namespace think\swoole;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Table;
 use think\Facade;
-use think\Loader;
 use think\facade\Config;
+use think\Loader;
 use think\swoole\facade\Timer as TimerF;
 
 /**
@@ -142,6 +142,7 @@ class Http extends Server
         if (0 == $worker_id && $this->monitor) {
             $this->monitor($server);
         }
+
         //只在一个进程内执行定时任务
         if (0 == $worker_id) {
             $this->timer($server);
@@ -237,7 +238,6 @@ class Http extends Server
         } else {
             $serv->finish($data);
         }
-
     }
 
     /**
