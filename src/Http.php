@@ -16,6 +16,7 @@ use think\Facade;
 use think\facade\Config;
 use think\Loader;
 use think\swoole\facade\Timer as TimerF;
+use think\Container;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -57,7 +58,7 @@ class Http extends Server
     public function setMonitor($interval = 2, $path = [])
     {
         $this->monitor['interval'] = $interval;
-        $this->monitor['path']     = (array) $path;
+        $this->monitor['path']     = (array)$path;
     }
 
     public function table(array $option)
@@ -113,8 +114,12 @@ class Http extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app       = new Application($this->appPath);
+        $this->app = new Application($this->appPath);
         $this->lastMtime = time();
+
+        //swoole server worker启动行为
+        $hook = Container::get('hook');
+        $hook->listen('swoole_worker_start', ['server' => $server, 'worker_id' => $worker_id]);
 
         // Swoole Server保存到容器
         $this->app->swoole = $server;
@@ -123,11 +128,11 @@ class Http extends Server
             $this->app['swoole_table'] = $this->table;
         }
 
-        $this->app->cachetable=$this->cachetable;
+        $this->app->cachetable = $this->cachetable;
 
         // 指定日志类驱动
         Loader::addClassMap([
-            'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
+            'think\\log\\driver\\File'    => __DIR__ . '/log/File.php',
             'think\\cache\\driver\\Table' => __DIR__ . '/cache/driver/Table.php',
         ]);
 
