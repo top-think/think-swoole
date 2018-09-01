@@ -58,7 +58,7 @@ class Http extends Server
     public function setMonitor($interval = 2, $path = [])
     {
         $this->monitor['interval'] = $interval;
-        $this->monitor['path']     = (array)$path;
+        $this->monitor['path']     = (array) $path;
     }
 
     public function table(array $option)
