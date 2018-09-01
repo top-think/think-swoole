@@ -221,7 +221,7 @@ class Swoole extends Command
         $pidFile = $this->config['pid_file'];
 
         if (is_file($pidFile)) {
-            $masterPid = (int)file_get_contents($pidFile);
+            $masterPid = (int) file_get_contents($pidFile);
         } else {
             $masterPid = 0;
         }
