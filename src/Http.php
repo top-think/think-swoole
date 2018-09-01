@@ -25,6 +25,7 @@ class Http extends Server
     protected $app;
     protected $appPath;
     protected $table;
+    protected $cachetable;
     protected $monitor;
     protected $lastMtime;
     protected $fieldType = [
@@ -81,6 +82,11 @@ class Http extends Server
         $this->table->create();
     }
 
+    public function cachetable()
+    {
+        $this->cachetable = new CacheTable();
+    }
+
     public function option(array $option)
     {
         // 设置参数
@@ -117,9 +123,12 @@ class Http extends Server
             $this->app['swoole_table'] = $this->table;
         }
 
+        $this->app->cachetable=$this->cachetable;
+
         // 指定日志类驱动
         Loader::addClassMap([
             'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
+            'think\\cache\\driver\\Table' => __DIR__ . '/cache/driver/Table.php',
         ]);
 
         Facade::bind([

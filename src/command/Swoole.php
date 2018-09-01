@@ -127,6 +127,8 @@ class Swoole extends Command
             $swoole->table($this->config['table']);
             unset($this->config['table']);
         }
+        
+        $swoole->cachetable();
 
         // 设置文件监控 调试模式自动开启
         if (Env::get('app_debug') || !empty($this->config['file_monitor'])) {
