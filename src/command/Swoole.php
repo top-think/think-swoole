@@ -20,6 +20,7 @@ use think\console\Output;
 use think\facade\Config;
 use think\facade\Env;
 use think\swoole\Http as HttpServer;
+use think\Container;
 
 /**
  * Swoole HTTP 命令行，支持操作：start|stop|restart|reload
@@ -127,7 +128,7 @@ class Swoole extends Command
             $swoole->table($this->config['table']);
             unset($this->config['table']);
         }
-        
+
         $swoole->cachetable();
 
         // 设置文件监控 调试模式自动开启
@@ -146,6 +147,9 @@ class Swoole extends Command
 
         $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
         $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
+
+        $hook = Container::get('hook');
+        $hook->listen("swoole_server_start", $swoole);
 
         $swoole->start();
     }
@@ -217,7 +221,7 @@ class Swoole extends Command
         $pidFile = $this->config['pid_file'];
 
         if (is_file($pidFile)) {
-            $masterPid = (int) file_get_contents($pidFile);
+            $masterPid = (int)file_get_contents($pidFile);
         } else {
             $masterPid = 0;
         }
