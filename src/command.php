@@ -11,6 +11,6 @@
 
 // 注册命令行指令
 \think\Console::addDefaultCommands([
-    '\\think\\swoole\\command\\Swoole',
-    '\\think\\swoole\\command\\Server',
+    'swoole'        => '\\think\\swoole\\command\\Swoole',
+    'swoole:server' => '\\think\\swoole\\command\\Server',
 ]);
