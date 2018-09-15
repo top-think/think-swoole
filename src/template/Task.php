@@ -10,16 +10,14 @@ namespace think\swoole\template;
 
 abstract class Task
 {
-    protected $arg = null;
 
-    public function __construct(...$arg)
+    public function __construct(...$args)
     {
-        $this->arg = $arg;
-        $this->_initialize(...$arg);
+        $this->initialize($args);
     }
 
-    abstract protected function _initialize(...$arg);
+    abstract protected function initialize($args);
 
-    abstract protected function run($serv, $task_id, $fromWorkerId);
+    abstract protected function run($serv, $taskId, $fromWorkerId);
 
 }
