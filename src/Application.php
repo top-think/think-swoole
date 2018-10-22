@@ -48,10 +48,12 @@ class Application extends App
             $_GET    = $request->get ?: [];
             $_POST   = $request->post ?: [];
             $_FILES  = $request->files ?: [];
-            $_SERVER = array_change_key_case($request->server, CASE_UPPER);
+            $header  = $request->header ?: [];
+            $server  = array_change_key_case($request->server, CASE_UPPER);
+            $_SERVER = array_merge($server, array_change_key_case($header, CASE_UPPER));
 
             // 重新实例化请求对象 处理swoole请求数据
-            $this->request->withHeader($request->header)
+            $this->request->withHeader($header)
                 ->withServer($_SERVER)
                 ->withGet($_GET)
                 ->withPost($_POST)
