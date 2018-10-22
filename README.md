@@ -144,3 +144,259 @@ php think swoole:server reload
 ~~~
 
 
+### 配置信息详解
+
+swoole.php
+
+```php
+<?php
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK IT ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006-2018 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
+use think\facade\Env;
+// +----------------------------------------------------------------------
+// | Swoole设置 php think swoole命令行下有效
+// +----------------------------------------------------------------------
+return [
+    // 扩展自身配置
+    'host'                  => '0.0.0.0', // 监听地址
+    'port'                  => 9501, // 监听端口
+    'mode'                  => '', // 运行模式 默认为SWOOLE_PROCESS
+    'sock_type'             => '', // sock type 默认为SWOOLE_SOCK_TCP
+    'app_path'              => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
+    'file_monitor'          => false, // 是否开启PHP文件更改监控（调试模式下自动开启）
+    'file_monitor_interval' => 2, // 文件变化监控检测时间间隔（秒）
+    'file_monitor_path'     => [], // 文件监控目录 默认监控application和config目录
+    // 可以支持swoole的所有配置参数
+    'pid_file'              => Env::get('runtime_path') . 'swoole.pid',//swoole主进程pid存放文件
+    'log_file'              => Env::get('runtime_path') . 'swoole.log',//swoole日志存放文件
+    'document_root'         => Env::get('root_path') . 'public',//设置静态服务根目录
+    'enable_static_handler' => true,//是否由SWOOLE底层自动处理静态文件，TRUE表示SWOOLE判断是否存在静态文件，如果存在则直接返回静态文件信息
+    'timer'                 => true,//是否开启系统定时器
+    'interval'              => 500,//系统定时器 时间间隔
+    'task_worker_num'       => 1,//swoole 任务工作进程数量
+    'user'                  =>'www',//表示swoole worker进程所属的管理员名称，如果要绑定1024以下端口则必须要求具有root权限，如果设置了该项，则除主进程外的所有进程都运行于指定用户下
+];
+```
+
+timer.php
+
+```php
+<?php
+/**
+ * Created by PhpStorm.
+ * User: xavier
+ * Date: 2018/8/15
+ * Time: 下午2:14
+ * 秒 分 时 日 月 星期几
+ * crontab 格式 * *  *  *  * *    => "类"
+ * *中间一个空格
+ * 系统定时任务需要在swoole.php中开启
+ * 自定义定时器不受其影响
+ */
+return [
+    '*/5 * * * * *' => '\\app\\lib\\Timer',//时间配置方式参考crontab，主要是增加秒，其他和crontab一致，对应Value为定时器接口实现类的完整命名空间（包含类名）
+];
+```
+
+### 异步任务投递
+
+1.异步任务接口实现
+
+```php
+<?php
+/**
+ * Created by PhpStorm.
+ * User: xavier
+ * Date: 2018/8/19
+ * Time: 下午8:28
+ */
+
+namespace app\lib;
+
+use think\swoole\template\Task;
+class TestTask extends Task
+{
+    public function _initialize(...$arg)
+    {
+        // TODO: Implement _initialize() method.
+    }
+
+    public function run($serv, $task_id, $fromWorkerId)
+    {
+        // TODO: Implement run() method.
+    }
+}
+```
+
+2.异步任务投递在控制器中的使用
+
+```php
+<?php
+namespace app\index\controller;
+use think\swoole\facade\Task;
+
+class Index
+{
+    public function hello()
+    {
+        //投递任务模板
+        $task=new \app\lib\TestTask();
+        Task::async($task);
+        //异步任务投递闭包
+        Task::async(function ($serv, $task_id, $data) {
+            $i = 0;
+            while ($i < 10) {
+                $i++;
+                echo $i;
+                sleep(1);
+            }
+        });
+
+        return 'hello' ;
+    }
+}
+```
+
+### 定时器的使用
+
+定时器分为系统定时器和自定义定时器，系统定时器需要在配置文件（timer.php）中进行配置，会根据配置由系统自动处理
+
+1. 定时器接口的实现
+
+```php
+<?php
+namespace app\lib;
+/**
+ * Created by PhpStorm.
+ * User: xavier
+ * Date: 2018/8/19
+ * Time: 下午8:01
+ */
+use think\swoole\template\Timer;
+class TestTimer extends Timer
+{
+
+    public function _initialize(...$arg)
+    {
+        // TODO: Implement _initialize() method.
+    }
+
+    public function run()
+    {
+        $i=0;
+        // TODO: Implement run() method.
+        while($i<10){
+            var_dump(12);
+            $i++;
+            sleep(1);
+        }
+    }
+}
+```
+
+2. 系统定时器的使用
+
+参考上面timer.php的配置方法，系统定时器任务会自动进行异步投递，因此必须在swoole.php中配置task_worker_num，系统会自动调用非繁忙的task worker进行任务处理
+
+3. 自定义定时器
+
+自定义定时器可以执行闭包和Timer接口实现类。注意，如非必要请勿在控制器等重复调用的地方使用tick方法，因为每次请求都会创建新的定时器。如果必须创建，请注意定时器回收。
+
+```php
+<?php
+namespace app\index\controller;
+use think\swoole\facade\Task;
+use think\swoole\facade\Timer;
+class Index
+{
+    public function hello()
+    {
+        //闭包方式使用定时器
+        Timer::tick(1000,function(){
+            var_dump(1);
+        });
+        //使用定时器模板
+        $t=new \app\lib\TestTimer();
+        Timer::tick(1000,$t);
+        return 'hello,' ;
+    }
+}
+```
+
+### 获取Server
+
+获取Swoole实例对象
+
+```php
+<?php
+namespace app\index\controller;
+use think\Container;
+class Index
+{
+    public function hello()
+    {
+        $swoole=Container::get('swoole');//获取swoole实例
+    }
+}
+```
+
+
+### 自定义服务启动
+
+如果需要在Swoole启动的时候创建一些服务，可以按照如下方法进行自定义
+
+在swoole.php中配置配置
+
+//闭包方式
+```php
+'wokerstart'=>function($server, $worker_id){
+    //如果只在一个进程处理 则可以这样
+
+    if (0==$worker_id){
+        //这样只会在第一个woker进程处理
+    }
+}
+```
+
+如果需要实现Workerstart的接口，可以这样实现
+
+```php
+<?php
+/**
+ * Created by PhpStorm.
+ * User: xavier
+ * Date: 2018/8/23
+ * Time: 下午5:27
+ * Email:499873958@qq.com
+ */
+
+namespace app\lib;
+
+use think\swoole\template\WorkerStart as Woker;
+class WorkStart extends Woker
+{
+    public function _initialize($server, $worker_id)
+    {
+        // TODO: Implement _initialize() method.
+    }
+
+    public function run()
+    {
+        var_dump(1);
+    }
+}
+```
+
+配置文件
+
+```php
+'wokerstart'=>'\\app\\lib\\WorkStart'
+```
+

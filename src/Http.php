@@ -16,6 +16,7 @@ use think\Facade;
 use think\facade\Config;
 use think\Loader;
 use think\swoole\facade\Timer as TimerF;
+use think\Container;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -25,6 +26,7 @@ class Http extends Server
     protected $app;
     protected $appPath;
     protected $table;
+    protected $cachetable;
     protected $monitor;
     protected $lastMtime;
     protected $fieldType = [
@@ -81,6 +83,11 @@ class Http extends Server
         $this->table->create();
     }
 
+    public function cachetable()
+    {
+        $this->cachetable = new CacheTable();
+    }
+
     public function option(array $option)
     {
         // 设置参数
@@ -107,8 +114,12 @@ class Http extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app       = new Application($this->appPath);
+        $this->app = new Application($this->appPath);
         $this->lastMtime = time();
+
+        //swoole server worker启动行为
+        $hook = Container::get('hook');
+        $hook->listen('swoole_worker_start', ['server' => $server, 'worker_id' => $worker_id]);
 
         // Swoole Server保存到容器
         $this->app->swoole = $server;
@@ -117,9 +128,12 @@ class Http extends Server
             $this->app['swoole_table'] = $this->table;
         }
 
+        $this->app->cachetable = $this->cachetable;
+
         // 指定日志类驱动
         Loader::addClassMap([
-            'think\\log\\driver\\File' => __DIR__ . '/log/File.php',
+            'think\\log\\driver\\File'    => __DIR__ . '/log/File.php',
+            'think\\cache\\driver\\Table' => __DIR__ . '/cache/driver/Table.php',
         ]);
 
         Facade::bind([
@@ -139,6 +153,8 @@ class Http extends Server
             'session' => Session::class,
         ]);
 
+        $this->initServer($server, $worker_id);
+
         if (0 == $worker_id && $this->monitor) {
             $this->monitor($server);
         }
@@ -146,6 +162,25 @@ class Http extends Server
         //只在一个进程内执行定时任务
         if (0 == $worker_id) {
             $this->timer($server);
+        }
+    }
+
+    /**
+     * 自定义初始化Swoole
+     * @param $server
+     * @param $worker_id
+     */
+    public function initServer($server, $worker_id)
+    {
+        $wokerStart = Config::get('swoole.wokerstart');
+        if ($wokerStart) {
+            if (is_string($wokerStart) && class_exists($wokerStart)) {
+                $obj = new $wokerStart($server, $worker_id);
+                $obj->run();
+                unset($obj);
+            } elseif ($wokerStart instanceof \Closure) {
+                $wokerStart($server, $worker_id);
+            }
         }
     }
 
