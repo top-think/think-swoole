@@ -33,16 +33,16 @@ return [
         echo "server: handshake success with fd{$request->fd}\n";
     },
 
-    'onMessage'    => function ($server, $frame) {
+    'onMessage' => function ($server, $frame) {
         echo "receive from {$frame->fd}:{$frame->data},opcode:{$frame->opcode},fin:{$frame->finish}\n";
         $server->push($frame->fd, "this is server");
     },
 
-    'onRequest'    => function ($request, $response) {
+    'onRequest' => function ($request, $response) {
         $response->end("<h1>Hello Swoole. #" . rand(1000, 9999) . "</h1>");
     },
 
-    'onClose'      => function ($ser, $fd) {
+    'onClose' => function ($ser, $fd) {
         echo "client {$fd} closed\n";
     },
 ];

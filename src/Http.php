@@ -17,6 +17,9 @@ use think\facade\Config;
 use think\Loader;
 use think\swoole\facade\Timer as TimerF;
 use think\Container;
+use think\swoole\queue\Task as QueueTask;
+use think\swoole\queue\Process as QueueProcess;
+use Swoole\WebSocket\Server as WebSocketServer;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -28,6 +31,7 @@ class Http extends Server
     protected $table;
     protected $cachetable;
     protected $monitor;
+    protected $server_type;
     protected $lastMtime;
     protected $fieldType = [
         'int'    => Table::TYPE_INT,
@@ -47,7 +51,18 @@ class Http extends Server
      */
     public function __construct($host, $port, $mode = SWOOLE_PROCESS, $sockType = SWOOLE_SOCK_TCP)
     {
-        $this->swoole = new HttpServer($host, $port, $mode, $sockType);
+        $this->server_type = Config::get('swoole.server_type');
+        switch ($this->server_type) {
+            case 'websocket':
+                $this->swoole = new WebSocketServer($host, $port, $mode, SWOOLE_SOCK_TCP);
+                break;
+            default:
+                $this->swoole = new HttpServer($host, $port, $mode, SWOOLE_SOCK_TCP);
+        }
+        if ("process" == Config::get('swoole.queue_type')) {
+            $process = new QueueProcess();
+            $process->run($this->swoole);
+        }
     }
 
     public function setAppPath($path)
@@ -58,7 +73,7 @@ class Http extends Server
     public function setMonitor($interval = 2, $path = [])
     {
         $this->monitor['interval'] = $interval;
-        $this->monitor['path']     = (array) $path;
+        $this->monitor['path']     = (array)$path;
     }
 
     public function table(array $option)
@@ -103,6 +118,13 @@ class Http extends Server
                 $this->swoole->on($event, [$this, 'on' . $event]);
             }
         }
+        if ("websocket" == $this->server_type) {
+            foreach ($this->event as $event) {
+                if (method_exists($this, 'Websocketon' . $event)) {
+                    $this->swoole->on($event, [$this, 'Websocketon' . $event]);
+                }
+            }
+        }
     }
 
     /**
@@ -114,7 +136,7 @@ class Http extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app = new Application($this->appPath);
+        $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
 
         //swoole server worker启动行为
@@ -230,6 +252,13 @@ class Http extends Server
                 TimerF::run($server);
             });
         }
+        $queue_type = Config::get('swoole.queue_type');
+        $task       = QueueTask::instance();
+        if ("task" == $queue_type) {
+            $server->tick(1000, function () use ($queue_type, $task) {
+                $task->run();
+            });
+        }
     }
 
     /**
@@ -241,6 +270,17 @@ class Http extends Server
     {
         // 执行应用并响应
         $this->app->swoole($request, $response);
+    }
+
+    /**
+     * Message回调
+     * @param $server
+     * @param $frame
+     */
+    public function WebsocketonMessage($server, $frame)
+    {
+        // 执行应用并响应
+        $this->app->swooleWebSocket($server, $frame);
     }
 
     /**

@@ -400,3 +400,83 @@ class WorkStart extends Woker
 'wokerstart'=>'\\app\\lib\\WorkStart'
 ```
 
+### Websocket支持  
+需要在swoole.php修改
+
+```a
+'server_type'           => 'websocket', // 服务类型 支持 http websocket
+```
+
+由于Swoole\WebSocket\Server继承于Swoole\Http\Server顾Http服务具有的功能Websocket也具有。如果采用如下websocket服务，
+通讯数据格式已经固定，如采用自定义数据结构，请采用自定义服务
+
+WebSocket通讯数据结构
+```json
+{
+    "event":"",//事件名称
+    "url":"",//目标地址
+    "arguments":{//客户端投递数据
+        "post":[],//post数据
+        "get":[],//get数据
+        "cookie":[],//cookie数据
+   }
+}
+```
+详解 
+
+* event  该参数为事件名称，用于触发客户端事件，即接收服务器推送数据处理指定任务
+
+* url，该为访问的目标地址，相当于http模式下http://xxx.com/url
+
+* arguments 客户端投递的所有数据，如果希望可以按照原来POST,GET的方式处理数据，可以提交时按照上述方式提交，会自动处理
+
+客户端JS可以参考example里websocketclient.js
+
+
+服务端发送数据
+
+```php
+use xavier\swoole\WebSocketFrame;
+
+$client=WebSocketFrame::getInstance();
+//发送数据给当前请求的客户端
+$client->pushToClient([]);//参数为数组，字符串，数字
+//发送给所有客户端
+$client->pushToClients([]);//参数为数组，字符串，数字
+
+$client->getArgs();//获取arguments里的参数
+
+$client->getData();//获取客户端发送给的所有数据
+
+$client->getServer();//获取当前server
+
+$client->getFrame();//获取当前客户端给发送的原始数据
+```
+
+
+新增队列支持
+
+think-queue，是一个非常好用的队列服务，xavier-swoole的队列服务依赖于think-queue，使用方法和think-queue保持一致
+
+主要增加如下功能
+
+1. 采用多进程模式运行或采用Task异步执行
+2. 可以指定同时消耗队列任务的进程数量
+3. Task模式和Server共享Task进程，充分利用资源
+4. Process模式采用进程模式，各个任务之间相互隔离，执行一定次数后，重启进程，防止内存泄露
+
+
+如果任务较多且复杂，推荐采用Process模式
+
+```php 
+'queue_type'=>'task',//task or process
+    'queue'=>[
+        "Index"=>[
+                      "delay"=>0,//延迟时间
+                      "sleep"=>3,//休息时间
+                      "maxTries"=>0,//重试次数
+                      "nums"=>2//进程数量
+        ],
+    ]
+```
+
