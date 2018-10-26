@@ -4,6 +4,7 @@ namespace think\swoole\queue;
 
 use think\queue\Worker;
 use think\facade\Config;
+
 /**
  * 进程模式运行队列
  * 优点：每个队列都有一个或者多个进程，且互相不干扰
