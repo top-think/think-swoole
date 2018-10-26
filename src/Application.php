@@ -125,7 +125,6 @@ class Application extends App
             $_SERVER["SERVER_PROTOCOL"] = 'http';
             $_SERVER["REQUEST_METHOD"]  = 'post';
 
-
             // 重新实例化请求对象 处理swoole请求数据
             $this->request
                 ->withServer($_SERVER)
