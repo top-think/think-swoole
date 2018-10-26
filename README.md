@@ -436,7 +436,7 @@ WebSocket通讯数据结构
 服务端发送数据
 
 ```php
-use xavier\swoole\WebSocketFrame;
+use think\swoole\WebSocketFrame;
 
 $client=WebSocketFrame::getInstance();
 //发送数据给当前请求的客户端
