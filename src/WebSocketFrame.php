@@ -75,7 +75,7 @@ class WebSocketFrame implements \ArrayAccess
     {
         if (is_string($data)) {
             $this->server->push($fd, $data);
-        } else if (is_array($data)) {
+        } elseif (is_array($data)) {
             $this->server->push($fd, json_encode($data));
         }
     }
