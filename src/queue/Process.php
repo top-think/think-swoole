@@ -1,5 +1,4 @@
 <?php
-
 namespace think\swoole\queue;
 
 use think\queue\Worker;

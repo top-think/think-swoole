@@ -5,7 +5,6 @@
  * email:49987958@qq.com
  * 可以配合https://github.com/xavieryang007/xavier-swoole/blob/master/src/example/websocketclient.js 使用
  */
-
 namespace think\swoole;
 
 class WebSocketFrame implements \ArrayAccess
