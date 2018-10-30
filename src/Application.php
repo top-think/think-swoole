@@ -68,6 +68,14 @@ class Application extends App
             // 更新请求对象实例
             $this->route->setRequest($this->request);
 
+            // 重新加载全局中间件
+            if (is_file($this->appPath . 'middleware.php')) {
+                $middleware = include $this->appPath . 'middleware.php';
+                if (is_array($middleware)) {
+                    $this->middleware->import($middleware);
+                }
+            }
+
             $resp = $this->run();
             $resp->send();
 
