@@ -288,8 +288,9 @@ class Http extends Server
      */
     public function WebsocketonClose($server, $fd, $reactorId)
     {
-		$data = [$server, $fd, $reactorId];
-        \think\Hook::listen('swoole_websocket_on_close', $data);
+        $data = [$server, $fd, $reactorId];
+        $hook = Container::get('hook');
+        $hook->listen('swoole_websocket_on_close', $data);
     }
 
     /**
