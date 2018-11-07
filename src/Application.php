@@ -16,6 +16,7 @@ use Swoole\Http\Response;
 use think\App;
 use think\Error;
 use think\exception\HttpException;
+use think\facade\Config;
 
 /**
  * Swoole应用对象
@@ -139,12 +140,11 @@ class Application extends App
                 ->withGet($_GET)
                 ->withPost($_POST)
                 ->withCookie($_COOKIE)
-                ->withInput($request->rawContent())
                 ->withFiles($_FILES)
-                ->setBaseUrl($request->server['request_uri'])
-                ->setUrl($request->server['request_uri'] . (!empty($request->server['query_string']) ? '&' . $request->server['query_string'] : ''))
-                ->setHost($request->header['host'])
-                ->setPathinfo(ltrim($request->server['path_info'], '/'));
+                ->setBaseUrl($request['url'])
+                ->setUrl($request['url'])
+                ->setHost(Config::get("app_host"))
+                ->setPathinfo(ltrim($request['url'], '/'));
 
             // 更新请求对象实例
             $this->route->setRequest($this->request);
@@ -184,7 +184,7 @@ class Application extends App
     protected function webSocketException($server, $frame, $e)
     {
         $response = [
-            'code'    => $e->code,
+            'code'    => $e->getCode(),
             'content' => $e->getMessage(),
         ];
         $server->push($frame->fd, json_encode($response));
