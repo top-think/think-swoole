@@ -17,13 +17,20 @@ class WebSocketFrame implements \ArrayAccess
     public function __construct($server, $frame)
     {
         $this->server = $server;
-        $this->frame  = $frame;
-        $this->data   = json_decode($this->frame->data, true);
+        $this->data   = null;
+        if (!empty($frame)) {
+            $this->frame  = $frame;
+            $this->data   = json_decode($this->frame->data, true);
+        }
     }
 
     public static function getInstance($server = null, $frame = null)
     {
         if (empty(self::$instance)) {
+            if (empty($server)) {
+                $swoole = Container::get('swoole');
+                $server = $swoole;
+            }
             self::$instance = new static($server, $frame);
         }
         return self::$instance;
