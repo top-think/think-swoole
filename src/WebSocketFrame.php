@@ -6,6 +6,7 @@
  * 可以配合https://github.com/xavieryang007/xavier-swoole/blob/master/src/example/websocketclient.js 使用
  */
 namespace think\swoole;
+use think\Container;
 
 class WebSocketFrame implements \ArrayAccess
 {
