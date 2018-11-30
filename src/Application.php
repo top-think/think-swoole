@@ -49,8 +49,13 @@ class Application extends App
             $_POST   = $request->post ?: [];
             $_FILES  = $request->files ?: [];
             $header  = $request->header ?: [];
-            $server  = array_change_key_case($request->server, CASE_UPPER);
-            $_SERVER = array_merge($server, array_change_key_case($header, CASE_UPPER));
+            $server  = $request->server ?: [];
+
+            if (isset($header['x-requested-with'])) {
+                $server['HTTP_X_REQUESTED_WITH'] = $header['x-requested-with'];
+            }
+
+            $_SERVER = array_change_key_case($server, CASE_UPPER);
 
             // 重新实例化请求对象 处理swoole请求数据
             $this->request->withHeader($header)
