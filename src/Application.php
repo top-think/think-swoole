@@ -104,7 +104,13 @@ class Application extends App
                 $response->header($key, $val);
             }
 
-            $response->end($content);
+            //判断是否是图片格式
+            if (strpos($response->header['Content-Type'],'image') === false){
+                $response->end($content);
+            } else {
+                $response->write($content);
+                $response->end();
+            }
         } catch (HttpException $e) {
             $this->exception($response, $e);
         } catch (\Exception $e) {
