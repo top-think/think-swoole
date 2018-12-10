@@ -105,7 +105,7 @@ class Application extends App
             }
 
             //判断是否是图片格式
-           if (strpos($response->header['Content-Type'], 'image') === false) {
+            if (strpos($response->header['Content-Type'], 'image') === false) {
                 $response->end($content);
             } else {
                 $response->write($content);
