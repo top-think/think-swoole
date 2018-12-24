@@ -18,6 +18,6 @@ abstract class Task
 
     abstract protected function initialize($args);
 
-    abstract protected function run($serv, $taskId, $fromWorkerId);
+    abstract public function run($serv, $taskId, $fromWorkerId);
 
 }
