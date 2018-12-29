@@ -127,14 +127,17 @@ class Application extends App
             WebSocketFrame::destroy();
             $request = $frame->data;
             $request = json_decode($request, true);
+
             // 重置应用的开始时间和内存占用
             $this->beginTime = microtime(true);
             $this->beginMem  = memory_get_usage();
             WebSocketFrame::getInstance($server, $frame);
-            $_COOKIE                    = isset($request['arguments']['cookie']) ? $request['arguments']['cookie'] : [];
-            $_GET                       = isset($request['arguments']['get']) ? $request['arguments']['get'] : [];
-            $_POST                      = isset($request['arguments']['post']) ? $request['arguments']['post'] : [];
-            $_FILES                     = isset($request['arguments']['files']) ? $request['arguments']['files'] : [];
+
+            $_COOKIE = isset($request['arguments']['cookie']) ? $request['arguments']['cookie'] : [];
+            $_GET    = isset($request['arguments']['get']) ? $request['arguments']['get'] : [];
+            $_POST   = isset($request['arguments']['post']) ? $request['arguments']['post'] : [];
+            $_FILES  = isset($request['arguments']['files']) ? $request['arguments']['files'] : [];
+
             $_SERVER["PATH_INFO"]       = $request['url'] ?: '/';
             $_SERVER["REQUEST_URI"]     = $request['url'] ?: '/';
             $_SERVER["SERVER_PROTOCOL"] = 'http';
