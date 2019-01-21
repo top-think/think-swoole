@@ -39,6 +39,12 @@ class Application extends App
             $this->beginTime = microtime(true);
             $this->beginMem  = memory_get_usage();
 
+            // 重置数据库查询次数
+            Db::$queryTimes = 0;
+
+            // 重置数据库执行次数
+            Db::$executeTimes = 0;
+
             // 销毁当前请求对象实例
             $this->delete('think\Request');
 
