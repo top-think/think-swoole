@@ -14,6 +14,7 @@ namespace think\swoole;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use think\App;
+use think\Db;
 use think\Error;
 use think\exception\HttpException;
 use think\facade\Config;
@@ -60,6 +61,14 @@ class Application extends App
 
             if (isset($header['x-requested-with'])) {
                 $server['HTTP_X_REQUESTED_WITH'] = $header['x-requested-with'];
+            }
+
+            if (isset($header['referer'])) {
+                $server['http_referer'] = $header['referer'];
+            }
+
+            if (isset($_GET[$this->config->get('var_pathinfo')])) {
+                $server['path_info'] = $_GET[$this->config->get('var_pathinfo')];
             }
 
             $_SERVER = array_change_key_case($server, CASE_UPPER);
