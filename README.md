@@ -1,4 +1,4 @@
-ThinkPHP 5.1 Swoole 扩展
+ThinkPHP 5.2 Swoole 扩展
 ===============
 
 ## 安装

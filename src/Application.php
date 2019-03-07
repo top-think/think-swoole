@@ -43,9 +43,6 @@ class Application extends App
             // 重置数据库查询次数
             Db::$queryTimes = 0;
 
-            // 重置数据库执行次数
-            Db::$executeTimes = 0;
-
             // 销毁当前请求对象实例
             $this->delete('think\Request');
 
@@ -167,7 +164,7 @@ class Application extends App
                 ->withFiles($_FILES)
                 ->setBaseUrl($request['url'])
                 ->setUrl($request['url'])
-                ->setHost(Config::get("app_host"))
+                ->setHost(Config::get("swoole.app_host"))
                 ->setPathinfo(ltrim($request['url'], '/'));
 
             // 更新请求对象实例

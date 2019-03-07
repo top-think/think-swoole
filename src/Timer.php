@@ -27,7 +27,7 @@ class Timer
     public function __construct()
     {
         //获取配置信息
-        $this->config = Config::pull('timer');
+        $this->config = Config::get('timer');
 
         if (empty($this->config)) {
             $this->config = [];

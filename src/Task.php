@@ -30,6 +30,6 @@ class Task
             }
         }
 
-        return Container::get('swoole')->task($task, $taskWorkerId, $finishCallback);
+        return Container::pull('swoole')->task($task, $taskWorkerId, $finishCallback);
     }
 }

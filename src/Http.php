@@ -12,14 +12,13 @@ namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
 use Swoole\Table;
+use Swoole\WebSocket\Server as WebSocketServer;
+use think\Container;
 use think\Facade;
 use think\facade\Config;
-use think\Loader;
 use think\swoole\facade\Timer as TimerF;
-use think\Container;
-use think\swoole\queue\Task as QueueTask;
 use think\swoole\queue\Process as QueueProcess;
-use Swoole\WebSocket\Server as WebSocketServer;
+use think\swoole\queue\Task as QueueTask;
 
 /**
  * Swoole Http Server 命令行服务类
@@ -27,7 +26,7 @@ use Swoole\WebSocket\Server as WebSocketServer;
 class Http extends Server
 {
     protected $app;
-    protected $appPath;
+    protected $rootPath;
     protected $table;
     protected $cachetable;
     protected $monitor;
@@ -65,9 +64,9 @@ class Http extends Server
         }
     }
 
-    public function setAppPath($path)
+    public function setRootPath($path)
     {
-        $this->appPath = $path;
+        $this->rootPath = $path;
     }
 
     public function setMonitor($interval = 2, $path = [])
@@ -136,12 +135,12 @@ class Http extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app       = new Application($this->appPath);
+        $this->app       = new Application($this->rootPath);
         $this->lastMtime = time();
 
         //swoole server worker启动行为
-        $hook = Container::get('hook');
-        $hook->listen('swoole_worker_start', ['server' => $server, 'worker_id' => $worker_id]);
+        $event = Container::pull('event');
+        $event->listen('swoole_worker_start', ['server' => $server, 'worker_id' => $worker_id]);
 
         // Swoole Server保存到容器
         $this->app->swoole = $server;
@@ -151,12 +150,6 @@ class Http extends Server
         }
 
         $this->app->cachetable = $this->cachetable;
-
-        // 指定日志类驱动
-        Loader::addClassMap([
-            'think\\log\\driver\\File'    => __DIR__ . '/log/File.php',
-            'think\\cache\\driver\\Table' => __DIR__ . '/cache/driver/Table.php',
-        ]);
 
         Facade::bind([
             'think\facade\Cookie'     => Cookie::class,
@@ -170,7 +163,7 @@ class Http extends Server
         // 应用初始化
         $this->app->initialize();
 
-        $this->app->bindTo([
+        $this->app->bind([
             'cookie'  => Cookie::class,
             'session' => Session::class,
         ]);
@@ -288,9 +281,9 @@ class Http extends Server
      */
     public function WebsocketonClose($server, $fd, $reactorId)
     {
-        $data = [$server, $fd, $reactorId];
-        $hook = Container::get('hook');
-        $hook->listen('swoole_websocket_on_close', $data);
+        $data  = [$server, $fd, $reactorId];
+        $event = Container::pull('event');
+        $event->listen('swoole_websocket_on_close', $data);
     }
 
     /**

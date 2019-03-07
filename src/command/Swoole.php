@@ -17,10 +17,10 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
+use think\Container;
 use think\facade\Config;
 use think\facade\Env;
 use think\swoole\Http as HttpServer;
-use think\Container;
 
 /**
  * Swoole HTTP 命令行，支持操作：start|stop|restart|reload
@@ -55,7 +55,7 @@ class Swoole extends Command
 
     protected function init()
     {
-        $this->config = Config::pull('swoole');
+        $this->config = Config::get('swoole');
 
         if (empty($this->config['pid_file'])) {
             $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
@@ -121,7 +121,7 @@ class Swoole extends Command
         }
 
         // 设置应用目录
-        $swoole->setAppPath($this->config['app_path']);
+        $swoole->setRootPath($this->config['root_path']);
 
         // 创建内存表
         if (!empty($this->config['table'])) {
@@ -148,8 +148,8 @@ class Swoole extends Command
         $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
         $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
-        $hook = Container::get('hook');
-        $hook->listen("swoole_server_start", $swoole);
+        $event = Container::pull('event');
+        $event->listen("swoole_server_start", $swoole);
 
         $swoole->start();
     }

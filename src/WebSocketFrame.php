@@ -21,8 +21,8 @@ class WebSocketFrame implements \ArrayAccess
         $this->server = $server;
         $this->data   = null;
         if (!empty($frame)) {
-            $this->frame  = $frame;
-            $this->data   = json_decode($this->frame->data, true);
+            $this->frame = $frame;
+            $this->data  = json_decode($this->frame->data, true);
         }
     }
 
@@ -30,8 +30,7 @@ class WebSocketFrame implements \ArrayAccess
     {
         if (empty(self::$instance)) {
             if (empty($server)) {
-                $swoole = Container::get('swoole');
-                $server = $swoole;
+                $server = Container::pull('swoole');
             }
             self::$instance = new static($server, $frame);
         }

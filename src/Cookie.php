@@ -26,7 +26,7 @@ class Cookie extends BaseCookie
      * @param  array $config
      * @return void
      */
-    public function init(array $config = [])
+    public function init(array $config = []): void
     {
         $this->config = array_merge($this->config, array_change_key_case($config));
     }
@@ -45,7 +45,7 @@ class Cookie extends BaseCookie
      * @param  array  $option 可选参数
      * @return void
      */
-    protected function setCookie($name, $value, $expire, $option = [])
+    protected function setCookie(string $name, string $value, int $expire, array $option = []): void
     {
         $this->response->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'], $option['httponly']);
     }

@@ -15,13 +15,13 @@ use think\Container;
 class Table extends Driver
 {
     protected $options = [
-        'expire'     => 0,
-        'prefix'     => '',
-        'serialize'  => true,
+        'expire'    => 0,
+        'prefix'    => '',
+        'serialize' => true,
     ];
     public function __construct($options = [])
     {
-        $this->handler = Container::get('cachetable');
+        $this->handler = Container::pull('cachetable');
     }
 
     public function set($name, $value, $expire = null)
