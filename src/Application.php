@@ -96,6 +96,9 @@ class Application extends App
 
             if ($this->isMulti()) {
                 $this->initialize();
+            } else {
+                $this->beginTime = microtime(true);
+                $this->beginMem  = memory_get_usage();
             }
 
             $resp = $this->run();
