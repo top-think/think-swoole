@@ -218,7 +218,7 @@ class Http extends Server
      */
     protected function monitor($server)
     {
-        $paths = $this->monitor['path'] ?: [$this->app->getAppPath(), $this->app->getConfigPath()];
+        $paths = $this->monitor['path'];
         $timer = $this->monitor['interval'] ?: 2;
 
         $server->tick($timer, function () use ($paths, $server) {

@@ -18,8 +18,8 @@ use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\Container;
+use think\facade\App;
 use think\facade\Config;
-use think\facade\Env;
 use think\swoole\Http as HttpServer;
 
 /**
@@ -58,7 +58,7 @@ class Swoole extends Command
         $this->config = Config::get('swoole');
 
         if (empty($this->config['pid_file'])) {
-            $this->config['pid_file'] = Env::get('runtime_path') . 'swoole.pid';
+            $this->config['pid_file'] = App::getRootPath() . 'runtime/swoole.pid';
         }
 
         // 避免pid混乱
@@ -123,6 +123,11 @@ class Swoole extends Command
         // 设置应用目录
         $swoole->setRootPath($this->config['root_path']);
 
+        if (!empty($this->config['app_init'])) {
+            $swoole->appInit($this->config['app_init']);
+            unset($this->config['app_init']);
+        }
+
         // 创建内存表
         if (!empty($this->config['table'])) {
             $swoole->table($this->config['table']);
@@ -132,9 +137,9 @@ class Swoole extends Command
         $swoole->cachetable();
 
         // 设置文件监控 调试模式自动开启
-        if (Env::get('app_debug') || !empty($this->config['file_monitor'])) {
-            $interval = isset($this->config['file_monitor_interval']) ? $this->config['file_monitor_interval'] : 2;
-            $paths    = isset($this->config['file_monitor_path']) ? $this->config['file_monitor_path'] : [];
+        if (App::isDebug() || !empty($this->config['file_monitor'])) {
+            $interval = $this->config['file_monitor_interval'] ?? 2;
+            $paths    = $this->config['file_monitor_path'] ?? [App::getAppPath(), App::getConfigPath()];
             $swoole->setMonitor($interval, $paths);
             unset($this->config['file_monitor'], $this->config['file_monitor_interval'], $this->config['file_monitor_path']);
         }
