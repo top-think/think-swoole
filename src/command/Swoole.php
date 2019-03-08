@@ -121,7 +121,7 @@ class Swoole extends Command
         }
 
         // 设置应用目录
-        $swoole->setRootPath($this->config['root_path']);
+        $swoole->setRootPath(App::getRootPath());
 
         if (!empty($this->config['app_init'])) {
             $swoole->appInit($this->config['app_init']);
