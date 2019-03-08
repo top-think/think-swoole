@@ -94,6 +94,10 @@ class Application extends App
                 }
             }
 
+            if ($this->isMulti()) {
+                $this->initialize();
+            }
+
             $resp = $this->run();
             $resp->send();
 
@@ -101,7 +105,7 @@ class Application extends App
             $status  = $resp->getCode();
 
             // Trace调试注入
-            if ($this->env->get('app_trace', $this->config->get('app_trace'))) {
+            if ($this->env->get('app_trace', $this->config->get('app.app_trace'))) {
                 $this->debug->inject($resp, $content);
             }
 

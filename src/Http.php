@@ -28,6 +28,7 @@ class Http extends Server
     protected $app;
     protected $rootPath;
     protected $table;
+    protected $appInit;
     protected $cachetable;
     protected $monitor;
     protected $server_type;
@@ -67,6 +68,11 @@ class Http extends Server
     public function setRootPath($path)
     {
         $this->rootPath = $path;
+    }
+
+    public function appInit(\Closure $closure)
+    {
+        $this->appInit = $closure;
     }
 
     public function setMonitor($interval = 2, $path = [])
@@ -135,7 +141,12 @@ class Http extends Server
     public function onWorkerStart($server, $worker_id)
     {
         // 应用实例化
-        $this->app       = new Application($this->rootPath);
+        $this->app = new Application($this->rootPath);
+
+        if ($this->appInit) {
+            call_user_func_array($this->appInit, [$this->app]);
+        }
+
         $this->lastMtime = time();
 
         //swoole server worker启动行为
@@ -160,13 +171,14 @@ class Http extends Server
             facade\Timer::class       => Timer::class,
         ]);
 
-        // 应用初始化
-        $this->app->initialize();
-
         $this->app->bind([
             'cookie'  => Cookie::class,
             'session' => Session::class,
         ]);
+
+        if (!$this->app->isMulti()) {
+            $this->app->initialize();
+        }
 
         $this->initServer($server, $worker_id);
 
