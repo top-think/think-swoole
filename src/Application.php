@@ -36,10 +36,6 @@ class Application extends App
         try {
             ob_start();
 
-            // 重置应用的开始时间和内存占用
-            $this->beginTime = microtime(true);
-            $this->beginMem  = memory_get_usage();
-
             // 重置数据库查询次数
             Db::$queryTimes = 0;
 
@@ -95,6 +91,8 @@ class Application extends App
             }
 
             if ($this->isMulti()) {
+                $this->namespace = null;
+                $this->appPath   = null;
                 $this->initialize();
             } else {
                 $this->beginTime = microtime(true);
