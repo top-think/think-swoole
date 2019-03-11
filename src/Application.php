@@ -14,10 +14,11 @@ namespace think\swoole;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use think\App;
-use think\Db;
 use think\Error;
 use think\exception\HttpException;
 use think\facade\Config;
+use think\facade\Db;
+use think\facade\Log;
 
 /**
  * Swoole应用对象
@@ -36,9 +37,7 @@ class Application extends App
         try {
             ob_start();
 
-            // 重置数据库查询次数
-            Db::$queryTimes = 0;
-
+            Log::clear();
             // 销毁当前请求对象实例
             $this->delete('think\Request');
 
@@ -60,8 +59,8 @@ class Application extends App
                 $server['http_referer'] = $header['referer'];
             }
 
-            if (isset($_GET[$this->config->get('var_pathinfo')])) {
-                $server['path_info'] = $_GET[$this->config->get('var_pathinfo')];
+            if (isset($_GET[$this->request->config('var_pathinfo')])) {
+                $server['path_info'] = $_GET[$this->request->config('var_pathinfo')];
             }
 
             $_SERVER = array_change_key_case($server, CASE_UPPER);
@@ -98,6 +97,9 @@ class Application extends App
                 $this->beginTime = microtime(true);
                 $this->beginMem  = memory_get_usage();
             }
+
+            // 数据库初始化
+            Db::init();
 
             $resp = $this->run();
             $resp->send();

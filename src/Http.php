@@ -165,6 +165,7 @@ class Http extends Server
         Facade::bind([
             'think\facade\Cookie'     => Cookie::class,
             'think\facade\Session'    => Session::class,
+            'think\facade\Log'        => Log::class,
             facade\Application::class => Application::class,
             facade\Http::class        => Http::class,
             facade\Task::class        => Task::class,
@@ -174,6 +175,7 @@ class Http extends Server
         $this->app->bind([
             'cookie'  => Cookie::class,
             'session' => Session::class,
+            'log'     => Log::class,
         ]);
 
         if (!$this->app->isMulti()) {
