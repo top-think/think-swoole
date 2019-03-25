@@ -12,39 +12,49 @@
 namespace think\swoole\command;
 
 use Swoole\Process;
+use think\console\Command;
 use think\console\input\Argument;
-use think\console\input\Option;
-use think\facade\Config;
-use think\facade\Env;
-use think\swoole\Server as ThinkServer;
+use think\swoole\Swoole;
+use Throwable;
 
 /**
- * Swoole 命令行，支持操作：start|stop|restart|reload
- * 支持应用配置目录下的swoole_server.php文件进行参数配置
+ * Swoole HTTP 命令行，支持操作：start|stop|restart|reload
+ * 支持应用配置目录下的swoole.php文件进行参数配置
  */
-class Server extends Swoole
+class Server extends Command
 {
     public function configure()
     {
-        $this->setName('swoole:server')
+        $this->setName('swoole')
             ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
-            ->addOption('host', 'H', Option::VALUE_OPTIONAL, 'the host of swoole server.', null)
-            ->addOption('port', 'p', Option::VALUE_OPTIONAL, 'the port of swoole server.', null)
-            ->addOption('daemon', 'd', Option::VALUE_NONE, 'Run the swoole server in daemon mode.')
-            ->setDescription('Swoole Server for ThinkPHP');
+            ->setDescription('Swoole HTTP Server for ThinkPHP');
+    }
+
+    public function handle()
+    {
+        $action = $this->input->getArgument('action');
+
+        $this->init();
+
+        if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
+            $this->$action();
+        } else {
+            $this->output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload .</error>");
+        }
     }
 
     protected function init()
     {
-        $this->config = Config::get('swoole_server');
+        $this->config = $this->app->config->get('swoole');
 
         if (empty($this->config['pid_file'])) {
-            $this->config['pid_file'] = Env::get('runtime_path') . 'swoole_server.pid';
+            $this->config['pid_file'] = $this->app->getRootPath() . 'runtime/swoole.pid';
         }
 
         // 避免pid混乱
         $this->config['pid_file'] .= '_' . $this->getPort();
     }
+
 
     /**
      * 启动server
@@ -56,66 +66,19 @@ class Server extends Swoole
         $pid = $this->getMasterPid();
 
         if ($this->isRunning($pid)) {
-            $this->output->writeln('<error>swoole server process is already running.</error>');
-            return false;
+            $this->output->writeln('<error>swoole http server process is already running.</error>');
+            return;
         }
 
-        $this->output->writeln('Starting swoole server...');
+        $this->output->writeln('Starting swoole http server...');
 
-        if (!empty($this->config['swoole_class'])) {
-            $class = $this->config['swoole_class'];
+        /** @var Swoole $swoole */
+        $swoole = $this->app->make(Swoole::class);
 
-            if (class_exists($class)) {
-                $swoole = new $class;
-                if (!$swoole instanceof ThinkServer) {
-                    $this->output->writeln("<error>Swoole Server Class Must extends \\think\\swoole\\Server</error>");
-                    return false;
-                }
-            } else {
-                $this->output->writeln("<error>Swoole Server Class Not Exists : {$class}</error>");
-                return false;
-            }
-        } else {
-            $host     = $this->getHost();
-            $port     = $this->getPort();
-            $type     = !empty($this->config['type']) ? $this->config['type'] : 'socket';
-            $mode     = !empty($this->config['mode']) ? $this->config['mode'] : SWOOLE_PROCESS;
-            $sockType = !empty($this->config['sock_type']) ? $this->config['sock_type'] : SWOOLE_SOCK_TCP;
+        $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
+        $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
-            switch ($type) {
-                case 'socket':
-                    $swooleClass = 'Swoole\Websocket\Server';
-                    break;
-                case 'http':
-                    $swooleClass = 'Swoole\Http\Server';
-                    break;
-                default:
-                    $swooleClass = 'Swoole\Server';
-            }
-
-            $swoole = new $swooleClass($host, $port, $mode, $sockType);
-
-            // 开启守护进程模式
-            if ($this->input->hasOption('daemon')) {
-                $this->config['daemonize'] = true;
-            }
-
-            foreach ($this->config as $name => $val) {
-                if (0 === strpos($name, 'on')) {
-                    $swoole->on(substr($name, 2), $val);
-                    unset($this->config[$name]);
-                }
-            }
-
-            // 设置服务器参数
-            $swoole->set($this->config);
-
-            $this->output->writeln("Swoole {$type} server started: <{$host}:{$port}>");
-            $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
-
-            // 启动服务
-            $swoole->start();
-        }
+        $swoole->run();
     }
 
     /**
@@ -125,16 +88,23 @@ class Server extends Swoole
      */
     protected function reload()
     {
-        // 柔性重启使用管理PID
         $pid = $this->getMasterPid();
 
         if (!$this->isRunning($pid)) {
-            $this->output->writeln('<error>no swoole server process running.</error>');
-            return false;
+            $this->output->writeln('<error>no swoole http server process running.</error>');
+            return;
         }
 
-        $this->output->writeln('Reloading swoole server...');
-        Process::kill($pid, SIGUSR1);
+        $this->output->writeln('Reloading swoole http server...');
+
+        $isRunning = $this->killProcess($pid, SIGUSR1);
+
+        if (!$isRunning) {
+            $this->output->error('> failure');
+
+            return;
+        }
+
         $this->output->writeln('> success');
     }
 
@@ -148,16 +118,114 @@ class Server extends Swoole
         $pid = $this->getMasterPid();
 
         if (!$this->isRunning($pid)) {
-            $this->output->writeln('<error>no swoole server process running.</error>');
-            return false;
+            $this->output->writeln('<error>no swoole http server process running.</error>');
+            return;
         }
 
-        $this->output->writeln('Stopping swoole server...');
+        $this->output->writeln('Stopping swoole http server...');
 
-        Process::kill($pid, SIGTERM);
+        $isRunning = $this->killProcess($pid, SIGTERM, 15);
+
+        if ($isRunning) {
+            $this->output->error('Unable to stop the swoole_http_server process.');
+            return;
+        }
+
         $this->removePid();
 
         $this->output->writeln('> success');
     }
 
+    /**
+     * 重启server
+     * @access protected
+     * @return void
+     */
+    protected function restart()
+    {
+        $pid = $this->getMasterPid();
+
+        if ($this->isRunning($pid)) {
+            $this->stop();
+        }
+
+        $this->start();
+    }
+
+    /**
+     * 获取主进程PID
+     * @access protected
+     * @return int
+     */
+    protected function getMasterPid()
+    {
+        $pidFile = $this->config['pid_file'];
+
+        if (is_file($pidFile)) {
+            $masterPid = (int) file_get_contents($pidFile);
+        } else {
+            $masterPid = 0;
+        }
+
+        return $masterPid;
+    }
+
+    /**
+     * 删除PID文件
+     * @access protected
+     * @return void
+     */
+    protected function removePid()
+    {
+        $masterPid = $this->config['pid_file'];
+
+        if (is_file($masterPid)) {
+            unlink($masterPid);
+        }
+    }
+
+    /**
+     * 杀死进程
+     * @param     $pid
+     * @param     $sig
+     * @param int $wait
+     * @return bool
+     */
+    protected function killProcess($pid, $sig, $wait = 0)
+    {
+        Process::kill($pid, $sig);
+
+        if ($wait) {
+            $start = time();
+
+            do {
+                if (!$this->isRunning($pid)) {
+                    break;
+                }
+
+                usleep(100000);
+            } while (time() < $start + $wait);
+        }
+
+        return $this->isRunning($pid);
+    }
+
+    /**
+     * 判断PID是否在运行
+     * @access protected
+     * @param  int $pid
+     * @return bool
+     */
+    protected function isRunning($pid)
+    {
+        if (empty($pid)) {
+            return false;
+        }
+
+        try {
+            return Process::kill($pid, 0);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
 }

@@ -2,3 +2,5 @@
 .DS_Store
 *.xml
 .idea/think-swoole.iml
+composer.lock
+vendor

@@ -19,6 +19,7 @@ class Table extends Driver
         'prefix'    => '',
         'serialize' => true,
     ];
+
     public function __construct($options = [])
     {
         $this->handler = Container::pull('cachetable');

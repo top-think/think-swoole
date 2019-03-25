@@ -6,11 +6,17 @@
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
+// | Author: yunwuxin <448901948@qq.com>
 // +----------------------------------------------------------------------
 
-// 注册命令行指令
-\think\Console::addDefaultCommands([
-    'swoole'        => '\\think\\swoole\\command\\Swoole',
-    'swoole:server' => '\\think\\swoole\\command\\Server',
-]);
+namespace think\swoole\facade;
+
+use think\Facade;
+
+class Server extends Facade
+{
+    protected static function getFacadeClass()
+    {
+        return 'swoole.server';
+    }
+}
