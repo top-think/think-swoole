@@ -129,7 +129,7 @@ class Sandbox
     public function getApplication()
     {
         $snapshot = $this->getSnapshot();
-        if ($snapshot instanceOf Container) {
+        if ($snapshot instanceof Container) {
             return $snapshot;
         }
 

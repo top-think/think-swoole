@@ -227,7 +227,7 @@ class Websocket
     public function call(string $event, $data = null)
     {
         if (!$this->eventExists($event)) {
-            return null;
+            return;
         }
 
         // inject request param on connect event

@@ -115,7 +115,7 @@ class Packet
         $type = $packet[0] ?? null;
 
         if (!array_key_exists($type, static::$socketTypes)) {
-            return null;
+            return;
         }
 
         return (int) $type;
@@ -134,14 +134,14 @@ class Packet
         $start  = strpos($packet, '[');
 
         if ($start === false || substr($packet, -1) !== ']') {
-            return null;
+            return;
         }
 
         $data = substr($packet, $start, strlen($packet) - $start);
         $data = json_decode($data, true);
 
         if (is_null($data)) {
-            return null;
+            return;
         }
 
         return [
