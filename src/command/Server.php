@@ -23,6 +23,13 @@ use Throwable;
  */
 class Server extends Command
 {
+    /**
+     * The configs for this package.
+     *
+     * @var array
+     */
+    protected $config;
+
     public function configure()
     {
         $this->setName('swoole')
@@ -46,15 +53,7 @@ class Server extends Command
     protected function init()
     {
         $this->config = $this->app->config->get('swoole');
-
-        if (empty($this->config['pid_file'])) {
-            $this->config['pid_file'] = $this->app->getRootPath() . 'runtime/swoole.pid';
-        }
-
-        // 避免pid混乱
-        $this->config['pid_file'] .= '_' . $this->getPort();
     }
-
 
     /**
      * 启动server
@@ -75,10 +74,30 @@ class Server extends Command
         /** @var Swoole $swoole */
         $swoole = $this->app->make(Swoole::class);
 
-        $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
-        $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
+        if ($this->config['auto_reload']) {
+            //热更新
+            /** @var \Swoole\Server $server */
+            $server = $this->app->make(\think\swoole\facade\Server::class);
 
+            $server->addProcess($this->getHotReloadProcess($server, (int) $this->config['auto_reload']));
+        }
         $swoole->run();
+    }
+
+    /**
+     * @param \Swoole\Server $server
+     * @param int            $ms
+     * @return Process
+     */
+    protected function getHotReloadProcess($server, $ms)
+    {
+        return new Process(function () use ($ms, $server) {
+            //todo 这里可以使用fswatch来检查文件变化
+
+            swoole_timer_tick($ms > 0 ? $ms : 3000, function () use ($server) {
+                $server->reload();
+            });
+        }, false, 0);
     }
 
     /**
@@ -159,7 +178,7 @@ class Server extends Command
      */
     protected function getMasterPid()
     {
-        $pidFile = $this->config['pid_file'];
+        $pidFile = $this->getPidPath();
 
         if (is_file($pidFile)) {
             $masterPid = (int) file_get_contents($pidFile);
@@ -168,6 +187,16 @@ class Server extends Command
         }
 
         return $masterPid;
+    }
+
+    /**
+     * Get Pid file path.
+     *
+     * @return string
+     */
+    protected function getPidPath()
+    {
+        return $this->config['server']['options']['pid_file'];
     }
 
     /**
@@ -213,7 +242,7 @@ class Server extends Command
     /**
      * 判断PID是否在运行
      * @access protected
-     * @param  int $pid
+     * @param int $pid
      * @return bool
      */
     protected function isRunning($pid)

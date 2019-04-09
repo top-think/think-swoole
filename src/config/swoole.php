@@ -1,37 +1,49 @@
 <?php
 
-use think\swoole\resetters\BindRequest;
-use think\swoole\resetters\ClearInstances;
-use think\swoole\resetters\RebindHttpContainer;
-use think\swoole\resetters\ResetConfig;
-use think\swoole\resetters\ResetSession;
+use think\swoole\websocket\room\TableRoom;
+use think\swoole\websocket\socketio\Handler;
+use think\swoole\websocket\socketio\Parser;
 
 return [
-    'server'                => [
-        'host'                => '0.0.0.0', // 监听地址
-        'port'                => 9501, // 监听端口
-        'mode'                => SWOOLE_PROCESS, // 运行模式 默认为SWOOLE_PROCESS
-        'sock_type'           => SWOOLE_SOCK_TCP, // sock type 默认为SWOOLE_SOCK_TCP
-        'app_path'            => '', // 应用地址 如果开启了 'daemonize'=>true 必须设置（使用绝对路径）
-        'public_path'         => root_path('public'),
-        'handle_static_files' => true,
-        'options'             => [
-            'pid_file'        => runtime_path() . 'swoole.pid',
-            'log_file'        => runtime_path() . 'swoole.log',
-            'task_worker_num' => 1,//swoole 任务工作进程数量
+    'server'           => [
+        'host'      => '127.0.0.1', // 监听地址
+        'port'      => 80, // 监听端口
+        'mode'      => SWOOLE_PROCESS, // 运行模式 默认为SWOOLE_PROCESS
+        'sock_type' => SWOOLE_SOCK_TCP, // sock type 默认为SWOOLE_SOCK_TCP
+        'options'   => [
+            'pid_file'              => runtime_path() . 'swoole.pid',
+            'log_file'              => runtime_path() . 'swoole.log',
+            'daemonize'             => false,
+            // Normally this value should be 1~4 times larger according to your cpu cores.
+            'reactor_num'           => swoole_cpu_num(),
+            'worker_num'            => swoole_cpu_num(),
+            'task_worker_num'       => swoole_cpu_num(),
+            'enable_static_handler' => true,
+            'document_root'         => root_path('public'),
+            'package_max_length'    => 20 * 1024 * 1024,
+            'buffer_output_size'    => 10 * 1024 * 1024,
+            'socket_buffer_size'    => 128 * 1024 * 1024,
+            'max_request'           => 3000,
+            'send_yield'            => true,
         ],
     ],
-    'file_monitor'          => false, // 是否开启PHP文件更改监控（调试模式下自动开启）
-    'file_monitor_interval' => 2, // 文件变化监控检测时间间隔（秒）
-    'file_monitor_path'     => [], // 文件监控目录 默认监控application和config目录
-    'resetters'             => [
-        ResetConfig::class,
-        ResetSession::class,
-        ClearInstances::class,
-        BindRequest::class,
-        RebindHttpContainer::class,
+    'websocket'        => [
+        'enabled'       => false,
+        'handler'       => Handler::class,
+        'parser'        => Parser::class,
+        'route_file'    => base_path() . 'websocket.php',
+        'ping_interval' => 25000,
+        'ping_timeout'  => 60000,
+        'room'          => [
+            'type'        => TableRoom::class,
+            'room_rows'   => 4096,
+            'room_size'   => 2048,
+            'client_rows' => 8192,
+            'client_size' => 2048,
+        ],
     ],
-    'tables'                => [
-
-    ],
+    'auto_reload'      => false,
+    'enable_coroutine' => true,
+    'resetters'        => [],
+    'tables'           => [],
 ];

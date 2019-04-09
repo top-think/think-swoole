@@ -1,6 +1,6 @@
 {
     "name": "topthink/think-swoole",
-    "description": "Swoole extend for thinkphp5.2",
+    "description": "Swoole extend for thinkphp",
     "license": "Apache-2.0",
     "authors": [
         {
@@ -9,27 +9,29 @@
         }
     ],
     "require": {
-        "ext-swoole": ">=1.9.5",
-        "topthink/framework": "^6.0",
-        "topthink/think-helper": "^3.0"
+        "ext-swoole": ">=4.0.0",
+        "topthink/framework": "^6.0.0",
+        "topthink/think-helper": "^3.0.4"
     },
     "autoload": {
         "psr-4": {
             "think\\swoole\\": "src"
-        }
+        },
+        "files": [
+            "src/helpers.php"
+        ]
     },
     "extra": {
-        "think-config": {
-        },
         "think": {
             "services": [
-                "\\think\\swoole\\Service"
+                "think\\swoole\\Service"
             ],
             "config": {
                 "swoole": "src/config/swoole.php"
             }
         }
     },
+    "minimum-stability": "dev",
     "require-dev": {
         "eaglewu/swoole-ide-helper": "dev-master"
     }

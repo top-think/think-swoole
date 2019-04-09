@@ -5,8 +5,17 @@ namespace think\swoole;
 use RuntimeException;
 use think\Config;
 use think\Container;
+use think\Event;
+use think\Http;
 use think\Request;
+use think\Response;
 use think\swoole\coroutine\Context;
+use think\swoole\resetters\BindRequest;
+use think\swoole\resetters\ClearInstances;
+use think\swoole\resetters\RebindHttpContainer;
+use think\swoole\resetters\RebindRouterContainer;
+use think\swoole\resetters\ResetConfig;
+use think\swoole\resetters\ResetEvent;
 use think\swoole\resetters\ResetterContract;
 
 class Sandbox
@@ -17,10 +26,8 @@ class Sandbox
     /** @var Config */
     protected $config;
 
-    /**
-     * @var array
-     */
-    protected $providers = [];
+    /** @var Event */
+    protected $event;
 
     protected $resetters = [];
 
@@ -46,24 +53,56 @@ class Sandbox
         return $this->app;
     }
 
-    public function initialize()
+    protected function initialize()
     {
         if (!$this->app instanceof Container) {
             throw new RuntimeException('A base app has not been set.');
         }
 
+        Container::setInstance(function () {
+            return $this->getApplication();
+        });
+
         $this->setInitialConfig();
+        $this->setInitialEvent();
         $this->setInitialResetters();
 
         return $this;
     }
 
-    public function run()
+    /**
+     * @param Request $request
+     * @return Response
+     */
+    public function run(Request $request)
     {
 
+        $level = ob_get_level();
+        ob_start();
+
+        $response = $this->handleRequest($request);
+
+        $content = $response->getContent();
+
+        $this->getHttp()->end($response);
+
+        if (ob_get_length() > 0) {
+            $response->content(ob_get_contents() . $content);
+        }
+
+        while (ob_get_level() > $level) {
+            ob_end_clean();
+        }
+
+        return $response;
     }
 
-    protected function beforeRun()
+    protected function handleRequest(Request $request)
+    {
+        return $this->getHttp()->run($request);
+    }
+
+    public function init()
     {
         if (!$this->config instanceof Config) {
             throw new RuntimeException('Please initialize after setting base app.');
@@ -73,10 +112,18 @@ class Sandbox
         $this->resetApp($app);
     }
 
-    protected function afterRun()
+    public function clear()
     {
         Context::clear();
         $this->setInstance($this->getBaseApp());
+    }
+
+    /**
+     * @return Http
+     */
+    protected function getHttp()
+    {
+        return $this->getApplication()->make(Http::class);
     }
 
     public function getApplication()
@@ -112,13 +159,7 @@ class Sandbox
         $app->instance('app', $app);
         $app->instance(Container::class, $app);
 
-        Container::setInstance($app);
         Context::setApp($app);
-    }
-
-    public function handleStatic()
-    {
-
     }
 
     /**
@@ -129,6 +170,11 @@ class Sandbox
         $this->config = clone $this->getBaseApp()->config;
     }
 
+    protected function setInitialEvent()
+    {
+        $this->event = clone $this->getBaseApp()->event;
+    }
+
     /**
      * Get config snapshot.
      */
@@ -137,12 +183,9 @@ class Sandbox
         return $this->config;
     }
 
-    /**
-     * Get Initialized providers.
-     */
-    public function getProviders()
+    public function getEvent()
     {
-        return $this->providers;
+        return $this->event;
     }
 
     /**
@@ -150,8 +193,18 @@ class Sandbox
      */
     protected function setInitialResetters()
     {
-        $app       = $this->getBaseApp();
-        $resetters = $this->config->get('swoole.resetters', []);
+        $app = $this->getBaseApp();
+
+        $resetters = [
+            ClearInstances::class,
+            RebindHttpContainer::class,
+            RebindRouterContainer::class,
+            BindRequest::class,
+            ResetConfig::class,
+            ResetEvent::class,
+        ];
+
+        $resetters = array_merge($resetters, $this->config->get('swoole.resetters', []));
 
         foreach ($resetters as $resetter) {
             $resetterClass = $app->make($resetter);

@@ -15,12 +15,15 @@ use Exception;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Process;
+use Swoole\Runtime;
+use Swoole\Server\Task;
 use think\App;
 use think\console\Output;
 use think\Container;
 use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\concerns\InteractsWithSwooleTable;
+use think\swoole\concerns\InteractsWithWebsocket;
 use think\swoole\facade\Server;
 use Throwable;
 
@@ -29,7 +32,7 @@ use Throwable;
  */
 class Swoole
 {
-    use InteractsWithSwooleTable;
+    use InteractsWithSwooleTable, InteractsWithWebsocket;
 
     /**
      * @var Container
@@ -37,9 +40,9 @@ class Swoole
     protected $container;
 
     /**
-     * @var string
+     * @var App
      */
-    protected $basePath;
+    protected $app;
 
     /**
      * Server events.
@@ -95,6 +98,7 @@ class Swoole
     protected function initialize()
     {
         $this->createTables();
+        $this->prepareWebsocket();
         $this->setSwooleServerListeners();
     }
 
@@ -106,7 +110,7 @@ class Swoole
         foreach ($this->events as $event) {
             $listener = Str::camel("on_$event");
             $callback = method_exists($this, $listener) ? [$this, $listener] : function () use ($event) {
-                $this->container->make('event')->trigger("swoole.$event", func_get_args());
+                $this->container->event->trigger("swoole.$event", func_get_args());
             };
 
             $this->container->make(Server::class)->on($event, $callback);
@@ -144,11 +148,15 @@ class Swoole
      */
     public function onWorkerStart($server)
     {
+        if ($this->container->config->get('swoole.enable_coroutine', false)) {
+            Runtime::enableCoroutine(true);
+        }
+
         $this->clearCache();
 
         $this->container->event->trigger('swoole.workerStart', func_get_args());
 
-        // don't init laravel app in task workers
+        // don't init app in task workers
         if ($server->taskworker) {
             $this->setProcessName('task process');
 
@@ -158,67 +166,124 @@ class Swoole
         $this->setProcessName('worker process');
 
         $this->prepareApplication();
+
+        if ($this->isServerWebsocket) {
+            $this->prepareWebsocketHandler();
+            $this->loadWebsocketRoutes();
+        }
     }
 
     protected function prepareApplication()
     {
         if (!$this->app instanceof App) {
             $this->app = new App();
+            $this->app->initialize();
         }
 
         $this->bindSandbox();
         $this->bindSwooleTable();
+
+        if ($this->isServerWebsocket) {
+            $this->bindRoom();
+            $this->bindWebsocket();
+        }
+    }
+
+    protected function prepareRequest(Request $req)
+    {
+        $header = $req->header ?: [];
+        $server = $req->server ?: [];
+
+        if (isset($header['x-requested-with'])) {
+            $server['HTTP_X_REQUESTED_WITH'] = $header['x-requested-with'];
+        }
+
+        if (isset($header['referer'])) {
+            $server['http_referer'] = $header['referer'];
+        }
+
+        if (isset($header['host'])) {
+            $server['http_host'] = $header['host'];
+        }
+
+        // 重新实例化请求对象 处理swoole请求数据
+        /** @var \think\Request $request */
+        $request = $this->app->make('request', [], true);
+
+        return $request->withHeader($header)
+            ->withServer($server)
+            ->withGet($req->get ?: [])
+            ->withPost($req->post ?: [])
+            ->withCookie($req->cookie ?: [])
+            ->withInput($req->rawContent())
+            ->withFiles($req->files ?: [])
+            ->setBaseUrl($req->server['request_uri'])
+            ->setUrl($req->server['request_uri'] . (!empty($req->server['query_string']) ? '&' . $req->server['query_string'] : ''))
+            ->setPathinfo(ltrim($req->server['path_info'], '/'));
+    }
+
+    protected function sendResponse(Sandbox $sandbox, \think\Response $thinkResponse, \Swoole\Http\Response $swooleResponse)
+    {
+
+        // 发送Header
+        foreach ($thinkResponse->getHeader() as $key => $val) {
+            $swooleResponse->header($key, $val);
+        }
+
+        // 发送状态码
+        $swooleResponse->status($thinkResponse->getCode());
+
+        foreach ($sandbox->getApplication()->cookie->getCookie() as $name => $val) {
+            list($value, $expire, $option) = $val;
+
+            $swooleResponse->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false);
+        }
+
+        $content = $thinkResponse->getContent();
+
+        if (!empty($content)) {
+            $swooleResponse->write($content);
+        }
+
+        $swooleResponse->end();
     }
 
     /**
      * "onRequest" listener.
      *
-     * @param Request  $swooleRequest
-     * @param Response $swooleResponse
+     * @param Request  $req
+     * @param Response $res
      */
-    public function onRequest($swooleRequest, $swooleResponse)
+    public function onRequest($req, $res)
     {
         $this->app->event->trigger('swoole.request');
 
         $this->resetOnRequest();
-        $sandbox      = $this->app->make(Sandbox::class);
-        $handleStatic = $this->container->config->get('swoole.server.handle_static_files', true);
-        $publicPath   = $this->container->config->get('swoole.server.public_path', root_path('public'));
+
+        /** @var Sandbox $sandbox */
+        $sandbox = $this->app->make(Sandbox::class);
+        $request = $this->prepareRequest($req);
 
         try {
-            // handle static file request first
-            if ($handleStatic && Request::handleStatic($swooleRequest, $swooleResponse, $publicPath)) {
-                return;
-            }
-            // transform swoole request to illuminate request
-            $illuminateRequest = Request::make($swooleRequest)->toIlluminate();
+            $sandbox->setRequest($request);
 
-            // set current request to sandbox
-            $sandbox->setRequest($illuminateRequest);
+            $sandbox->init();
 
-            // enable sandbox
-            $sandbox->enable();
+            $response = $sandbox->run($request);
 
-            // handle request via laravel/lumen's dispatcher
-            $illuminateResponse = $sandbox->run($illuminateRequest);
-
-            // send response
-            Response::make($illuminateResponse, $swooleResponse)->send();
+            $this->sendResponse($sandbox, $response, $res);
         } catch (Throwable $e) {
             try {
                 $exceptionResponse = $this->app
-                    ->make(ExceptionHandler::class)
-                    ->render(
-                        $illuminateRequest,
-                        $this->normalizeException($e)
-                    );
-                Response::make($exceptionResponse, $swooleResponse)->send();
+                    ->make(Handle::class)
+                    ->render($request, $e);
+
+                $this->sendResponse($sandbox, $exceptionResponse, $res);
             } catch (Throwable $e) {
                 $this->logServerError($e);
             }
         } finally {
-            // disable and recycle sandbox resource
-            $sandbox->disable();
+            $sandbox->clear();
         }
     }
 
@@ -227,20 +292,33 @@ class Swoole
      */
     protected function resetOnRequest()
     {
-
+        // Reset websocket data
+        if ($this->isServerWebsocket) {
+            $this->app->make(Websocket::class)->reset(true);
+        }
     }
 
     /**
      * Set onTask listener.
      *
-     * @param mixed                      $server
-     * @param string|\Swoole\Server\Task $taskId or $task
-     * @param string                     $srcWorkerId
-     * @param mixed                      $data
+     * @param mixed       $server
+     * @param string|Task $taskId or $task
+     * @param string      $srcWorkerId
+     * @param mixed       $data
      */
     public function onTask($server, $taskId, $srcWorkerId, $data)
     {
+        $this->container->event->trigger('swoole.task', func_get_args());
 
+        try {
+            // push websocket message
+            if ($this->isWebsocketPushPayload($data)) {
+                $this->pushMessage($server, $data['data']);
+                // push async task to queue
+            }
+        } catch (Throwable $e) {
+            $this->logServerError($e);
+        }
     }
 
     /**
@@ -253,7 +331,7 @@ class Swoole
     public function onFinish($server, $taskId, $data)
     {
         // task worker callback
-        $this->container->make('events')->dispatch('swoole.finish', func_get_args());
+        $this->container->event->trigger('swoole.finish', func_get_args());
 
         return;
     }
@@ -361,28 +439,10 @@ class Swoole
     public function logServerError(Throwable $e)
     {
         /** @var Handle $handle */
-        $handle = $this->app['error_handle'];
+        $handle = $this->app->make(Handle::class);
 
         $handle->renderForConsole(new Output(), $e);
 
         $handle->report($e);
-    }
-
-    /**
-     * Indicates if the payload is async task.
-     *
-     * @param mixed $payload
-     *
-     * @return boolean
-     */
-    protected function isAsyncTaskPayload($payload): bool
-    {
-        $data = json_decode($payload, true);
-
-        if (JSON_ERROR_NONE !== json_last_error()) {
-            return false;
-        }
-
-        return isset($data['job']);
     }
 }

@@ -6,23 +6,24 @@ use think\Container;
 use think\Http;
 use think\swoole\Sandbox;
 
+/**
+ * Class RebindHttpContainer
+ * @package think\swoole\resetters
+ * @property Container $app;
+ */
 class RebindHttpContainer implements ResetterContract
 {
-    /**
-     * @var Container
-     */
-    protected $app;
 
     public function handle(Container $app, Sandbox $sandbox)
     {
-        $kernel = $app->make(Http::class);
+        $http = $app->make(Http::class);
 
         $closure = function () use ($app) {
             $this->app = $app;
         };
 
-        $resetKernel = $closure->bindTo($kernel, $kernel);
-        $resetKernel();
+        $resetHttp = $closure->bindTo($http, $http);
+        $resetHttp();
 
         return $app;
     }
