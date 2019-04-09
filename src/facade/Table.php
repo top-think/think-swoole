@@ -11,7 +11,6 @@
 
 namespace think\swoole\facade;
 
-
 use think\Facade;
 
 /**

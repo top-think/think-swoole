@@ -11,7 +11,6 @@
 
 namespace think\swoole\websocket;
 
-
 use Swoole\Websocket\Frame;
 use think\Request;
 
