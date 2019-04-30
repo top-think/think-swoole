@@ -215,7 +215,7 @@ class Server extends Command
     {
         $masterPid = $this->getPidPath();
 
-        if (is_file($masterPid)) {
+        if (file_exists($masterPid)) {
             unlink($masterPid);
         }
     }
