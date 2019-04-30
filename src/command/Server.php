@@ -81,6 +81,13 @@ class Server extends Command
 
             $server->addProcess($this->getHotReloadProcess($server, (int) $this->config['auto_reload']));
         }
+
+        $host = $this->config['server']['host'];
+        $port = $this->config['server']['port'];
+
+        $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
+        $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
+
         $swoole->run();
     }
 
@@ -206,7 +213,7 @@ class Server extends Command
      */
     protected function removePid()
     {
-        $masterPid = $this->config['pid_file'];
+        $masterPid = $this->getPidPath();
 
         if (is_file($masterPid)) {
             unlink($masterPid);

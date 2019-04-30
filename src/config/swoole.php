@@ -6,7 +6,7 @@ use think\swoole\websocket\socketio\Parser;
 
 return [
     'server'           => [
-        'host'      => '127.0.0.1', // 监听地址
+        'host'      => '0.0.0.0', // 监听地址
         'port'      => 80, // 监听端口
         'mode'      => SWOOLE_PROCESS, // 运行模式 默认为SWOOLE_PROCESS
         'sock_type' => SWOOLE_SOCK_TCP, // sock type 默认为SWOOLE_SOCK_TCP
