@@ -187,7 +187,7 @@ class Server extends Command
     {
         $pidFile = $this->getPidPath();
 
-        if (is_file($pidFile)) {
+        if (file_exists($pidFile) && is_file($pidFile)) {
             $masterPid = (int) file_get_contents($pidFile);
         } else {
             $masterPid = 0;
