@@ -29,7 +29,6 @@ use think\swoole\helper\SuperClosure;
 use think\swoole\helper\Task;
 use think\swoole\helper\Timer;
 use think\swoole\interfaces\RunInterface;
-use think\swoole\interfaces\TimerInterface;
 use Throwable;
 use XCron\CronExpression;
 

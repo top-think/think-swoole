@@ -15,4 +15,5 @@ interface RunInterface
      * @return mixed
      */
     public function run($server);
+    
 }

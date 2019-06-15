@@ -7,7 +7,6 @@
 
 namespace think\swoole\helper;
 
-
 use think\App;
 use think\swoole\facade\Server;
 

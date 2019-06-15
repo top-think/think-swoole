@@ -8,7 +8,6 @@
 namespace think\swoole\helper;
 
 use SuperClosure\Serializer;
-use think\App;
 
 class SuperClosure
 {

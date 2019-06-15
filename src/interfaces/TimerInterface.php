@@ -14,4 +14,5 @@ interface TimerInterface extends RunInterface
      * @return mixed
      */
     public function getInterval();
+    
 }
