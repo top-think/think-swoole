@@ -198,7 +198,6 @@ class Websocket
                 'Invalid websocket callback. Must be a string or callable.'
             );
         }
-
         $this->callbacks[$event] = $callback;
 
         return $this;
@@ -233,7 +232,6 @@ class Websocket
         // inject request param on connect event
         $isConnect = $event === static::EVENT_CONNECT;
         $dataKey   = $isConnect ? 'request' : 'data';
-
         return $this->app->invoke($this->callbacks[$event], [
             'websocket' => $this,
             $dataKey    => $data,

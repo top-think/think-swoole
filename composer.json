@@ -11,7 +11,9 @@
     "require": {
         "ext-swoole": ">=4.0.0",
         "topthink/framework": "^6.0.0",
-        "topthink/think-helper": "^3.0.4"
+        "topthink/think-helper": "^3.0.4",
+        "xavier/xcron-expression": "^0.11.0",
+        "jeremeamia/superclosure": "^2.4"
     },
     "autoload": {
         "psr-4": {

@@ -22,102 +22,108 @@ class Sandbox
 {
     /** @var Container */
     protected $app;
-
+    
     /** @var Config */
     protected $config;
-
+    
     /** @var Event */
     protected $event;
-
+    
     protected $resetters = [];
-
+    
     public function __construct($app = null)
     {
         if (!$app instanceof Container) {
             return;
         }
-
+        
         $this->setBaseApp($app);
         $this->initialize();
     }
-
+    
     public function setBaseApp(Container $app)
     {
         $this->app = $app;
-
+        
         return $this;
     }
-
+    
     public function getBaseApp()
     {
         return $this->app;
     }
-
+    
     protected function initialize()
     {
         if (!$this->app instanceof Container) {
             throw new RuntimeException('A base app has not been set.');
         }
-
+        
         Container::setInstance(function () {
             return $this->getApplication();
         });
-
+        
         $this->setInitialConfig();
         $this->setInitialEvent();
         $this->setInitialResetters();
-
+        
         return $this;
     }
-
+    
     /**
      * @param Request $request
      * @return Response
      */
     public function run(Request $request)
     {
-
+        
         $level = ob_get_level();
         ob_start();
-
+        
         $response = $this->handleRequest($request);
-
+        
         $content = $response->getContent();
-
+        
         $this->getHttp()->end($response);
-
+        
         if (ob_get_length() > 0) {
             $response->content(ob_get_contents() . $content);
         }
-
+        
         while (ob_get_level() > $level) {
             ob_end_clean();
         }
-
+        
         return $response;
     }
-
+    
+    public function runService(\Closure $closure)
+    {
+        $app = $this->getApplication();
+        $closure($app);
+    }
+    
     protected function handleRequest(Request $request)
     {
         return $this->getHttp()->run($request);
     }
-
+    
     public function init()
     {
         if (!$this->config instanceof Config) {
             throw new RuntimeException('Please initialize after setting base app.');
         }
-
+        
         $this->setInstance($app = $this->getApplication());
         $this->resetApp($app);
     }
-
+    
     public function clear()
     {
         Context::clear();
         $this->setInstance($this->getBaseApp());
     }
-
+    
     /**
      * @return Http
      */
@@ -125,20 +131,20 @@ class Sandbox
     {
         return $this->getApplication()->make(Http::class);
     }
-
+    
     public function getApplication()
     {
         $snapshot = $this->getSnapshot();
         if ($snapshot instanceof Container) {
             return $snapshot;
         }
-
+        
         $snapshot = clone $this->getBaseApp();
         $this->setSnapshot($snapshot);
-
+        
         return $snapshot;
     }
-
+    
     /**
      * Get current snapshot.
      */
@@ -146,22 +152,22 @@ class Sandbox
     {
         return Context::getApp();
     }
-
+    
     public function setSnapshot(Container $snapshot)
     {
         Context::setApp($snapshot);
-
+        
         return $this;
     }
-
+    
     public function setInstance(Container $app)
     {
         $app->instance('app', $app);
         $app->instance(Container::class, $app);
-
+        
         Context::setApp($app);
     }
-
+    
     /**
      * Set initial config.
      */
@@ -169,12 +175,12 @@ class Sandbox
     {
         $this->config = clone $this->getBaseApp()->config;
     }
-
+    
     protected function setInitialEvent()
     {
         $this->event = clone $this->getBaseApp()->event;
     }
-
+    
     /**
      * Get config snapshot.
      */
@@ -182,19 +188,19 @@ class Sandbox
     {
         return $this->config;
     }
-
+    
     public function getEvent()
     {
         return $this->event;
     }
-
+    
     /**
      * Initialize resetters.
      */
     protected function setInitialResetters()
     {
         $app = $this->getBaseApp();
-
+        
         $resetters = [
             ClearInstances::class,
             RebindHttpContainer::class,
@@ -203,9 +209,9 @@ class Sandbox
             ResetConfig::class,
             ResetEvent::class,
         ];
-
+        
         $resetters = array_merge($resetters, $this->config->get('swoole.resetters', []));
-
+        
         foreach ($resetters as $resetter) {
             $resetterClass = $app->make($resetter);
             if (!$resetterClass instanceof ResetterContract) {
@@ -214,7 +220,7 @@ class Sandbox
             $this->resetters[$resetter] = $resetterClass;
         }
     }
-
+    
     /**
      * Get Initialized resetters.
      */
@@ -222,7 +228,7 @@ class Sandbox
     {
         return $this->resetters;
     }
-
+    
     /**
      * Reset Application.
      *
@@ -234,14 +240,14 @@ class Sandbox
             $resetter->handle($app, $this);
         }
     }
-
+    
     public function setRequest(Request $request)
     {
         Context::setData('_request', $request);
-
+        
         return $this;
     }
-
+    
     /**
      * Get current request.
      */
