@@ -7,7 +7,6 @@
 
 namespace think\swoole\interfaces;
 
-
 interface RunInterface
 {
     /**
@@ -15,5 +14,5 @@ interface RunInterface
      * @return mixed
      */
     public function run($server);
-    
+
 }

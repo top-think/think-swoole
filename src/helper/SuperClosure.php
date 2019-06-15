@@ -13,9 +13,8 @@ class SuperClosure
 {
     private $closure;
     private $serialized;
-    private $app;
     
-    function __construct(\Closure $closure)
+    public function __construct(\Closure $closure)
     {
         $this->closure = $closure;
     }
@@ -41,7 +40,7 @@ class SuperClosure
         return \think\facade\App::invokeFunction($this->closure, $args);
     }
     
-    final function call(...$args)
+    final public function call(...$args)
     {
         return \think\facade\App::invokeFunction($this->closure, $args);
     }
