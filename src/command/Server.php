@@ -78,7 +78,6 @@ class Server extends Command
             //热更新
             /** @var \Swoole\Server $server */
             $server = $this->app->make(\think\swoole\facade\Server::class);
-            
             $server->addProcess($this->getHotReloadProcess($server, (int)$this->config['auto_reload']));
         }
         
@@ -103,11 +102,12 @@ class Server extends Command
             if (function_exists("inotify_init")) {
                 $handle = inotify_init();
                 $dir    = $this->app->getAppPath();
-                inotify_add_watch($handle, $dir, IN_MODIFY | IN_MOVED_FROM  | IN_CREATE | IN_DELETE);
+                inotify_add_watch($handle, $dir, IN_MODIFY | IN_MOVED_FROM | IN_CREATE | IN_DELETE);
                 $events = inotify_read($handle);
                 if ($events) {
                     foreach ($events as $event) {
-                        echo '[update]' . $event["name"] . " reload...\n";
+                        $this->output->writeln('[update]' . $event["name"]);
+                        $this->output->writeln('Reloading swoole http server...');
                     }
                     $server->reload();
                 }
@@ -200,7 +200,7 @@ class Server extends Command
         $pidFile = $this->getPidPath();
         
         if (file_exists($pidFile)) {
-            $masterPid = (int)file_get_contents($pidFile);
+            $masterPid = (int) file_get_contents($pidFile);
         } else {
             $masterPid = 0;
         }
