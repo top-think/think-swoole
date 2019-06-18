@@ -78,7 +78,7 @@ class Server extends Command
             //热更新
             /** @var \Swoole\Server $server */
             $server = $this->app->make(\think\swoole\facade\Server::class);
-            $server->addProcess($this->getHotReloadProcess($server, (int)$this->config['auto_reload']));
+            $server->addProcess($this->getHotReloadProcess($server, (int) $this->config['auto_reload']));
         }
         
         $host = $this->config['server']['host'];
