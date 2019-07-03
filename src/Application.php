@@ -18,6 +18,7 @@ use think\Db;
 use think\Error;
 use think\exception\HttpException;
 use think\facade\Config;
+use think\response\Download;
 
 /**
  * Swoole应用对象
@@ -119,8 +120,12 @@ class Application extends App
                 $response->header($key, $val);
             }
 
-            $response->write($content);
-            $response->end();
+             if($resp instanceof Download) {
+                $response->sendfile($resp->getData());
+            } else {
+                $response->write($content);
+                $response->end();
+            }
         } catch (HttpException $e) {
             $this->exception($response, $e);
         } catch (\Exception $e) {
