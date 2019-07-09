@@ -19,7 +19,6 @@ use Swoole\Runtime;
 use Swoole\Server\Task;
 use think\App;
 use think\console\Output;
-use think\Container;
 use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\concerns\InteractsWithSwooleTable;
@@ -35,7 +34,7 @@ class Swoole
     use InteractsWithSwooleTable, InteractsWithWebsocket;
 
     /**
-     * @var Container
+     * @var App
      */
     protected $container;
 
@@ -68,9 +67,9 @@ class Swoole
 
     /**
      * Manager constructor.
-     * @param Container $container
+     * @param App $container
      */
-    public function __construct(Container $container)
+    public function __construct(App $container)
     {
         $this->container = $container;
         $this->initialize();

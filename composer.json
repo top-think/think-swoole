@@ -34,6 +34,7 @@
     },
     "minimum-stability": "dev",
     "require-dev": {
-        "swoole/ide-helper": "^4.3"
+        "swoole/ide-helper": "^4.3",
+        "symfony/var-dumper": "^4.3"
     }
 }

@@ -3,6 +3,7 @@
 namespace think\swoole;
 
 use RuntimeException;
+use think\App;
 use think\Config;
 use think\Container;
 use think\Event;
@@ -15,12 +16,13 @@ use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\RebindHttpContainer;
 use think\swoole\resetters\RebindRouterContainer;
 use think\swoole\resetters\ResetConfig;
+use think\swoole\resetters\ResetDumper;
 use think\swoole\resetters\ResetEvent;
 use think\swoole\resetters\ResetterContract;
 
 class Sandbox
 {
-    /** @var Container */
+    /** @var App */
     protected $app;
 
     /** @var Config */
@@ -200,6 +202,7 @@ class Sandbox
             RebindHttpContainer::class,
             RebindRouterContainer::class,
             BindRequest::class,
+            ResetDumper::class,
             ResetConfig::class,
             ResetEvent::class,
         ];
