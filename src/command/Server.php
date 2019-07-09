@@ -14,6 +14,8 @@ namespace think\swoole\command;
 use Swoole\Process;
 use think\console\Command;
 use think\console\input\Argument;
+use think\helper\Arr;
+use think\swoole\FileWatcher;
 use think\swoole\Swoole;
 use Throwable;
 
@@ -39,9 +41,10 @@ class Server extends Command
 
     public function handle()
     {
-        $action = $this->input->getArgument('action');
+        $this->checkEnvironment();
+        $this->loadConfig();
 
-        $this->init();
+        $action = $this->input->getArgument('action');
 
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
             $this->$action();
@@ -50,9 +53,41 @@ class Server extends Command
         }
     }
 
-    protected function init()
+    /**
+     * 检查环境
+     */
+    protected function checkEnvironment()
+    {
+        if (!extension_loaded('swoole')) {
+            $this->output->error('Can\'t detect Swoole extension installed.');
+
+            exit(1);
+        }
+
+        if (!version_compare(swoole_version(), '4.3.1', 'ge')) {
+            $this->output->error('Your Swoole version must be higher than `4.3.1`.');
+
+            exit(1);
+        }
+    }
+
+    /**
+     * 加载配置
+     */
+    protected function loadConfig()
     {
         $this->config = $this->app->config->get('swoole');
+    }
+
+    /**
+     * 读取配置
+     * @param      $name
+     * @param null $default
+     * @return mixed
+     */
+    protected function getConfig($name, $default = null)
+    {
+        return Arr::get($this->config, $name, $default);
     }
 
     /**
@@ -74,12 +109,12 @@ class Server extends Command
         /** @var Swoole $swoole */
         $swoole = $this->app->make(Swoole::class);
 
-        if ($this->config['auto_reload']) {
+        if (Arr::get($this->config, 'hot_update.enable', false)) {
             //热更新
             /** @var \Swoole\Server $server */
             $server = $this->app->make(\think\swoole\facade\Server::class);
 
-            $server->addProcess($this->getHotReloadProcess($server, (int) $this->config['auto_reload']));
+            $server->addProcess($this->getHotUpdateProcess($server));
         }
 
         $host = $this->config['server']['host'];
@@ -93,15 +128,14 @@ class Server extends Command
 
     /**
      * @param \Swoole\Server $server
-     * @param int            $ms
      * @return Process
      */
-    protected function getHotReloadProcess($server, $ms)
+    protected function getHotUpdateProcess($server)
     {
-        return new Process(function () use ($ms, $server) {
-            //todo 这里可以使用fswatch来检查文件变化
+        return new Process(function () use ($server) {
+            $watcher = new FileWatcher($this->getConfig('hot_update.include', []), $this->getConfig('hot_update.exclude', []), $this->getConfig('hot_update.name', []));
 
-            swoole_timer_tick($ms > 0 ? $ms : 3000, function () use ($server) {
+            $watcher->watch(function () use ($server) {
                 $server->reload();
             });
         }, false, 0);

@@ -42,7 +42,12 @@ return [
             'client_size' => 2048,
         ],
     ],
-    'auto_reload'      => false,
+    'hot_update'       => [
+        'enable'  => env('app_debug', false),
+        'name'    => ['*.php'],
+        'include' => [app_path()],
+        'exclude' => [],
+    ],
     'enable_coroutine' => true,
     'resetters'        => [],
     'tables'           => [],

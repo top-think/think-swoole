@@ -14,6 +14,7 @@ namespace think\swoole;
 use Swoole\Http\Server as HttpServer;
 use Swoole\Websocket\Server as WebsocketServer;
 use think\App;
+use think\event\RouteLoaded;
 use think\Route;
 use think\swoole\command\Server as ServerCommand;
 use think\swoole\facade\Server;
@@ -50,14 +51,16 @@ class Service extends \think\Service
         $this->app->bind('swoole', Swoole::class);
     }
 
-    public function boot(Route $route)
+    public function boot()
     {
         $this->commands(ServerCommand::class);
         if ($this->isWebsocket) {
-            $route->group(function () use ($route) {
-                $route->get('socket.io/', '@upgrade');
-                $route->post('socket.io/', '@reject');
-            })->prefix(Controller::class)->middleware(Middleware::class);
+            $this->app->event->listen(RouteLoaded::class, function (Route $route) {
+                $route->group(function () use ($route) {
+                    $route->get('socket.io/', '@upgrade');
+                    $route->post('socket.io/', '@reject');
+                })->prefix(Controller::class)->middleware(Middleware::class);
+            });
         }
     }
 

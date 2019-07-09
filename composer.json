@@ -10,8 +10,9 @@
     ],
     "require": {
         "ext-swoole": ">=4.0.0",
-        "topthink/framework": "^6.0.0",
-        "topthink/think-helper": "^3.0.4"
+        "topthink/framework": "^6.0",
+        "topthink/think-helper": "^3.0.4",
+        "symfony/finder": "^4.3.2"
     },
     "autoload": {
         "psr-4": {
@@ -33,6 +34,6 @@
     },
     "minimum-stability": "dev",
     "require-dev": {
-        "eaglewu/swoole-ide-helper": "dev-master"
+        "swoole/ide-helper": "^4.3"
     }
 }
