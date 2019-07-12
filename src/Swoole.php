@@ -21,6 +21,7 @@ use think\App;
 use think\console\Output;
 use think\exception\Handle;
 use think\helper\Str;
+use think\swoole\App as SwooleApp;
 use think\swoole\concerns\InteractsWithSwooleTable;
 use think\swoole\concerns\InteractsWithWebsocket;
 use think\swoole\facade\Server;
@@ -39,7 +40,7 @@ class Swoole
     protected $container;
 
     /**
-     * @var App
+     * @var SwooleApp
      */
     protected $app;
 
@@ -174,8 +175,8 @@ class Swoole
 
     protected function prepareApplication()
     {
-        if (!$this->app instanceof App) {
-            $this->app = new App();
+        if (!$this->app instanceof SwooleApp) {
+            $this->app = new SwooleApp();
             $this->app->initialize();
         }
 

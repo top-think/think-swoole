@@ -86,6 +86,10 @@ class Sandbox
 
         $content = $response->getContent();
 
+        if (ob_get_level() == 0) {
+            ob_start();
+        }
+
         $this->getHttp()->end($response);
 
         if (ob_get_length() > 0) {
