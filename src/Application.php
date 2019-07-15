@@ -120,10 +120,12 @@ class Application extends App
                 $response->header($key, $val);
             }
 
-             if($resp instanceof Download) {
+            if($resp instanceof Download) {
                 $response->sendfile($resp->getData());
             } else {
-                $response->write($content);
+                if(!empty($content)){
+                    $response->write($content);
+                }
                 $response->end();
             }
         } catch (HttpException $e) {

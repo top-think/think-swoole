@@ -138,11 +138,11 @@ class Http extends Server
         // 应用实例化
         $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
-
+        //防止与主线程共用db连接，工作进程启动时，重载
+        $this->app->db([],true);
         //swoole server worker启动行为
         $hook = Container::get('hook');
         $hook->listen('swoole_worker_start', ['server' => $server, 'worker_id' => $worker_id]);
-
         // Swoole Server保存到容器
         $this->app->swoole = $server;
 
