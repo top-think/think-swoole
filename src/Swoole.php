@@ -412,6 +412,10 @@ class Swoole
      */
     protected function setProcessName($process)
     {
+        // Mac OSX不支持进程重命名
+        if (stristr(PHP_OS, 'DAR')) {
+            return;
+        }
 
         $serverName = 'swoole_http_server';
         $appName    = $this->container->config->get('app.name', 'ThinkPHP');
