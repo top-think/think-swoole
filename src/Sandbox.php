@@ -65,6 +65,8 @@ class Sandbox
             return $this->getApplication();
         });
 
+        $this->app->bind(Http::class, \think\swoole\Http::class);
+
         $this->setInitialConfig();
         $this->setInitialEvent();
         $this->setInitialResetters();
@@ -76,9 +78,8 @@ class Sandbox
      * @param Request $request
      * @return Response
      */
-    public function run(Request $request)
+    public function run(Request $request): Response
     {
-
         $level = ob_get_level();
         ob_start();
 
@@ -103,7 +104,7 @@ class Sandbox
         return $response;
     }
 
-    protected function handleRequest(Request $request)
+    protected function handleRequest(Request $request): Response
     {
         return $this->getHttp()->run($request);
     }
@@ -204,7 +205,6 @@ class Sandbox
         $resetters = [
             ClearInstances::class,
             RebindHttpContainer::class,
-            RebindRouterContainer::class,
             BindRequest::class,
             ResetDumper::class,
             ResetConfig::class,

@@ -176,7 +176,7 @@ class Swoole
     protected function prepareApplication()
     {
         if (!$this->app instanceof SwooleApp) {
-            $this->app = new SwooleApp();
+            $this->app = new SwooleApp($this->container->getRootPath());
             $this->app->initialize();
         }
 
@@ -218,13 +218,12 @@ class Swoole
             ->withInput($req->rawContent())
             ->withFiles($req->files ?: [])
             ->setBaseUrl($req->server['request_uri'])
-            ->setUrl($req->server['request_uri'] . (!empty($req->server['query_string']) ? '&' . $req->server['query_string'] : ''))
+            ->setUrl($req->server['request_uri'] . (!empty($req->server['query_string']) ? '?' . $req->server['query_string'] : ''))
             ->setPathinfo(ltrim($req->server['path_info'], '/'));
     }
 
     protected function sendResponse(Sandbox $sandbox, \think\Response $thinkResponse, \Swoole\Http\Response $swooleResponse)
     {
-
         // 发送Header
         foreach ($thinkResponse->getHeader() as $key => $val) {
             $swooleResponse->header($key, $val);
@@ -262,6 +261,7 @@ class Swoole
 
         /** @var Sandbox $sandbox */
         $sandbox = $this->app->make(Sandbox::class);
+
         $request = $this->prepareRequest($req);
 
         try {
@@ -345,7 +345,7 @@ class Swoole
     }
 
     /**
-     * Bind sandbox to Laravel app container.
+     * Bind sandbox to app container.
      */
     protected function bindSandbox()
     {
