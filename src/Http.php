@@ -13,12 +13,12 @@ use think\Route;
 class Http extends \think\Http
 {
     /** @var Middleware */
-    static $middleware;
+    protected static $middleware;
 
     /** @var Route */
-    static $route;
+    protected static $route;
 
-    static $apps = [];
+    protected static $apps = [];
 
     protected function loadMiddleware(): void
     {
@@ -81,17 +81,17 @@ class Http extends \think\Http
             $middleware->setApp($app);
             $this->app->instance("middleware", $middleware);
 
-            $event = clone self::$apps[$appName]['event'];
-            $closure = function () use ($app) {
+            $event      = clone self::$apps[$appName]['event'];
+            $closure    = function () use ($app) {
                 $this->app = $app;
             };
             $resetEvent = $closure->bindTo($event, $event);
             $resetEvent();
             $this->app->instance("event", $event);
 
-            $lang = clone self::$apps[$appName]['lang'];
-            $request = $this->app->request;
-            $closure = function () use ($request) {
+            $lang      = clone self::$apps[$appName]['lang'];
+            $request   = $this->app->request;
+            $closure   = function () use ($request) {
                 $this->request = $request;
             };
             $resetLang = $closure->bindTo($lang, $lang);
