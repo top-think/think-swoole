@@ -13,12 +13,12 @@ use think\Route;
 class Http extends \think\Http
 {
     /** @var Middleware */
-    static $middleware;
+    public static $middleware;
 
     /** @var Route */
-    static $route;
+    public static $route;
 
-    static $apps = [];
+    public static $apps = [];
 
     protected function loadMiddleware(): void
     {

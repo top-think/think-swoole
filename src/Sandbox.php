@@ -14,7 +14,6 @@ use think\swoole\coroutine\Context;
 use think\swoole\resetters\BindRequest;
 use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\RebindHttpContainer;
-use think\swoole\resetters\RebindRouterContainer;
 use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetDumper;
 use think\swoole\resetters\ResetEvent;
