@@ -234,10 +234,19 @@ class Websocket
         $isConnect = $event === static::EVENT_CONNECT;
         $dataKey   = $isConnect ? 'request' : 'data';
 
-        return $this->app->invoke($this->callbacks[$event], [
+        $params = [
             'websocket' => $this,
             $dataKey    => $data,
-        ]);
+        ];
+
+        $callback = $this->callbacks[$event];
+
+        if (is_string($callback) && strpos($callback, '@') !== false) {
+            $segments = explode('@', $callback);
+            return $this->app->invoke([$this->app->make($segments[0]), $segments[1]], $params);
+        }
+
+        return $this->app->invoke($callback, $params);
     }
 
     /**

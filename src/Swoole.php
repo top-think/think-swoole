@@ -55,8 +55,6 @@ class Swoole
         'workerStart',
         'workerStop',
         'packet',
-        'bufferFull',
-        'bufferEmpty',
         'task',
         'finish',
         'pipeMessage',

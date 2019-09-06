@@ -37,7 +37,7 @@ class RedisRoom implements RoomContract
     }
 
     /**
-     * @param \Redis|null $redis
+     * @param Redis|null $redis
      *
      * @return RoomContract
      */
@@ -139,11 +139,13 @@ class RedisRoom implements RoomContract
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $this->redis->pipeline(function (Pipeline $pipe) use ($redisKey, $values) {
-            foreach ($values as $value) {
-                $pipe->sadd($redisKey, $value);
+        $pipe = $this->redis->multi(Redis::PIPELINE);
+
+        foreach ($values as $value) {
+            $pipe->sadd($redisKey, $value);
         }
-        });
+
+        $pipe->exec();
 
         return $this;
     }
@@ -162,11 +164,13 @@ class RedisRoom implements RoomContract
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $this->redis->pipeline(function (Pipeline $pipe) use ($redisKey, $values) {
-            foreach ($values as $value) {
-                $pipe->srem($redisKey, $value);
-            }
-        });
+        $pipe = $this->redis->multi(Redis::PIPELINE);
+
+        foreach ($values as $value) {
+            $pipe->srem($redisKey, $value);
+        }
+
+        $pipe->exec();
 
         return $this;
     }

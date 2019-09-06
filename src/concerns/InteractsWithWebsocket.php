@@ -2,7 +2,7 @@
 
 namespace think\swoole\concerns;
 
-use http\Exception\RuntimeException;
+use RuntimeException;
 use Swoole\Http\Request;
 use Swoole\Websocket\Frame;
 use Swoole\Websocket\Server;
@@ -279,7 +279,7 @@ trait InteractsWithWebsocket
     }
 
     /**
-     * Bind room instance to Laravel app container.
+     * Bind room instance to app container.
      */
     protected function bindRoom(): void
     {

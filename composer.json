@@ -9,10 +9,12 @@
         }
     ],
     "require": {
+        "ext-json": "*",
         "ext-swoole": ">=4.0.0",
         "topthink/framework": "^6.0",
         "topthink/think-helper": "^3.0.4",
-        "symfony/finder": "^4.3.2"
+        "symfony/finder": "^4.3.2",
+        "swoole/ide-helper": "^4.3"
     },
     "autoload": {
         "psr-4": {
@@ -34,7 +36,6 @@
     },
     "minimum-stability": "dev",
     "require-dev": {
-        "swoole/ide-helper": "^4.3",
         "symfony/var-dumper": "^4.3"
     }
 }
