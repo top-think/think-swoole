@@ -27,7 +27,15 @@ class Http extends \think\Http
             self::$middleware = clone $this->app->middleware;
         } else {
             $middleware = clone self::$middleware;
-            $middleware->setApp($this->app);
+
+            $app     = $this->app;
+            $closure = function () use ($app) {
+                $this->app = $app;
+            };
+
+            $resetMiddleware = $closure->bindTo($middleware, $middleware);
+            $resetMiddleware();
+
             $this->app->instance("middleware", $middleware);
         }
     }
