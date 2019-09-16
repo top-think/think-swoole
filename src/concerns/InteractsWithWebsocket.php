@@ -41,6 +41,11 @@ trait InteractsWithWebsocket
     protected $websocketHandler;
 
     /**
+     * @var RoomContract
+     */
+    protected $websocketRoom;
+
+    /**
      * @var Parser
      */
     protected $payloadParser;
@@ -203,15 +208,17 @@ trait InteractsWithWebsocket
      */
     protected function prepareWebsocket()
     {
-        $config      = $this->container->make('config');
-        $isWebsocket = $config->get('swoole.websocket.enabled');
-        $parser      = $config->get('swoole.websocket.parser', SocketioParser::class);
+        $config = $this->container->make('config');
 
-        if ($isWebsocket) {
-            $this->events            = array_merge($this->events ?? [], $this->wsEvents);
-            $this->isServerWebsocket = true;
-            $this->setPayloadParser(new $parser);
+        if (!$this->isServerWebsocket = $config->get('swoole.websocket.enabled')) {
+            return;
         }
+
+        $parser = $config->get('swoole.websocket.parser', SocketioParser::class);
+
+        $this->events = array_merge($this->events ?? [], $this->wsEvents);
+        $this->prepareWebsocketRoom();
+        $this->setPayloadParser(new $parser);
     }
 
     /**
@@ -225,6 +232,21 @@ trait InteractsWithWebsocket
     {
         return (bool) $this->container->make(SwooleServer::class)
                           ->connection_info($fd)['websocket_status'] ?? false;
+    }
+
+    /**
+     * Prepare websocket room.
+     */
+    protected function prepareWebsocketRoom()
+    {
+        $config = $this->container->make('config');
+        $room   = $config->get('swoole.websocket.room', []);
+
+        $className = Arr::pull($room, 'type', TableRoom::class);
+
+        // create room instance and initialize
+        $this->websocketRoom = $this->createRoom($className, $room);
+        $this->websocketRoom->prepare();
     }
 
     /**
@@ -283,17 +305,8 @@ trait InteractsWithWebsocket
      */
     protected function bindRoom(): void
     {
-        $this->app->bind(RoomContract::class, function (App $app) {
-            $config = $app->make('config');
-            $room   = $config->get('swoole.websocket.room', []);
-
-            $className = Arr::pull($room, 'type', TableRoom::class);
-
-            // create room instance and initialize
-            $room = $this->createRoom($className, $room);
-            $room->prepare();
-
-            return $room;
+        $this->app->bind(RoomContract::class, function () {
+            return $this->websocketRoom;
         });
 
         $this->app->bind('swoole.room', RoomContract::class);

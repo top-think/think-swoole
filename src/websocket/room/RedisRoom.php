@@ -34,59 +34,38 @@ class RedisRoom implements RoomContract
     public function __construct(array $config)
     {
         $this->config = $config;
-    }
 
-    /**
-     * @param Redis|null $redis
-     *
-     * @return RoomContract
-     */
-    public function prepare(Redis $redis = null): RoomContract
-    {
-        $this->setRedis($redis);
-        $this->setPrefix();
-        $this->cleanRooms();
-
-        return $this;
-    }
-
-    /**
-     * Set redis client.
-     *
-     * @param Redis|null $redis
-     */
-    public function setRedis(?Redis $redis = null)
-    {
-        if (!$redis) {
-            $server  = Arr::get($this->config, 'server', []);
-            $options = Arr::get($this->config, 'options', []);
-
-            // forbid setting prefix from options
-            if (Arr::has($options, 'prefix')) {
-                $options = Arr::except($options, 'prefix');
-            }
-
-            $redis = new Redis($server, $options);
-        }
-
-        $this->redis = $redis;
-    }
-
-    /**
-     * Set key prefix from config.
-     */
-    protected function setPrefix()
-    {
         if ($prefix = Arr::get($this->config, 'prefix')) {
             $this->prefix = $prefix;
         }
     }
 
     /**
-     * Get redis client.
+     * @return RoomContract
      */
-    public function getRedis()
+    public function prepare(): RoomContract
     {
+        $this->cleanRooms();
+
+        //关闭redis
+        $this->redis->close();
+        $this->redis = null;
+        return $this;
+    }
+
+    /**
+     * Set redis client.
+     *
+     */
+    protected function getRedis()
+    {
+        if (!$this->redis) {
+            $host = Arr::get($this->config, 'host', '127.0.0.1');
+            $port = Arr::get($this->config, 'port', 6379);
+
+            $this->redis = new Redis();
+            $this->redis->pconnect($host, $port);
+        }
         return $this->redis;
     }
 
@@ -134,12 +113,12 @@ class RedisRoom implements RoomContract
      *
      * @return $this
      */
-    public function addValue($key, array $values, string $table)
+    protected function addValue($key, array $values, string $table)
     {
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $pipe = $this->redis->multi(Redis::PIPELINE);
+        $pipe = $this->getRedis()->multi(Redis::PIPELINE);
 
         foreach ($values as $value) {
             $pipe->sadd($redisKey, $value);
@@ -159,12 +138,12 @@ class RedisRoom implements RoomContract
      *
      * @return $this
      */
-    public function removeValue($key, array $values, string $table)
+    protected function removeValue($key, array $values, string $table)
     {
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $pipe = $this->redis->multi(Redis::PIPELINE);
+        $pipe = $this->getRedis()->multi(Redis::PIPELINE);
 
         foreach ($values as $value) {
             $pipe->srem($redisKey, $value);
@@ -219,11 +198,11 @@ class RedisRoom implements RoomContract
      *
      * @return array
      */
-    public function getValue(string $key, string $table)
+    protected function getValue(string $key, string $table)
     {
         $this->checkTable($table);
 
-        return $this->redis->smembers($this->getKey($key, $table));
+        return $this->getRedis()->smembers($this->getKey($key, $table));
     }
 
     /**
@@ -234,7 +213,7 @@ class RedisRoom implements RoomContract
      *
      * @return string
      */
-    public function getKey(string $key, string $table)
+    protected function getKey(string $key, string $table)
     {
         return "{$this->prefix}{$table}:{$key}";
     }
@@ -244,8 +223,8 @@ class RedisRoom implements RoomContract
      */
     protected function cleanRooms(): void
     {
-        if (count($keys = $this->redis->keys("{$this->prefix}*"))) {
-            $this->redis->del($keys);
+        if (count($keys = $this->getRedis()->keys("{$this->prefix}*"))) {
+            $this->getRedis()->del($keys);
         }
     }
 }
