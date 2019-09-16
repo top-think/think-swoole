@@ -85,14 +85,16 @@ class Http extends \think\Http
 
             $this->app->instance("config", clone self::$apps[$appName]['config']);
 
-            $middleware = clone self::$apps[$appName]['middleware'];
-            $middleware->setApp($app);
+            $closure = function () use ($app) {
+                $this->app = $app;
+            };
+
+            $middleware      = clone self::$apps[$appName]['middleware'];
+            $resetMiddleware = $closure->bindTo($middleware, $middleware);
+            $resetMiddleware();
             $this->app->instance("middleware", $middleware);
 
             $event      = clone self::$apps[$appName]['event'];
-            $closure    = function () use ($app) {
-                $this->app = $app;
-            };
             $resetEvent = $closure->bindTo($event, $event);
             $resetEvent();
             $this->app->instance("event", $event);
