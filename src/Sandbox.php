@@ -11,9 +11,7 @@ use think\Http;
 use think\Request;
 use think\Response;
 use think\swoole\coroutine\Context;
-use think\swoole\resetters\BindRequest;
 use think\swoole\resetters\ClearInstances;
-use think\swoole\resetters\RebindHttpContainer;
 use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetDumper;
 use think\swoole\resetters\ResetEvent;
@@ -203,8 +201,6 @@ class Sandbox
 
         $resetters = [
             ClearInstances::class,
-            RebindHttpContainer::class,
-            BindRequest::class,
             ResetDumper::class,
             ResetConfig::class,
             ResetEvent::class,
@@ -241,18 +237,4 @@ class Sandbox
         }
     }
 
-    public function setRequest(Request $request)
-    {
-        Context::setData('_request', $request);
-
-        return $this;
-    }
-
-    /**
-     * Get current request.
-     */
-    public function getRequest()
-    {
-        return Context::getData('_request');
-    }
 }

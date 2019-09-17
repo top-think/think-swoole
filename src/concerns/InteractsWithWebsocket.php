@@ -73,8 +73,6 @@ trait InteractsWithWebsocket
 
         try {
             $websocket->reset(true)->setSender($req->fd);
-            // set current request to sandbox
-            $sandbox->setRequest($request);
             // enable sandbox
             $sandbox->init();
 

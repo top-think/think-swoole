@@ -255,16 +255,12 @@ class Swoole
     {
         $this->app->event->trigger('swoole.request');
 
-        $this->resetOnRequest();
-
         /** @var Sandbox $sandbox */
         $sandbox = $this->app->make(Sandbox::class);
 
         $request = $this->prepareRequest($req);
 
         try {
-            $sandbox->setRequest($request);
-
             $sandbox->init();
 
             $response = $sandbox->run($request);
@@ -282,17 +278,6 @@ class Swoole
             }
         } finally {
             $sandbox->clear();
-        }
-    }
-
-    /**
-     * Reset on every request.
-     */
-    protected function resetOnRequest()
-    {
-        // Reset websocket data
-        if ($this->isServerWebsocket) {
-            $this->app->make(Websocket::class)->reset(true);
         }
     }
 
