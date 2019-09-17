@@ -140,7 +140,7 @@ class Websocket
      *
      * @return boolean
      */
-    public function emit(string $event, $data): bool
+    public function emit(string $event, $data = null): bool
     {
         $fds      = $this->getFds();
         $assigned = !empty($this->to);
