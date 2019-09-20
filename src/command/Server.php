@@ -11,13 +11,10 @@
 
 namespace think\swoole\command;
 
-use Swoole\Process;
 use think\console\Command;
 use think\console\input\Argument;
-use think\helper\Arr;
-use think\swoole\FileWatcher;
-use think\swoole\Swoole;
-use Throwable;
+use think\swoole\Manager;
+use think\swoole\PidManager;
 
 /**
  * Swoole HTTP 命令行，支持操作：start|stop|restart|reload
@@ -25,12 +22,6 @@ use Throwable;
  */
 class Server extends Command
 {
-    /**
-     * The configs for this package.
-     *
-     * @var array
-     */
-    protected $config;
 
     public function configure()
     {
@@ -42,12 +33,11 @@ class Server extends Command
     public function handle()
     {
         $this->checkEnvironment();
-        $this->loadConfig();
 
         $action = $this->input->getArgument('action');
 
         if (in_array($action, ['start', 'stop', 'reload', 'restart'])) {
-            $this->$action();
+            $this->app->invokeMethod([$this, $action], [], true);
         } else {
             $this->output->writeln("<error>Invalid argument action:{$action}, Expected start|stop|restart|reload .</error>");
         }
@@ -72,94 +62,46 @@ class Server extends Command
     }
 
     /**
-     * 加载配置
-     */
-    protected function loadConfig()
-    {
-        $this->config = $this->app->config->get('swoole');
-    }
-
-    /**
-     * 读取配置
-     * @param      $name
-     * @param null $default
-     * @return mixed
-     */
-    protected function getConfig($name, $default = null)
-    {
-        return Arr::get($this->config, $name, $default);
-    }
-
-    /**
      * 启动server
      * @access protected
+     * @param Manager    $manager
+     * @param PidManager $pidManager
      * @return void
      */
-    protected function start()
+    protected function start(Manager $manager, PidManager $pidManager)
     {
-        $pid = $this->getMasterPid();
-
-        if ($this->isRunning($pid)) {
+        if ($pidManager->isRunning()) {
             $this->output->writeln('<error>swoole http server process is already running.</error>');
             return;
         }
 
         $this->output->writeln('Starting swoole http server...');
 
-        /** @var Swoole $swoole */
-        $swoole = $this->app->make(Swoole::class);
-
-        if (Arr::get($this->config, 'hot_update.enable', false)) {
-            //热更新
-            /** @var \Swoole\Server $server */
-            $server = $this->app->make(\think\swoole\facade\Server::class);
-
-            $server->addProcess($this->getHotUpdateProcess($server));
-        }
-
-        $host = $this->config['server']['host'];
-        $port = $this->config['server']['port'];
+        $host = $manager->getConfig('server.host');
+        $port = $manager->getConfig('server.port');
 
         $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
         $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
-        $swoole->run();
-    }
-
-    /**
-     * @param \Swoole\Server $server
-     * @return Process
-     */
-    protected function getHotUpdateProcess($server)
-    {
-        return new Process(function () use ($server) {
-            $watcher = new FileWatcher($this->getConfig('hot_update.include', []), $this->getConfig('hot_update.exclude', []), $this->getConfig('hot_update.name', []));
-
-            $watcher->watch(function () use ($server) {
-                $server->reload();
-            });
-        }, false, 0);
+        $manager->run();
     }
 
     /**
      * 柔性重启server
      * @access protected
+     * @param PidManager $manager
      * @return void
      */
-    protected function reload()
+    protected function reload(PidManager $manager)
     {
-        $pid = $this->getMasterPid();
-
-        if (!$this->isRunning($pid)) {
+        if (!$manager->isRunning()) {
             $this->output->writeln('<error>no swoole http server process running.</error>');
             return;
         }
 
         $this->output->writeln('Reloading swoole http server...');
 
-        $isRunning = $this->killProcess($pid, SIGUSR1);
-
-        if (!$isRunning) {
+        if (!$manager->killProcess(SIGUSR1)) {
             $this->output->error('> failure');
 
             return;
@@ -171,27 +113,24 @@ class Server extends Command
     /**
      * 停止server
      * @access protected
+     * @param PidManager $manager
      * @return void
      */
-    protected function stop()
+    protected function stop(PidManager $manager)
     {
-        $pid = $this->getMasterPid();
-
-        if (!$this->isRunning($pid)) {
+        if (!$manager->isRunning()) {
             $this->output->writeln('<error>no swoole http server process running.</error>');
             return;
         }
 
         $this->output->writeln('Stopping swoole http server...');
 
-        $isRunning = $this->killProcess($pid, SIGTERM, 15);
+        $isRunning = $manager->killProcess(SIGTERM, 15);
 
         if ($isRunning) {
             $this->output->error('Unable to stop the swoole_http_server process.');
             return;
         }
-
-        $this->removePid();
 
         $this->output->writeln('> success');
     }
@@ -199,103 +138,17 @@ class Server extends Command
     /**
      * 重启server
      * @access protected
+     * @param Manager    $manager
+     * @param PidManager $pidManager
      * @return void
      */
-    protected function restart()
+    protected function restart(Manager $manager, PidManager $pidManager)
     {
-        $pid = $this->getMasterPid();
-
-        if ($this->isRunning($pid)) {
-            $this->stop();
+        if ($pidManager->isRunning()) {
+            $this->stop($pidManager);
         }
 
-        $this->start();
+        $this->start($manager, $pidManager);
     }
 
-    /**
-     * 获取主进程PID
-     * @access protected
-     * @return int
-     */
-    protected function getMasterPid()
-    {
-        $pidFile = $this->getPidPath();
-
-        if (file_exists($pidFile)) {
-            $masterPid = (int) file_get_contents($pidFile);
-        } else {
-            $masterPid = 0;
-        }
-
-        return $masterPid;
-    }
-
-    /**
-     * Get Pid file path.
-     *
-     * @return string
-     */
-    protected function getPidPath()
-    {
-        return $this->config['server']['options']['pid_file'];
-    }
-
-    /**
-     * 删除PID文件
-     * @access protected
-     * @return void
-     */
-    protected function removePid()
-    {
-        $masterPid = $this->getPidPath();
-
-        if (file_exists($masterPid)) {
-            unlink($masterPid);
-        }
-    }
-
-    /**
-     * 杀死进程
-     * @param     $pid
-     * @param     $sig
-     * @param int $wait
-     * @return bool
-     */
-    protected function killProcess($pid, $sig, $wait = 0)
-    {
-        Process::kill($pid, $sig);
-
-        if ($wait) {
-            $start = time();
-
-            do {
-                if (!$this->isRunning($pid)) {
-                    break;
-                }
-
-                usleep(100000);
-            } while (time() < $start + $wait);
-        }
-
-        return $this->isRunning($pid);
-    }
-
-    /**
-     * 判断PID是否在运行
-     * @access protected
-     * @param int $pid
-     * @return bool
-     */
-    protected function isRunning($pid)
-    {
-        if (empty($pid)) {
-            return false;
-        }
-
-        try {
-            return Process::kill($pid, 0);
-        } catch (Throwable $e) {
-            return false;
-        }
-    }
 }

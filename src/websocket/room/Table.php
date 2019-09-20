@@ -3,9 +3,10 @@
 namespace think\swoole\websocket\room;
 
 use InvalidArgumentException;
-use Swoole\Table;
+use Swoole\Table as SwooleTable;
+use think\swoole\contract\websocket\RoomInterface;
 
-class TableRoom implements RoomContract
+class Table implements RoomInterface
 {
     /**
      * @var array
@@ -18,12 +19,12 @@ class TableRoom implements RoomContract
     ];
 
     /**
-     * @var Table
+     * @var SwooleTable
      */
     protected $rooms;
 
     /**
-     * @var Table
+     * @var SwooleTable
      */
     protected $fds;
 
@@ -40,9 +41,9 @@ class TableRoom implements RoomContract
     /**
      * Do some init stuffs before workers started.
      *
-     * @return RoomContract
+     * @return RoomInterface
      */
-    public function prepare(): RoomContract
+    public function prepare(): RoomInterface
     {
         $this->initRoomsTable();
         $this->initFdsTable();
@@ -113,7 +114,7 @@ class TableRoom implements RoomContract
      */
     public function getClients(string $room)
     {
-        return $this->getValue($room, RoomContract::ROOMS_KEY) ?? [];
+        return $this->getValue($room, RoomInterface::ROOMS_KEY) ?? [];
     }
 
     /**
@@ -125,29 +126,29 @@ class TableRoom implements RoomContract
      */
     public function getRooms(int $fd)
     {
-        return $this->getValue($fd, RoomContract::DESCRIPTORS_KEY) ?? [];
+        return $this->getValue($fd, RoomInterface::DESCRIPTORS_KEY) ?? [];
     }
 
     /**
      * @param string $room
      * @param array  $fds
      *
-     * @return TableRoom
+     * @return $this
      */
-    protected function setClients(string $room, array $fds): TableRoom
+    protected function setClients(string $room, array $fds)
     {
-        return $this->setValue($room, $fds, RoomContract::ROOMS_KEY);
+        return $this->setValue($room, $fds, RoomInterface::ROOMS_KEY);
     }
 
     /**
      * @param int   $fd
      * @param array $rooms
      *
-     * @return TableRoom
+     * @return $this
      */
-    protected function setRooms(int $fd, array $rooms): TableRoom
+    protected function setRooms(int $fd, array $rooms)
     {
-        return $this->setValue($fd, $rooms, RoomContract::DESCRIPTORS_KEY);
+        return $this->setValue($fd, $rooms, RoomInterface::DESCRIPTORS_KEY);
     }
 
     /**
@@ -155,8 +156,8 @@ class TableRoom implements RoomContract
      */
     protected function initRoomsTable(): void
     {
-        $this->rooms = new Table($this->config['room_rows']);
-        $this->rooms->column('value', Table::TYPE_STRING, $this->config['room_size']);
+        $this->rooms = new SwooleTable($this->config['room_rows']);
+        $this->rooms->column('value', SwooleTable::TYPE_STRING, $this->config['room_size']);
         $this->rooms->create();
     }
 
@@ -165,8 +166,8 @@ class TableRoom implements RoomContract
      */
     protected function initFdsTable()
     {
-        $this->fds = new Table($this->config['client_rows']);
-        $this->fds->column('value', Table::TYPE_STRING, $this->config['client_size']);
+        $this->fds = new SwooleTable($this->config['client_rows']);
+        $this->fds->column('value', SwooleTable::TYPE_STRING, $this->config['client_size']);
         $this->fds->create();
     }
 
@@ -212,7 +213,7 @@ class TableRoom implements RoomContract
      */
     protected function checkTable(string $table)
     {
-        if (!property_exists($this, $table) || !$this->$table instanceof Table) {
+        if (!property_exists($this, $table) || !$this->$table instanceof SwooleTable) {
             throw new InvalidArgumentException("Invalid table name: `{$table}`.");
         }
     }

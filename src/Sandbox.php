@@ -10,15 +10,21 @@ use think\Event;
 use think\Http;
 use think\Request;
 use think\Response;
+use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
 use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\ResetConfig;
-use think\swoole\resetters\ResetDumper;
 use think\swoole\resetters\ResetEvent;
-use think\swoole\resetters\ResetterContract;
 
 class Sandbox
 {
+    /**
+     * The app containers in different coroutine environment.
+     *
+     * @var array
+     */
+    protected $snapshots = [];
+
     /** @var App */
     protected $app;
 
@@ -30,12 +36,8 @@ class Sandbox
 
     protected $resetters = [];
 
-    public function __construct($app = null)
+    public function __construct(Container $app)
     {
-        if (!$app instanceof Container) {
-            return;
-        }
-
         $this->setBaseApp($app);
         $this->initialize();
     }
@@ -54,10 +56,6 @@ class Sandbox
 
     protected function initialize()
     {
-        if (!$this->app instanceof Container) {
-            throw new RuntimeException('A base app has not been set.');
-        }
-
         Container::setInstance(function () {
             return $this->getApplication();
         });
@@ -106,20 +104,13 @@ class Sandbox
         return $this->getHttp()->run($request);
     }
 
-    public function init()
+    public function init($fd = null)
     {
-        if (!$this->config instanceof Config) {
-            throw new RuntimeException('Please initialize after setting base app.');
+        if (!is_null($fd)) {
+            Context::setData('_fd', $fd);
         }
-
         $this->setInstance($app = $this->getApplication());
         $this->resetApp($app);
-    }
-
-    public function clear()
-    {
-        Context::clear();
-        $this->setInstance($this->getBaseApp());
     }
 
     /**
@@ -143,27 +134,43 @@ class Sandbox
         return $snapshot;
     }
 
+    protected function getSnapshotId()
+    {
+        if ($fd = Context::getData('_fd')) {
+            return "fd_" . $fd;
+        } else {
+            return Context::getCoroutineId();
+        }
+    }
+
     /**
      * Get current snapshot.
+     * @return App|null
      */
     public function getSnapshot()
     {
-        return Context::getApp();
+        return $this->snapshots[$this->getSnapshotId()] ?? null;
     }
 
     public function setSnapshot(Container $snapshot)
     {
-        Context::setApp($snapshot);
+        $this->snapshots[$this->getSnapshotId()] = $snapshot;
 
         return $this;
+    }
+
+    public function clear($snapshot = true)
+    {
+        if ($snapshot) {
+            unset($this->snapshots[$this->getSnapshotId()]);
+        }
+        Context::clear();
     }
 
     public function setInstance(Container $app)
     {
         $app->instance('app', $app);
         $app->instance(Container::class, $app);
-
-        Context::setApp($app);
     }
 
     /**
@@ -201,7 +208,6 @@ class Sandbox
 
         $resetters = [
             ClearInstances::class,
-            ResetDumper::class,
             ResetConfig::class,
             ResetEvent::class,
         ];
@@ -210,19 +216,11 @@ class Sandbox
 
         foreach ($resetters as $resetter) {
             $resetterClass = $app->make($resetter);
-            if (!$resetterClass instanceof ResetterContract) {
-                throw new RuntimeException("{$resetter} must implement " . ResetterContract::class);
+            if (!$resetterClass instanceof ResetterInterface) {
+                throw new RuntimeException("{$resetter} must implement " . ResetterInterface::class);
             }
             $this->resetters[$resetter] = $resetterClass;
         }
-    }
-
-    /**
-     * Get Initialized resetters.
-     */
-    public function getResetters()
-    {
-        return $this->resetters;
     }
 
     /**

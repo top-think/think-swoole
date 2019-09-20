@@ -3,16 +3,17 @@
 namespace think\swoole\websocket\room;
 
 use InvalidArgumentException;
-use Redis;
+use Redis as PHPRedis;
 use think\helper\Arr;
+use think\swoole\contract\websocket\RoomInterface;
 
 /**
  * Class RedisRoom
  */
-class RedisRoom implements RoomContract
+class Redis implements RoomInterface
 {
     /**
-     * @var Redis
+     * @var PHPRedis
      */
     protected $redis;
 
@@ -41,9 +42,9 @@ class RedisRoom implements RoomContract
     }
 
     /**
-     * @return RoomContract
+     * @return RoomInterface
      */
-    public function prepare(): RoomContract
+    public function prepare(): RoomInterface
     {
         $this->cleanRooms();
 
@@ -63,7 +64,7 @@ class RedisRoom implements RoomContract
             $host = Arr::get($this->config, 'host', '127.0.0.1');
             $port = Arr::get($this->config, 'port', 6379);
 
-            $this->redis = new Redis();
+            $this->redis = new PHPRedis();
             $this->redis->pconnect($host, $port);
         }
         return $this->redis;
@@ -79,10 +80,10 @@ class RedisRoom implements RoomContract
     {
         $rooms = is_array($rooms) ? $rooms : [$rooms];
 
-        $this->addValue($fd, $rooms, RoomContract::DESCRIPTORS_KEY);
+        $this->addValue($fd, $rooms, RoomInterface::DESCRIPTORS_KEY);
 
         foreach ($rooms as $room) {
-            $this->addValue($room, [$fd], RoomContract::ROOMS_KEY);
+            $this->addValue($room, [$fd], RoomInterface::ROOMS_KEY);
         }
     }
 
@@ -97,10 +98,10 @@ class RedisRoom implements RoomContract
         $rooms = is_array($rooms) ? $rooms : [$rooms];
         $rooms = count($rooms) ? $rooms : $this->getRooms($fd);
 
-        $this->removeValue($fd, $rooms, RoomContract::DESCRIPTORS_KEY);
+        $this->removeValue($fd, $rooms, RoomInterface::DESCRIPTORS_KEY);
 
         foreach ($rooms as $room) {
-            $this->removeValue($room, [$fd], RoomContract::ROOMS_KEY);
+            $this->removeValue($room, [$fd], RoomInterface::ROOMS_KEY);
         }
     }
 
@@ -118,7 +119,7 @@ class RedisRoom implements RoomContract
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $pipe = $this->getRedis()->multi(Redis::PIPELINE);
+        $pipe = $this->getRedis()->multi(PHPRedis::PIPELINE);
 
         foreach ($values as $value) {
             $pipe->sadd($redisKey, $value);
@@ -143,7 +144,7 @@ class RedisRoom implements RoomContract
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $pipe = $this->getRedis()->multi(Redis::PIPELINE);
+        $pipe = $this->getRedis()->multi(PHPRedis::PIPELINE);
 
         foreach ($values as $value) {
             $pipe->srem($redisKey, $value);
@@ -163,7 +164,7 @@ class RedisRoom implements RoomContract
      */
     public function getClients(string $room)
     {
-        return $this->getValue($room, RoomContract::ROOMS_KEY) ?? [];
+        return $this->getValue($room, RoomInterface::ROOMS_KEY) ?? [];
     }
 
     /**
@@ -175,7 +176,7 @@ class RedisRoom implements RoomContract
      */
     public function getRooms(int $fd)
     {
-        return $this->getValue($fd, RoomContract::DESCRIPTORS_KEY) ?? [];
+        return $this->getValue($fd, RoomInterface::DESCRIPTORS_KEY) ?? [];
     }
 
     /**
@@ -185,7 +186,7 @@ class RedisRoom implements RoomContract
      */
     protected function checkTable(string $table)
     {
-        if (!in_array($table, [RoomContract::ROOMS_KEY, RoomContract::DESCRIPTORS_KEY])) {
+        if (!in_array($table, [RoomInterface::ROOMS_KEY, RoomInterface::DESCRIPTORS_KEY])) {
             throw new InvalidArgumentException("Invalid table name: `{$table}`.");
         }
     }

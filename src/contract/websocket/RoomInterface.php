@@ -1,8 +1,8 @@
 <?php
 
-namespace think\swoole\websocket\room;
+namespace think\swoole\contract\websocket;
 
-interface RoomContract
+interface RoomInterface
 {
     /**
      * Rooms key
@@ -21,9 +21,9 @@ interface RoomContract
     /**
      * Do some init stuffs before workers started.
      *
-     * @return RoomContract
+     * @return RoomInterface
      */
-    public function prepare(): RoomContract;
+    public function prepare(): RoomInterface;
 
     /**
      * Add multiple socket fds to a room.

@@ -63,14 +63,10 @@ trait InteractsWithSwooleTable
     }
 
     /**
-     * Bind swoole table to Laravel app container.
+     * Bind swoole table to app container.
      */
     protected function bindSwooleTable()
     {
-        $this->app->bind(Table::class, function () {
-            return $this->currentTable;
-        });
-
-        $this->app->bind('swoole.table', Table::class);
+        $this->app->instance(Table::class, $this->currentTable);
     }
 }

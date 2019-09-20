@@ -9,19 +9,34 @@
 // | Author: yunwuxin <448901948@qq.com>
 // +----------------------------------------------------------------------
 
-namespace think\swoole\facade;
+namespace think\swoole\contract\websocket;
 
-use think\Facade;
+use Swoole\Websocket\Frame;
+use think\Request;
 
-/**
- * Class Table
- * @package think\swoole\facade
- * @mixin \think\swoole\Table
- */
-class Table extends Facade
+interface HandlerInterface
 {
-    protected static function getFacadeClass()
-    {
-        return 'swoole.table';
-    }
+    /**
+     * "onOpen" listener.
+     *
+     * @param int     $fd
+     * @param Request $request
+     */
+    public function onOpen($fd, Request $request);
+
+    /**
+     * "onMessage" listener.
+     *  only triggered when event handler not found
+     *
+     * @param Frame $frame
+     */
+    public function onMessage(Frame $frame);
+
+    /**
+     * "onClose" listener.
+     *
+     * @param int $fd
+     * @param int $reactorId
+     */
+    public function onClose($fd, $reactorId);
 }

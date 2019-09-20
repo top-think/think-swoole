@@ -12,12 +12,11 @@
 namespace think\swoole;
 
 use Swoole\Http\Server as HttpServer;
+use Swoole\Server;
 use Swoole\Websocket\Server as WebsocketServer;
-use think\App;
-use think\event\RouteLoaded;
 use think\Route;
 use think\swoole\command\Server as ServerCommand;
-use think\swoole\facade\Server;
+use think\swoole\websocket\Room;
 use think\swoole\websocket\socketio\Controller;
 use think\swoole\websocket\socketio\Middleware;
 
@@ -32,7 +31,7 @@ class Service extends \think\Service
 
     public function register()
     {
-        $this->isWebsocket = $this->app->config->get('swoole.websocket.enabled', false);
+        $this->isWebsocket = $this->app->config->get('swoole.websocket.enable', false);
 
         $this->app->bind(Server::class, function () {
             if (is_null(static::$server)) {
@@ -42,24 +41,27 @@ class Service extends \think\Service
             return static::$server;
         });
 
-        $this->app->bind('swoole.server', Server::class);
+        $this->app->bind("swoole.server", Server::class);
 
-        $this->app->bind(Swoole::class, function (App $app) {
-            return new Swoole($app);
+        $this->app->bind(PidManager::class, function () {
+            return new PidManager($this->app->config->get("swoole.server.options.pid_file"));
         });
-
-        $this->app->bind('swoole', Swoole::class);
     }
 
     public function boot()
     {
         $this->commands(ServerCommand::class);
         if ($this->isWebsocket) {
-            $this->app->event->listen(RouteLoaded::class, function (Route $route) {
+            $this->registerRoutes(function (Route $route) {
                 $route->group(function () use ($route) {
                     $route->get('socket.io/', '@upgrade');
                     $route->post('socket.io/', '@reject');
-                })->prefix(Controller::class)->middleware(Middleware::class);
+                })
+                    ->prefix(Controller::class)
+                    ->allowCrossDomain([
+                        'Access-Control-Allow-Credentials' => 'true',
+                        'X-XSS-Protection'                 => 0,
+                    ]);
             });
         }
     }

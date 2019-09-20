@@ -4,13 +4,14 @@ namespace think\swoole\resetters;
 
 use think\Container;
 use think\swoole\Sandbox;
+use think\swoole\contract\ResetterInterface;
 
 /**
  * Class ResetEvent
  * @package think\swoole\resetters
  * @property Container $app;
  */
-class ResetEvent implements ResetterContract
+class ResetEvent implements ResetterInterface
 {
 
     public function handle(Container $app, Sandbox $sandbox)

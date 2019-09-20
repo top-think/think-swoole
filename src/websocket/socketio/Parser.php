@@ -2,16 +2,10 @@
 
 namespace think\swoole\websocket\socketio;
 
-use think\swoole\websocket\socketio\strategy\Heartbeat;
+use think\swoole\contract\websocket\ParserInterface;
 
-class Parser extends \think\swoole\websocket\Parser
+class Parser implements ParserInterface
 {
-    /**
-     * Strategy classes need to implement handle method.
-     */
-    protected $strategies = [
-        Heartbeat::class,
-    ];
 
     /**
      * Encode output payload for websocket push.

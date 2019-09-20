@@ -4,8 +4,9 @@ namespace think\swoole\resetters;
 
 use think\Container;
 use think\swoole\Sandbox;
+use think\swoole\contract\ResetterInterface;
 
-class ResetConfig implements ResetterContract
+class ResetConfig implements ResetterInterface
 {
 
     public function handle(Container $app, Sandbox $sandbox)

@@ -3,13 +3,10 @@
 namespace think\swoole\websocket;
 
 use Swoole\Websocket\Frame;
+use think\swoole\contract\websocket\ParserInterface;
 
-class SimpleParser extends Parser
+class SimpleParser implements ParserInterface
 {
-    /**
-     * Strategy classes need to implement handle method.
-     */
-    protected $strategies = [];
 
     /**
      * Encode output payload for websocket push.

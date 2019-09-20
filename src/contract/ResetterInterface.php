@@ -1,11 +1,11 @@
 <?php
 
-namespace think\swoole\resetters;
+namespace think\swoole\contract;
 
 use think\Container;
 use think\swoole\Sandbox;
 
-interface ResetterContract
+interface ResetterInterface
 {
     /**
      * "handle" function for resetting app.

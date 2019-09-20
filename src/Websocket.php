@@ -2,10 +2,9 @@
 
 namespace think\swoole;
 
-use InvalidArgumentException;
-use think\App;
-use think\swoole\facade\Server;
-use think\swoole\websocket\room\RoomContract;
+use Swoole\Server;
+use think\swoole\coroutine\Context;
+use think\swoole\websocket\Room;
 
 /**
  * Class Websocket
@@ -17,57 +16,25 @@ class Websocket
     const EVENT_CONNECT = 'connect';
 
     /**
-     * Determine if to broadcast.
-     *
-     * @var boolean
+     * @var Server
      */
-    protected $isBroadcast = false;
+    protected $server;
 
     /**
-     * Scoket sender's fd.
-     *
-     * @var integer
-     */
-    protected $sender;
-
-    /**
-     * Recepient's fd or room name.
-     *
-     * @var array
-     */
-    protected $to = [];
-
-    /**
-     * Websocket event callbacks.
-     *
-     * @var array
-     */
-    protected $callbacks = [];
-
-    /**
-     * Pipeline instance.
-     *
-     * @var App
-     */
-    protected $app;
-
-    /**
-     * Room adapter.
-     *
-     * @var RoomContract
+     * @var Room
      */
     protected $room;
 
     /**
      * Websocket constructor.
      *
-     * @param App          $app
-     * @param RoomContract $room
+     * @param Server $server
+     * @param Room   $room
      */
-    public function __construct(App $app, RoomContract $room)
+    public function __construct(Server $server, Room $room)
     {
-        $this->app  = $app;
-        $this->room = $room;
+        $this->server = $server;
+        $this->room   = $room;
     }
 
     /**
@@ -75,9 +42,17 @@ class Websocket
      */
     public function broadcast(): self
     {
-        $this->isBroadcast = true;
+        Context::setData('websocket._broadcast', true);
 
         return $this;
+    }
+
+    /**
+     * Get broadcast status value.
+     */
+    public function isBroadcast()
+    {
+        return Context::getData('websocket._broadcast', false);
     }
 
     /**
@@ -91,13 +66,25 @@ class Websocket
     {
         $values = is_string($values) || is_integer($values) ? func_get_args() : $values;
 
+        $to = Context::getData("swoole._to", []);
+
         foreach ($values as $value) {
-            if (!in_array($value, $this->to)) {
-                $this->to[] = $value;
+            if (!in_array($value, $to)) {
+                $to[] = $value;
             }
         }
 
+        Context::setData("swoole._to", $to);
+
         return $this;
+    }
+
+    /**
+     * Get push destinations (fd or room name).
+     */
+    public function getTo()
+    {
+        return Context::getData("swoole._to", []);
     }
 
     /**
@@ -111,7 +98,7 @@ class Websocket
     {
         $rooms = is_string($rooms) || is_integer($rooms) ? func_get_args() : $rooms;
 
-        $this->room->add($this->sender, $rooms);
+        $this->room->add($this->getSender(), $rooms);
 
         return $this;
     }
@@ -127,7 +114,7 @@ class Websocket
     {
         $rooms = is_string($rooms) || is_integer($rooms) ? func_get_args() : $rooms;
 
-        $this->room->delete($this->sender, $rooms);
+        $this->room->delete($this->getSender(), $rooms);
 
         return $this;
     }
@@ -143,7 +130,7 @@ class Websocket
     public function emit(string $event, $data = null): bool
     {
         $fds      = $this->getFds();
-        $assigned = !empty($this->to);
+        $assigned = !empty($this->getTo());
 
         // if no fds are found, but rooms are assigned
         // that means trying to emit to a non-existing room
@@ -152,101 +139,19 @@ class Websocket
             return false;
         }
 
-        $result = $this->app->make(Server::class)->task([
+        $result = $this->server->task([
             'action' => static::PUSH_ACTION,
             'data'   => [
-                'sender'    => $this->sender,
+                'sender'    => $this->getSender(),
                 'fds'       => $fds,
-                'broadcast' => $this->isBroadcast,
+                'broadcast' => $this->isBroadcast(),
                 'assigned'  => $assigned,
                 'event'     => $event,
                 'message'   => $data,
             ],
         ]);
 
-        $this->reset();
-
         return $result !== false;
-    }
-
-    /**
-     * An alias of `join` function.
-     *
-     * @param string
-     *
-     * @return $this
-     */
-    public function in($room)
-    {
-        $this->join($room);
-
-        return $this;
-    }
-
-    /**
-     * Register an event name with a closure binding.
-     *
-     * @param string
-     * @param callback
-     *
-     * @return $this
-     */
-    public function on(string $event, $callback)
-    {
-        if (!is_string($callback) && !is_callable($callback)) {
-            throw new InvalidArgumentException(
-                'Invalid websocket callback. Must be a string or callable.'
-            );
-        }
-
-        $this->callbacks[$event] = $callback;
-
-        return $this;
-    }
-
-    /**
-     * Check if this event name exists.
-     *
-     * @param string
-     *
-     * @return boolean
-     */
-    public function eventExists(string $event)
-    {
-        return array_key_exists($event, $this->callbacks);
-    }
-
-    /**
-     * Execute callback function by its event name.
-     *
-     * @param string
-     * @param mixed
-     *
-     * @return mixed
-     */
-    public function call(string $event, $data = null)
-    {
-        if (!$this->eventExists($event)) {
-            return;
-        }
-
-        // inject request param on connect event
-        $isConnect = $event === static::EVENT_CONNECT;
-        $dataKey   = $isConnect ? 'request' : 'data';
-
-        $params = [
-            'websocket' => $this,
-            $dataKey    => $data,
-        ];
-
-        $callback = $this->callbacks[$event];
-
-        if (is_string($callback) && strpos($callback, '@') !== false) {
-            $segments = explode('@', $callback);
-            return $this->app->invoke([$this->app->make($segments[0]), $segments[1]], $params);
-        }
-
-        return $this->app->invoke($callback, $params);
     }
 
     /**
@@ -258,7 +163,7 @@ class Websocket
      */
     public function close(int $fd = null)
     {
-        return $this->app->make(Server::class)->close($fd ?: $this->sender);
+        return $this->server->close($fd ?: $this->getSender());
     }
 
     /**
@@ -270,7 +175,7 @@ class Websocket
      */
     public function setSender(int $fd)
     {
-        $this->sender = $fd;
+        Context::setData('websocket._sender', $fd);
 
         return $this;
     }
@@ -280,23 +185,7 @@ class Websocket
      */
     public function getSender()
     {
-        return $this->sender;
-    }
-
-    /**
-     * Get broadcast status value.
-     */
-    public function getIsBroadcast()
-    {
-        return $this->isBroadcast;
-    }
-
-    /**
-     * Get push destinations (fd or room name).
-     */
-    public function getTo()
-    {
-        return $this->to;
+        return Context::getData('websocket._sender');
     }
 
     /**
@@ -304,10 +193,11 @@ class Websocket
      */
     protected function getFds()
     {
-        $fds   = array_filter($this->to, function ($value) {
+        $to    = $this->getTo();
+        $fds   = array_filter($to, function ($value) {
             return is_integer($value);
         });
-        $rooms = array_diff($this->to, $fds);
+        $rooms = array_diff($to, $fds);
 
         foreach ($rooms as $room) {
             $clients = $this->room->getClients($room);
@@ -320,25 +210,6 @@ class Websocket
         }
 
         return array_values(array_unique($fds));
-    }
-
-    /**
-     * Reset some data status.
-     *
-     * @param bool $force
-     *
-     * @return $this
-     */
-    public function reset($force = false)
-    {
-        $this->isBroadcast = false;
-        $this->to          = [];
-
-        if ($force) {
-            $this->sender = null;
-        }
-
-        return $this;
     }
 
 }

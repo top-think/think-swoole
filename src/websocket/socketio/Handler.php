@@ -2,15 +2,16 @@
 
 namespace think\swoole\websocket\socketio;
 
+use Swoole\Server;
 use Swoole\Websocket\Frame;
 use Swoole\WebSocket\Server as WebsocketServer;
 use think\App;
 use think\Config;
 use think\Request;
-use think\swoole\facade\Server;
-use think\swoole\websocket\HandlerContract;
+use think\swoole\contract\websocket\HandlerInterface;
+use think\swoole\Sandbox;
 
-class Handler implements HandlerContract
+class Handler implements HandlerInterface
 {
     /** @var WebsocketServer */
     protected $server;
@@ -18,10 +19,14 @@ class Handler implements HandlerContract
     /** @var Config */
     protected $config;
 
+    /** @var Sandbox */
+    protected $sandbox;
+
     public function __construct(App $app)
     {
-        $this->server = $app->make(Server::class);
-        $this->config = $app->config;
+        $this->server  = $app->make(Server::class);
+        $this->config  = $app->config;
+        $this->sandbox = $app->make(Sandbox::class);
     }
 
     /**
@@ -29,8 +34,6 @@ class Handler implements HandlerContract
      *
      * @param int     $fd
      * @param Request $request
-     *
-     * @return bool
      */
     public function onOpen($fd, Request $request)
     {
@@ -48,11 +51,7 @@ class Handler implements HandlerContract
 
             $this->server->push($fd, $initPayload);
             $this->server->push($fd, $connectPayload);
-
-            return true;
         }
-
-        return false;
     }
 
     /**
@@ -60,10 +59,18 @@ class Handler implements HandlerContract
      *  only triggered when event handler not found
      *
      * @param Frame $frame
+     * @return bool
      */
     public function onMessage(Frame $frame)
     {
-        return;
+        $packet = $frame->data;
+        if (Packet::getPayload($packet)) {
+            return false;
+        }
+
+        if ($this->checkHeartbeat($frame->fd, $packet)) {
+            return true;
+        }
     }
 
     /**
@@ -75,5 +82,26 @@ class Handler implements HandlerContract
     public function onClose($fd, $reactorId)
     {
         return;
+    }
+
+    protected function checkHeartbeat($fd, $packet)
+    {
+        $packetLength = strlen($packet);
+        $payload      = '';
+
+        if ($isPing = Packet::isSocketType($packet, 'ping')) {
+            $payload .= Packet::PONG;
+        }
+
+        if ($isPing && $packetLength > 1) {
+            $payload .= substr($packet, 1, $packetLength - 1);
+        }
+
+        if ($isPing) {
+            $this->server->push($fd, $payload);
+            return true;
+        }
+
+        return false;
     }
 }
