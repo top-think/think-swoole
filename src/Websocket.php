@@ -66,7 +66,7 @@ class Websocket
     {
         $values = is_string($values) || is_integer($values) ? func_get_args() : $values;
 
-        $to = Context::getData("swoole._to", []);
+        $to = Context::getData("websocket._to", []);
 
         foreach ($values as $value) {
             if (!in_array($value, $to)) {
@@ -74,7 +74,7 @@ class Websocket
             }
         }
 
-        Context::setData("swoole._to", $to);
+        Context::setData("websocket._to", $to);
 
         return $this;
     }
@@ -84,7 +84,7 @@ class Websocket
      */
     public function getTo()
     {
-        return Context::getData("swoole._to", []);
+        return Context::getData("websocket._to", []);
     }
 
     /**
@@ -132,26 +132,31 @@ class Websocket
         $fds      = $this->getFds();
         $assigned = !empty($this->getTo());
 
-        // if no fds are found, but rooms are assigned
-        // that means trying to emit to a non-existing room
-        // skip it directly instead of pushing to a task queue
-        if (empty($fds) && $assigned) {
-            return false;
+        try {
+
+            // if no fds are found, but rooms are assigned
+            // that means trying to emit to a non-existing room
+            // skip it directly instead of pushing to a task queue
+            if (empty($fds) && $assigned) {
+                return false;
+            }
+
+            $result = $this->server->task([
+                'action' => static::PUSH_ACTION,
+                'data'   => [
+                    'sender'    => $this->getSender(),
+                    'fds'       => $fds,
+                    'broadcast' => $this->isBroadcast(),
+                    'assigned'  => $assigned,
+                    'event'     => $event,
+                    'message'   => $data,
+                ],
+            ]);
+
+            return $result !== false;
+        } finally {
+            $this->reset();
         }
-
-        $result = $this->server->task([
-            'action' => static::PUSH_ACTION,
-            'data'   => [
-                'sender'    => $this->getSender(),
-                'fds'       => $fds,
-                'broadcast' => $this->isBroadcast(),
-                'assigned'  => $assigned,
-                'event'     => $event,
-                'message'   => $data,
-            ],
-        ]);
-
-        return $result !== false;
     }
 
     /**
@@ -212,4 +217,9 @@ class Websocket
         return array_values(array_unique($fds));
     }
 
+    protected function reset()
+    {
+        Context::removeData("websocket._to");
+        Context::removeData('websocket._broadcast');
+    }
 }

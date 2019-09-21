@@ -22,11 +22,11 @@ class Handler implements HandlerInterface
     /** @var Sandbox */
     protected $sandbox;
 
-    public function __construct(App $app)
+    public function __construct(Server $server, Config $config, Sandbox $sandbox)
     {
-        $this->server  = $app->make(Server::class);
-        $this->config  = $app->config;
-        $this->sandbox = $app->make(Sandbox::class);
+        $this->server  = $server;
+        $this->config  = $config;
+        $this->sandbox = $sandbox;
     }
 
     /**
@@ -68,9 +68,9 @@ class Handler implements HandlerInterface
             return false;
         }
 
-        if ($this->checkHeartbeat($frame->fd, $packet)) {
-            return true;
-        }
+        $this->checkHeartbeat($frame->fd, $packet);
+
+        return true;
     }
 
     /**
@@ -99,9 +99,6 @@ class Handler implements HandlerInterface
 
         if ($isPing) {
             $this->server->push($fd, $payload);
-            return true;
         }
-
-        return false;
     }
 }
