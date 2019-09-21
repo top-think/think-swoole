@@ -16,9 +16,7 @@ use Swoole\Server;
 use Swoole\Websocket\Server as WebsocketServer;
 use think\Route;
 use think\swoole\command\Server as ServerCommand;
-use think\swoole\websocket\Room;
 use think\swoole\websocket\socketio\Controller;
-use think\swoole\websocket\socketio\Middleware;
 
 class Service extends \think\Service
 {
