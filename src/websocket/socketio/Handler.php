@@ -5,7 +5,6 @@ namespace think\swoole\websocket\socketio;
 use Swoole\Server;
 use Swoole\Websocket\Frame;
 use Swoole\WebSocket\Server as WebsocketServer;
-use think\App;
 use think\Config;
 use think\Request;
 use think\swoole\contract\websocket\HandlerInterface;
