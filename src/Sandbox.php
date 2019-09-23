@@ -10,9 +10,7 @@ use think\Event;
 use think\Http;
 use think\Request;
 use think\Response;
-use think\service\ModelService;
 use think\service\PaginatorService;
-use think\service\ValidateService;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
 use think\swoole\resetters\ClearInstances;
@@ -170,7 +168,10 @@ class Sandbox
         if ($snapshot) {
             unset($this->snapshots[$this->getSnapshotId()]);
         }
+
         Context::clear();
+        $this->setInstance($this->getBaseApp());
+        gc_collect_cycles();
     }
 
     public function setInstance(Container $app)
@@ -215,9 +216,7 @@ class Sandbox
         $app = $this->getBaseApp();
 
         $services = [
-        //    ModelService::class,
             PaginatorService::class,
-        //    ValidateService::class,
         ];
 
         $services = array_merge($services, $this->config->get('swoole.services', []));

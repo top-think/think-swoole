@@ -16,9 +16,8 @@ use Swoole\Server;
 use Swoole\Websocket\Server as WebsocketServer;
 use think\Route;
 use think\swoole\command\Server as ServerCommand;
-use think\swoole\websocket\Room;
+use think\swoole\pool\Db;
 use think\swoole\websocket\socketio\Controller;
-use think\swoole\websocket\socketio\Middleware;
 
 class Service extends \think\Service
 {
@@ -46,6 +45,10 @@ class Service extends \think\Service
         $this->app->bind(PidManager::class, function () {
             return new PidManager($this->app->config->get("swoole.server.options.pid_file"));
         });
+
+        if ($this->app->config->get('swoole.connection_pool.enable', true)) {
+            $this->app->bind('db', Db::class);
+        }
     }
 
     public function boot()
