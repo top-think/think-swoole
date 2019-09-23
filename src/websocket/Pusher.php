@@ -45,7 +45,7 @@ class Pusher
     protected $event;
 
     /**
-     * @var string|null
+     * @var mixed
      */
     protected $message;
 
@@ -68,7 +68,7 @@ class Pusher
         bool $broadcast,
         bool $assigned,
         string $event,
-        ?string $message,
+        $message,
         $server
     )
     {
@@ -191,7 +191,7 @@ class Pusher
     /**
      * @return string|null
      */
-    public function getMessage(): ?string
+    public function getMessage()
     {
         return $this->message;
     }

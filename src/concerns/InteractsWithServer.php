@@ -47,22 +47,13 @@ trait InteractsWithServer
      */
     public function onWorkerStart($server)
     {
-        if ($this->getConfig('enable_coroutine', false)) {
-            Runtime::enableCoroutine(true);
-        }
+        Runtime::enableCoroutine($this->getConfig('coroutine.enable', true), $this->getConfig('coroutine.flags', SWOOLE_HOOK_ALL));
 
         $this->clearCache();
 
         $this->triggerEvent("workerStart", func_get_args());
 
-        // don't init app in task workers
-        if ($server->taskworker) {
-            $this->setProcessName('task process');
-
-            return;
-        }
-
-        $this->setProcessName('worker process');
+        $this->setProcessName($server->taskworker ? 'task process' : 'worker process');
 
         $this->prepareApplication();
     }
@@ -70,18 +61,16 @@ trait InteractsWithServer
     /**
      * Set onTask listener.
      *
-     * @param mixed       $server
-     * @param string|Task $taskId or $task
-     * @param string      $srcWorkerId
-     * @param mixed       $data
+     * @param mixed $server
+     * @param Task  $task
      */
-    public function onTask($server, $taskId, $srcWorkerId, $data)
+    public function onTask($server, Task $task)
     {
         $this->triggerEvent('task', func_get_args());
 
         try {
-            if ($this->isWebsocketPushPayload($data)) {
-                $this->pushMessage($server, $data['data']);
+            if ($this->isWebsocketPushPayload($task->data)) {
+                $this->pushMessage($server, $task->data['data']);
             }
             //todo other tasks
 

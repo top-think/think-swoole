@@ -10,11 +10,15 @@ use think\Event;
 use think\Http;
 use think\Request;
 use think\Response;
+use think\service\ModelService;
+use think\service\PaginatorService;
+use think\service\ValidateService;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
 use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetEvent;
+use think\swoole\resetters\ResetService;
 
 class Sandbox
 {
@@ -35,6 +39,7 @@ class Sandbox
     protected $event;
 
     protected $resetters = [];
+    protected $services  = [];
 
     public function __construct(Container $app)
     {
@@ -63,6 +68,7 @@ class Sandbox
         $this->app->bind(Http::class, \think\swoole\Http::class);
 
         $this->setInitialConfig();
+        $this->setInitialServices();
         $this->setInitialEvent();
         $this->setInitialResetters();
 
@@ -199,6 +205,31 @@ class Sandbox
         return $this->event;
     }
 
+    public function getServices()
+    {
+        return $this->services;
+    }
+
+    protected function setInitialServices()
+    {
+        $app = $this->getBaseApp();
+
+        $services = [
+        //    ModelService::class,
+            PaginatorService::class,
+        //    ValidateService::class,
+        ];
+
+        $services = array_merge($services, $this->config->get('swoole.services', []));
+
+        foreach ($services as $service) {
+            if (class_exists($service) && !in_array($service, $this->services)) {
+                $serviceObj               = new $service($app);
+                $this->services[$service] = $serviceObj;
+            }
+        }
+    }
+
     /**
      * Initialize resetters.
      */
@@ -210,6 +241,7 @@ class Sandbox
             ClearInstances::class,
             ResetConfig::class,
             ResetEvent::class,
+            ResetService::class,
         ];
 
         $resetters = array_merge($resetters, $this->config->get('swoole.resetters', []));

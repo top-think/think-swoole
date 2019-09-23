@@ -4,7 +4,7 @@ use think\swoole\websocket\socketio\Handler;
 use think\swoole\websocket\socketio\Parser;
 
 return [
-    'server'           => [
+    'server'     => [
         'host'      => env('SWOOLE_HOST', '127.0.0.1'), // 监听地址
         'port'      => env('SWOOLE_PORT', 80), // 监听端口
         'mode'      => SWOOLE_PROCESS, // 运行模式 默认为SWOOLE_PROCESS
@@ -17,6 +17,8 @@ return [
             'reactor_num'           => swoole_cpu_num(),
             'worker_num'            => swoole_cpu_num(),
             'task_worker_num'       => swoole_cpu_num(),
+            'task_enable_coroutine' => true,
+            'task_max_request'      => 3000,
             'enable_static_handler' => true,
             'document_root'         => root_path('public'),
             'package_max_length'    => 20 * 1024 * 1024,
@@ -26,7 +28,7 @@ return [
             'send_yield'            => true,
         ],
     ],
-    'websocket'        => [
+    'websocket'  => [
         'enable'        => false,
         'handler'       => Handler::class,
         'parser'        => Parser::class,
@@ -47,13 +49,16 @@ return [
         'listen'        => [],
         'subscribe'     => [],
     ],
-    'hot_update'       => [
+    'hot_update' => [
         'enable'  => env('APP_DEBUG', false),
         'name'    => ['*.php'],
         'include' => [app_path()],
         'exclude' => [],
     ],
-    'enable_coroutine' => true,
-    'resetters'        => [],
-    'tables'           => [],
+    'coroutine'  => [
+        'enable' => true,
+        'flags'  => SWOOLE_HOOK_ALL,
+    ],
+    'resetters'  => [],
+    'tables'     => [],
 ];

@@ -156,6 +156,7 @@ class Manager
     {
         if (!$this->app instanceof SwooleApp) {
             $this->app = new SwooleApp($this->container->getRootPath());
+            $this->app->bind(SwooleApp::class, App::class);
             $this->app->initialize();
         }
 

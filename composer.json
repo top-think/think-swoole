@@ -14,7 +14,8 @@
         "topthink/framework": "^6.0",
         "topthink/think-helper": "^3.0.4",
         "symfony/finder": "^4.3.2",
-        "swoole/ide-helper": "^4.3"
+        "swoole/ide-helper": "^4.3",
+        "open-smf/connection-pool": "dev-master"
     },
     "autoload": {
         "psr-4": {
