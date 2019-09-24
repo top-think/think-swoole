@@ -2,6 +2,7 @@
 
 namespace think\swoole\coroutine;
 
+use Closure;
 use Swoole\Coroutine;
 
 class Context
@@ -25,6 +26,27 @@ class Context
     public static function getData(string $key, $default = null)
     {
         return static::$data[static::getCoroutineId()][$key] ?? $default;
+    }
+
+    public static function hasData(string $key)
+    {
+        return isset(static::$data[static::getCoroutineId()]) && array_key_exists($key, static::$data[static::getCoroutineId()]);
+    }
+
+    public static function rememberData(string $key, $value)
+    {
+        if (self::hasData($key)) {
+            return self::getData($key);
+        }
+
+        if ($value instanceof Closure) {
+            // 获取缓存数据
+            $value = $value();
+        }
+
+        self::setData($key, $value);
+
+        return $value;
     }
 
     /**

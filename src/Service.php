@@ -45,10 +45,6 @@ class Service extends \think\Service
         $this->app->bind(PidManager::class, function () {
             return new PidManager($this->app->config->get("swoole.server.options.pid_file"));
         });
-
-        if ($this->app->config->get('swoole.connection_pool.enable', true)) {
-            $this->app->bind('db', Db::class);
-        }
     }
 
     public function boot()

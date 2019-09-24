@@ -62,16 +62,8 @@ trait InteractsWithHttp
         $header = $req->header ?: [];
         $server = $req->server ?: [];
 
-        if (isset($header['x-requested-with'])) {
-            $server['HTTP_X_REQUESTED_WITH'] = $header['x-requested-with'];
-        }
-
-        if (isset($header['referer'])) {
-            $server['http_referer'] = $header['referer'];
-        }
-
-        if (isset($header['host'])) {
-            $server['http_host'] = $header['host'];
+        foreach ($header as $key => $value) {
+            $server["http_" . str_replace('-', '_', $key)] = $value;
         }
 
         // 重新实例化请求对象 处理swoole请求数据

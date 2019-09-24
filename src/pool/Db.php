@@ -5,6 +5,7 @@ namespace think\swoole\pool;
 use Swoole\Coroutine\Channel;
 use think\Config;
 use think\db\ConnectionInterface;
+use think\swoole\coroutine\Context;
 use think\swoole\pool\db\Connection;
 
 /**
@@ -42,32 +43,35 @@ class Db extends \think\Db
             $name = $this->getConfig('default', 'mysql');
         }
 
-        $pool = $this->getPool($name);
+        return Context::rememberData("db.connection.{$name}", function () use ($force, $name) {
 
-        if (!isset($this->connectionCount[$name])) {
-            $this->connectionCount[$name] = 0;
-        }
+            $pool = $this->getPool($name);
 
-        if ($this->connectionCount[$name] < $this->getMaxActive()) {
-            //新建
-            if (!$force) {
-                $this->connectionCount[$name]++;
+            if (!isset($this->connectionCount[$name])) {
+                $this->connectionCount[$name] = 0;
             }
-            return new Connection($this->createConnection($name), $pool, !$force);
-        }
 
-        $connection = $pool->pop($this->getMaxWaitTime());
+            if ($this->connectionCount[$name] < $this->getMaxActive()) {
+                //新建
+                if (!$force) {
+                    $this->connectionCount[$name]++;
+                }
+                return new Connection($this->createConnection($name), $pool, !$force);
+            }
 
-        if ($connection === false) {
-            throw new \RuntimeException(sprintf(
-                'Borrow the connection timeout in %.2f(s), connections in pool: %d, all connections: %d',
-                $this->getMaxWaitTime(),
-                $pool->length(),
-                $this->connectionCount[$name] ?? 0
-            ));
-        }
+            $connection = $pool->pop($this->getMaxWaitTime());
 
-        return new Connection($connection, $pool);
+            if ($connection === false) {
+                throw new \RuntimeException(sprintf(
+                    'Borrow the connection timeout in %.2f(s), connections in pool: %d, all connections: %d',
+                    $this->getMaxWaitTime(),
+                    $pool->length(),
+                    $this->connectionCount[$name] ?? 0
+                ));
+            }
+
+            return new Connection($connection, $pool);
+        });
     }
 
     protected function getConnectionConfig(string $name): array

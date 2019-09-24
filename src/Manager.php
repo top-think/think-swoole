@@ -23,6 +23,7 @@ use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
 use think\swoole\concerns\InteractsWithWebsocket;
+use think\swoole\pool\Db;
 use Throwable;
 
 /**
@@ -157,6 +158,10 @@ class Manager
         if (!$this->app instanceof SwooleApp) {
             $this->app = new SwooleApp($this->container->getRootPath());
             $this->app->bind(SwooleApp::class, App::class);
+            //绑定连接池
+            if ($this->getConfig('connection_pool.enable', true)) {
+                $this->app->bind('db', Db::class);
+            }
             $this->app->initialize();
         }
 
