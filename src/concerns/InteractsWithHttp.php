@@ -108,10 +108,6 @@ trait InteractsWithHttp
 
         $content = $thinkResponse->getContent();
 
-        if (!empty($content)) {
-            $swooleResponse->write($content);
-        }
-
-        $swooleResponse->end();
+        $swooleResponse->end($content);
     }
 }
