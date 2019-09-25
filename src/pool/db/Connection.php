@@ -3,26 +3,19 @@
 namespace think\swoole\pool\db;
 
 use Psr\SimpleCache\CacheInterface;
-use Swoole\Coroutine\Channel;
 use think\db\BaseQuery;
 use think\db\ConnectionInterface;
 use think\DbManager;
+use think\swoole\concerns\InteractsWithPoolConnector;
 
+/**
+ * Class Connection
+ * @package think\swoole\pool\db
+ * @property ConnectionInterface $handler
+ */
 class Connection implements ConnectionInterface
 {
-
-    protected $handler;
-
-    protected $pool;
-
-    protected $return = true;
-
-    public function __construct(ConnectionInterface $connection, Channel $pool, $return = true)
-    {
-        $this->handler = $connection;
-        $this->pool    = $pool;
-        $this->return  = $return;
-    }
+    use InteractsWithPoolConnector;
 
     /**
      * 获取当前连接器类对应的Query类
@@ -238,26 +231,4 @@ class Connection implements ConnectionInterface
         return $this->handler->getLastSql();
     }
 
-    public function __call($method, $arguments)
-    {
-        return $this->handler->{$method}(...$arguments);
-    }
-
-    public function returnToPool(): bool
-    {
-        if (!$this->return) {
-            return true;
-        }
-
-        if ($this->pool->isFull()) {
-            return false;
-        }
-
-        return $this->pool->push($this->handler, 0.001);
-    }
-
-    public function __destruct()
-    {
-        $this->returnToPool();
-    }
 }

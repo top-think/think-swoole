@@ -2,9 +2,9 @@
 
 namespace think\swoole\pool;
 
-use Swoole\Coroutine\Channel;
 use think\Config;
 use think\db\ConnectionInterface;
+use think\swoole\concerns\InteractsWithPool;
 use think\swoole\coroutine\Context;
 use think\swoole\pool\db\Connection;
 
@@ -15,19 +15,16 @@ use think\swoole\pool\db\Connection;
  */
 class Db extends \think\Db
 {
-    /** @var Channel[] */
-    protected $pools = [];
-
-    protected $connectionCount = [];
+    use InteractsWithPool;
 
     protected function getMaxActive()
     {
-        return $this->config->get('swoole.connection_pool.max_active', 3);
+        return $this->config->get('swoole.pool.db.max_active', 3);
     }
 
     protected function getMaxWaitTime()
     {
-        return $this->config->get('swoole.connection_pool.max_wait_time', 3);
+        return $this->config->get('swoole.pool.db.max_wait_time', 3);
     }
 
     /**
@@ -83,16 +80,4 @@ class Db extends \think\Db
         return $config;
     }
 
-    /**
-     * 获取连接池
-     * @param $name
-     * @return Channel
-     */
-    protected function getPool($name)
-    {
-        if (empty($this->pools[$name])) {
-            $this->pools[$name] = new Channel($this->getMaxActive());
-        }
-        return $this->pools[$name];
-    }
 }

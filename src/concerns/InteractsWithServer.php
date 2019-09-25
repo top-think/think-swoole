@@ -56,6 +56,14 @@ trait InteractsWithServer
         $this->setProcessName($server->taskworker ? 'task process' : 'worker process');
 
         $this->prepareApplication();
+
+        $this->bindSwooleTable();
+
+        if ($this->isServerWebsocket) {
+            $this->bindRoom();
+            $this->prepareWebsocketListener();
+            $this->prepareWebsocketHandler();
+        }
     }
 
     /**

@@ -23,6 +23,7 @@ use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
 use think\swoole\concerns\InteractsWithWebsocket;
+use think\swoole\pool\Cache;
 use think\swoole\pool\Db;
 use Throwable;
 
@@ -159,23 +160,35 @@ class Manager
             $this->app = new SwooleApp($this->container->getRootPath());
             $this->app->bind(SwooleApp::class, App::class);
             //绑定连接池
-            if ($this->getConfig('connection_pool.enable', true)) {
+            if ($this->getConfig('pool.db.enable', true)) {
                 $this->app->bind('db', Db::class);
             }
+            if ($this->getConfig('pool.cache.enable', true)) {
+                $this->app->bind('cache', Cache::class);
+            }
             $this->app->initialize();
-        }
-
-        $this->bindSwooleTable();
-
-        if ($this->isServerWebsocket) {
-            $this->bindRoom();
-            $this->prepareWebsocketListener();
-            $this->prepareWebsocketHandler();
+            $this->prepareConcretes();
         }
     }
 
     /**
-     * 清楚apc、op缓存
+     * 预加载
+     */
+    protected function prepareConcretes()
+    {
+        $defaultConcretes = ['db', 'cache',];
+
+        $concretes = array_merge($defaultConcretes, $this->getConfig('concretes', []));
+
+        foreach ($concretes as $concrete) {
+            if ($this->app->exists($concrete)) {
+                $this->app->make($concrete);
+            }
+        }
+    }
+
+    /**
+     * 清除apc、op缓存
      */
     protected function clearCache()
     {
