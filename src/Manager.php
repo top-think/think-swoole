@@ -176,7 +176,7 @@ class Manager
      */
     protected function prepareConcretes()
     {
-        $defaultConcretes = ['db', 'cache',];
+        $defaultConcretes = ['db', 'cache', 'event'];
 
         $concretes = array_merge($defaultConcretes, $this->getConfig('concretes', []));
 

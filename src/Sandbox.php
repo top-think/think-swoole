@@ -3,6 +3,7 @@
 namespace think\swoole;
 
 use RuntimeException;
+use Symfony\Component\VarDumper\VarDumper;
 use think\App;
 use think\Config;
 use think\Container;
@@ -13,6 +14,7 @@ use think\Response;
 use think\service\PaginatorService;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
+use think\swoole\middleware\ResetVarDumper;
 use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetEvent;
@@ -36,6 +38,7 @@ class Sandbox
     /** @var Event */
     protected $event;
 
+    /** @var ResetterInterface[] */
     protected $resetters = [];
     protected $services  = [];
 
@@ -69,6 +72,8 @@ class Sandbox
         $this->setInitialServices();
         $this->setInitialEvent();
         $this->setInitialResetters();
+        //兼容var-dumper
+        $this->compatibleVarDumper();
 
         return $this;
     }
@@ -259,10 +264,17 @@ class Sandbox
      *
      * @param Container $app
      */
-    public function resetApp(Container $app)
+    protected function resetApp(Container $app)
     {
         foreach ($this->resetters as $resetter) {
             $resetter->handle($app, $this);
+        }
+    }
+
+    protected function compatibleVarDumper()
+    {
+        if (class_exists(VarDumper::class)) {
+            $this->app->middleware->add(ResetVarDumper::class);
         }
     }
 
