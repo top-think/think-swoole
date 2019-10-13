@@ -157,7 +157,7 @@ class Dispatcher
 
                 $result = $this->app->invoke([$this->app->make($service['class']), $method], $params);
             }
-        } catch (Throwable|Exception $e) {
+        } catch (Throwable | Exception $e) {
             $result = Error::make($e->getCode(), $e->getMessage());
         }
 

@@ -10,8 +10,6 @@ use think\Config;
 use think\Container;
 use think\Event;
 use think\Http;
-use think\Request;
-use think\Response;
 use think\service\PaginatorService;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
