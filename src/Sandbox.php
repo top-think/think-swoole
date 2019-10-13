@@ -2,6 +2,7 @@
 
 namespace think\swoole;
 
+use Closure;
 use RuntimeException;
 use Symfony\Component\VarDumper\VarDumper;
 use think\App;
@@ -19,6 +20,7 @@ use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetEvent;
 use think\swoole\resetters\ResetService;
+use Throwable;
 
 class Sandbox
 {
@@ -28,6 +30,9 @@ class Sandbox
      * @var array
      */
     protected $snapshots = [];
+
+    /** @var Manager */
+    protected $manager;
 
     /** @var App */
     protected $app;
@@ -42,8 +47,9 @@ class Sandbox
     protected $resetters = [];
     protected $services  = [];
 
-    public function __construct(Container $app)
+    public function __construct(Container $app, Manager $manager)
     {
+        $this->manager = $manager;
         $this->setBaseApp($app);
         $this->initialize();
     }
@@ -78,39 +84,17 @@ class Sandbox
         return $this;
     }
 
-    /**
-     * @param Request $request
-     * @return Response
-     */
-    public function run(Request $request): Response
+    public function run(Closure $callable, $fd = null, $persistent = false)
     {
-        $level = ob_get_level();
-        ob_start();
+        $this->init($fd);
 
-        $response = $this->handleRequest($request);
-
-        $content = $response->getContent();
-
-        if (ob_get_level() == 0) {
-            ob_start();
+        try {
+            $this->getApplication()->invoke($callable, [$this]);
+        } catch (Throwable $e) {
+            $this->manager->logServerError($e);
+        } finally {
+            $this->clear(!$persistent);
         }
-
-        $this->getHttp()->end($response);
-
-        if (ob_get_length() > 0) {
-            $response->content(ob_get_contents() . $content);
-        }
-
-        while (ob_get_level() > $level) {
-            ob_end_clean();
-        }
-
-        return $response;
-    }
-
-    protected function handleRequest(Request $request): Response
-    {
-        return $this->getHttp()->run($request);
     }
 
     public function init($fd = null)
@@ -122,12 +106,15 @@ class Sandbox
         $this->resetApp($app);
     }
 
-    /**
-     * @return Http
-     */
-    protected function getHttp()
+    public function clear($snapshot = true)
     {
-        return $this->getApplication()->make(Http::class);
+        if ($snapshot) {
+            unset($this->snapshots[$this->getSnapshotId()]);
+        }
+
+        Context::clear();
+        $this->setInstance($this->getBaseApp());
+        gc_collect_cycles();
     }
 
     public function getApplication()
@@ -166,17 +153,6 @@ class Sandbox
         $this->snapshots[$this->getSnapshotId()] = $snapshot;
 
         return $this;
-    }
-
-    public function clear($snapshot = true)
-    {
-        if ($snapshot) {
-            unset($this->snapshots[$this->getSnapshotId()]);
-        }
-
-        Context::clear();
-        $this->setInstance($this->getBaseApp());
-        gc_collect_cycles();
     }
 
     public function setInstance(Container $app)

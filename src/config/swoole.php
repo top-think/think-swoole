@@ -1,5 +1,6 @@
 <?php
 
+use think\swoole\rpc\JsonParser;
 use think\swoole\websocket\socketio\Handler;
 use think\swoole\websocket\socketio\Parser;
 
@@ -48,6 +49,17 @@ return [
         ],
         'listen'        => [],
         'subscribe'     => [],
+    ],
+    'rpc'        => [
+        'server' => [
+            'enable'   => false,
+            'port'     => 9000,
+            'parser'   => JsonParser::class,
+            'services' => [
+            ],
+        ],
+        'client' => [
+        ],
     ],
     'hot_update' => [
         'enable'  => env('APP_DEBUG', false),

@@ -20,7 +20,7 @@ trait InteractsWithPool
     protected function getPool($name)
     {
         if (empty($this->pools[$name])) {
-            $this->pools[$name] = new Channel($this->getMaxActive());
+            $this->pools[$name] = new Channel($this->getMaxActive($name));
         }
         return $this->pools[$name];
     }

@@ -5,8 +5,8 @@ namespace think\swoole\concerns;
 use Exception;
 use Swoole\Runtime;
 use Swoole\Server\Task;
+use think\Event;
 use think\swoole\PidManager;
-use Throwable;
 
 /**
  * Trait InteractsWithServer
@@ -51,19 +51,13 @@ trait InteractsWithServer
 
         $this->clearCache();
 
-        $this->triggerEvent("workerStart", func_get_args());
-
         $this->setProcessName($server->taskworker ? 'task process' : 'worker process');
 
         $this->prepareApplication();
 
         $this->bindSwooleTable();
 
-        if ($this->isServerWebsocket) {
-            $this->bindRoom();
-            $this->prepareWebsocketListener();
-            $this->prepareWebsocketHandler();
-        }
+        $this->triggerEvent("workerStart");
     }
 
     /**
@@ -74,17 +68,9 @@ trait InteractsWithServer
      */
     public function onTask($server, Task $task)
     {
-        $this->triggerEvent('task', func_get_args());
-
-        try {
-            if ($this->isWebsocketPushPayload($task->data)) {
-                $this->pushMessage($server, $task->data['data']);
-            }
-            //todo other tasks
-
-        } catch (Throwable $e) {
-            $this->logServerError($e);
-        }
+        $this->runInSandbox(function (Event $event) use ($task) {
+            $event->trigger('swoole.task', $task);
+        });
     }
 
     /**
@@ -104,7 +90,7 @@ trait InteractsWithServer
      */
     public function onShutdown()
     {
-        $this->triggerEvent('shutdown', func_get_args());
+        $this->triggerEvent('shutdown');
         $this->pidManager->remove();
     }
 

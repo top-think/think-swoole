@@ -15,7 +15,7 @@
         "topthink/think-helper": "^3.0.4",
         "symfony/finder": "^4.3.2",
         "swoole/ide-helper": "^4.3",
-        "topthink/think-orm": "2.0.x-dev"
+        "nette/php-generator": "^3.2"
     },
     "autoload": {
         "psr-4": {

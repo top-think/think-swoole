@@ -3,6 +3,7 @@
 namespace think\swoole;
 
 use Swoole\Server;
+use think\swoole\contract\websocket\ParserInterface;
 use think\swoole\coroutine\Context;
 use think\swoole\websocket\Room;
 
@@ -26,15 +27,22 @@ class Websocket
     protected $room;
 
     /**
+     * @var ParserInterface
+     */
+    protected $parser;
+
+    /**
      * Websocket constructor.
      *
-     * @param Server $server
-     * @param Room   $room
+     * @param Server          $server
+     * @param Room            $room
+     * @param ParserInterface $parser
      */
-    public function __construct(Server $server, Room $room)
+    public function __construct(Server $server, Room $room, ParserInterface $parser)
     {
         $this->server = $server;
         $this->room   = $room;
+        $this->parser = $parser;
     }
 
     /**
@@ -133,10 +141,6 @@ class Websocket
         $assigned = !empty($this->getTo());
 
         try {
-
-            // if no fds are found, but rooms are assigned
-            // that means trying to emit to a non-existing room
-            // skip it directly instead of pushing to a task queue
             if (empty($fds) && $assigned) {
                 return false;
             }
@@ -144,12 +148,11 @@ class Websocket
             $result = $this->server->task([
                 'action' => static::PUSH_ACTION,
                 'data'   => [
-                    'sender'    => $this->getSender(),
-                    'fds'       => $fds,
-                    'broadcast' => $this->isBroadcast(),
-                    'assigned'  => $assigned,
-                    'event'     => $event,
-                    'message'   => $data,
+                    'sender'      => $this->getSender(),
+                    'descriptors' => $fds,
+                    'broadcast'   => $this->isBroadcast(),
+                    'assigned'    => $assigned,
+                    'payload'     => $this->parser->encode($event, $data),
                 ],
             ]);
 

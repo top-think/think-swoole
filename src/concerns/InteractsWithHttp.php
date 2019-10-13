@@ -7,8 +7,10 @@ use Swoole\Http\Response;
 use Swoole\Server;
 use think\App;
 use think\Container;
+use think\Cookie;
+use think\Event;
 use think\exception\Handle;
-use think\swoole\Sandbox;
+use think\Http;
 use Throwable;
 
 /**
@@ -29,32 +31,48 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->app->event->trigger('swoole.request', func_get_args());
+        $args = func_get_args();
+        $this->runInSandbox(function (Http $http, Cookie $cookie, Event $event) use ($args, $req, $res) {
+            $event->trigger('swoole.request', $args);
 
-        /** @var Sandbox $sandbox */
-        $sandbox = $this->app->make(Sandbox::class);
-
-        $request = $this->prepareRequest($req);
-
-        try {
-            $sandbox->init();
-
-            $response = $sandbox->run($request);
-
-            $this->sendResponse($sandbox, $response, $res);
-        } catch (Throwable $e) {
+            $request = $this->prepareRequest($req);
             try {
-                $exceptionResponse = $this->app
+                $response = $this->handleRequest($http, $request);
+                $this->sendResponse($res, $response, $cookie);
+            } catch (Throwable $e) {
+                $response = $this->app
                     ->make(Handle::class)
                     ->render($request, $e);
 
-                $this->sendResponse($sandbox, $exceptionResponse, $res);
-            } catch (Throwable $e) {
-                $this->logServerError($e);
+                $this->sendResponse($res, $response, $cookie);
             }
-        } finally {
-            $sandbox->clear();
+        });
+    }
+
+    protected function handleRequest(Http $http, $request)
+    {
+        $level = ob_get_level();
+        ob_start();
+
+        $response = $http->run($request);
+
+        $content = $response->getContent();
+
+        if (ob_get_level() == 0) {
+            ob_start();
         }
+
+        $http->end($response);
+
+        if (ob_get_length() > 0) {
+            $response->content(ob_get_contents() . $content);
+        }
+
+        while (ob_get_level() > $level) {
+            ob_end_clean();
+        }
+
+        return $response;
     }
 
     protected function prepareRequest(Request $req)
@@ -82,24 +100,24 @@ trait InteractsWithHttp
             ->setPathinfo(ltrim($req->server['path_info'], '/'));
     }
 
-    protected function sendResponse(Sandbox $sandbox, \think\Response $thinkResponse, \Swoole\Http\Response $swooleResponse)
+    protected function sendResponse(Response $res, \think\Response $response, Cookie $cookie)
     {
         // 发送Header
-        foreach ($thinkResponse->getHeader() as $key => $val) {
-            $swooleResponse->header($key, $val);
+        foreach ($response->getHeader() as $key => $val) {
+            $res->header($key, $val);
         }
 
         // 发送状态码
-        $swooleResponse->status($thinkResponse->getCode());
+        $res->status($response->getCode());
 
-        foreach ($sandbox->getApplication()->cookie->getCookie() as $name => $val) {
+        foreach ($cookie->getCookie() as $name => $val) {
             list($value, $expire, $option) = $val;
 
-            $swooleResponse->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false);
+            $res->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false);
         }
 
-        $content = $thinkResponse->getContent();
+        $content = $response->getContent();
 
-        $swooleResponse->end($content);
+        $res->end($content);
     }
 }

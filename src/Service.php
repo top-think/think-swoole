@@ -15,6 +15,7 @@ use Swoole\Http\Server as HttpServer;
 use Swoole\Server;
 use Swoole\Websocket\Server as WebsocketServer;
 use think\Route;
+use think\swoole\command\RpcInterface;
 use think\swoole\command\Server as ServerCommand;
 use think\swoole\websocket\socketio\Controller;
 
@@ -48,7 +49,8 @@ class Service extends \think\Service
 
     public function boot()
     {
-        $this->commands(ServerCommand::class);
+        $this->commands(ServerCommand::class, RpcInterface::class);
+
         if ($this->isWebsocket) {
             $this->registerRoutes(function (Route $route) {
                 $route->group(function () use ($route) {

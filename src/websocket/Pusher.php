@@ -2,7 +2,7 @@
 
 namespace think\swoole\websocket;
 
-use Swoole\Websocket\Server;
+use Swoole\Server;
 
 /**
  * Class Pusher
@@ -13,11 +13,6 @@ class Pusher
      * @var Server
      */
     protected $server;
-
-    /**
-     * @var int
-     */
-    protected $opcode;
 
     /**
      * @var int
@@ -42,74 +37,33 @@ class Pusher
     /**
      * @var string
      */
-    protected $event;
-
-    /**
-     * @var mixed
-     */
-    protected $message;
+    protected $payload;
 
     /**
      * Push constructor.
      *
-     * @param int         $opcode
-     * @param int         $sender
-     * @param array       $descriptors
-     * @param bool        $broadcast
-     * @param bool        $assigned
-     * @param string      $event
-     * @param string|null $message
-     * @param Server
+     * @param Server $server
+     * @param int    $sender
+     * @param array  $descriptors
+     * @param bool   $broadcast
+     * @param bool   $assigned
+     * @param string $payload
      */
-    protected function __construct(
-        int $opcode,
-        int $sender,
-        array $descriptors,
-        bool $broadcast,
-        bool $assigned,
-        string $event,
-        $message,
-        $server
+    public function __construct(
+        Server $server,
+        string $payload,
+        int $sender = 0,
+        array $descriptors = [],
+        bool $broadcast = false,
+        bool $assigned = false
     )
     {
-        $this->opcode      = $opcode;
         $this->sender      = $sender;
         $this->descriptors = $descriptors;
         $this->broadcast   = $broadcast;
         $this->assigned    = $assigned;
-        $this->event       = $event;
-        $this->message     = $message;
+        $this->payload     = $payload;
         $this->server      = $server;
-    }
-
-    /**
-     * Static constructor
-     *
-     * @param array  $data
-     * @param Server $server
-     *
-     * @return Pusher
-     */
-    public static function make(array $data, $server)
-    {
-        return new static(
-            $data['opcode'] ?? 1,
-            $data['sender'] ?? 0,
-            $data['fds'] ?? [],
-            $data['broadcast'] ?? false,
-            $data['assigned'] ?? false,
-            $data['event'] ?? null,
-            $data['message'] ?? null,
-            $server
-        );
-    }
-
-    /**
-     * @return int
-     */
-    public function getOpcode(): int
-    {
-        return $this->opcode;
     }
 
     /**
@@ -183,25 +137,9 @@ class Pusher
     /**
      * @return string
      */
-    public function getEvent(): string
+    public function getPayload(): string
     {
-        return $this->event;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getMessage()
-    {
-        return $this->message;
-    }
-
-    /**
-     * @return Server
-     */
-    public function getServer()
-    {
-        return $this->server;
+        return $this->payload;
     }
 
     /**
@@ -213,18 +151,6 @@ class Pusher
     }
 
     /**
-     * Check if it's a websocket fd.
-     *
-     * @param int $fd
-     *
-     * @return bool
-     */
-    public function isServerWebsocket(int $fd): bool
-    {
-        return (bool) $this->server->getClientInfo($fd)['websocket_status'] ?? false;
-    }
-
-    /**
      * Returns all descriptors that are websocket
      *
      * @return array
@@ -232,7 +158,7 @@ class Pusher
     protected function getWebsocketConnections(): array
     {
         return array_filter(iterator_to_array($this->server->connections), function ($fd) {
-            return $this->isServerWebsocket($fd);
+            return (bool) $this->server->getClientInfo($fd)['websocket_status'] ?? false;
         });
     }
 
@@ -241,7 +167,7 @@ class Pusher
      *
      * @return bool
      */
-    public function shouldPushToDescriptor(int $fd): bool
+    protected function shouldPushToDescriptor(int $fd): bool
     {
         if (!$this->server->exist($fd)) {
             return false;
@@ -252,12 +178,9 @@ class Pusher
 
     /**
      * Push message to related descriptors
-     *
-     * @param mixed $payload
-     *
      * @return void
      */
-    public function push($payload): void
+    public function push(): void
     {
         // attach sender if not broadcast
         if (!$this->broadcast && $this->sender && !$this->hasDescriptor($this->sender)) {
@@ -272,7 +195,7 @@ class Pusher
         // push message to designated fds
         foreach ($this->descriptors as $descriptor) {
             if ($this->shouldPushToDescriptor($descriptor)) {
-                $this->server->push($descriptor, $payload, $this->opcode);
+                $this->server->push($descriptor, $this->payload);
             }
         }
     }

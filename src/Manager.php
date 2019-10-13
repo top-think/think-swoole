@@ -11,6 +11,7 @@
 
 namespace think\swoole;
 
+use Closure;
 use Exception;
 use Swoole\Process;
 use Swoole\Server;
@@ -20,6 +21,7 @@ use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\App as SwooleApp;
 use think\swoole\concerns\InteractsWithHttp;
+use think\swoole\concerns\InteractsWithRpc;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
 use think\swoole\concerns\InteractsWithWebsocket;
@@ -32,7 +34,7 @@ use Throwable;
  */
 class Manager
 {
-    use InteractsWithServer, InteractsWithSwooleTable, InteractsWithHttp, InteractsWithWebsocket;
+    use InteractsWithServer, InteractsWithSwooleTable, InteractsWithHttp, InteractsWithWebsocket, InteractsWithRpc;
 
     /**
      * @var App
@@ -108,6 +110,7 @@ class Manager
         $this->createTables();
         $this->prepareWebsocket();
         $this->setSwooleServerListeners();
+        $this->prepareRpc();
     }
 
     /**
@@ -126,9 +129,20 @@ class Manager
      * @param $event
      * @param $params
      */
-    protected function triggerEvent(string $event, $params): void
+    protected function triggerEvent(string $event, $params = null): void
     {
-        $this->container->event->trigger("swoole.{$event}", func_get_args());
+        $this->container->event->trigger("swoole.{$event}", $params);
+    }
+
+    /**
+     * 监听事件
+     * @param string $event
+     * @param        $listener
+     * @param bool   $first
+     */
+    protected function onEvent(string $event, $listener, bool $first = false): void
+    {
+        $this->container->event->listen("swoole.{$event}", $listener, $first);
     }
 
     /**
@@ -181,7 +195,7 @@ class Manager
         $concretes = array_merge($defaultConcretes, $this->getConfig('concretes', []));
 
         foreach ($concretes as $concrete) {
-            if ($this->app->exists($concrete)) {
+            if ($this->app->has($concrete)) {
                 $this->app->make($concrete);
             }
         }
@@ -235,6 +249,20 @@ class Manager
         }, false, 0);
 
         $this->getServer()->addProcess($process);
+    }
+
+    /**
+     * 在沙箱中执行
+     * @param Closure $callable
+     * @param null    $fd
+     * @param bool    $persistent
+     */
+    protected function runInSandbox(Closure $callable, $fd = null, $persistent = false)
+    {
+        /** @var Sandbox $sandbox */
+        $sandbox = $this->app->make(Sandbox::class);
+
+        $sandbox->run($callable, $fd, $persistent);
     }
 
     /**

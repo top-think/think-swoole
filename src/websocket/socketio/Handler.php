@@ -8,7 +8,6 @@ use Swoole\WebSocket\Server as WebsocketServer;
 use think\Config;
 use think\Request;
 use think\swoole\contract\websocket\HandlerInterface;
-use think\swoole\Sandbox;
 
 class Handler implements HandlerInterface
 {
@@ -18,14 +17,10 @@ class Handler implements HandlerInterface
     /** @var Config */
     protected $config;
 
-    /** @var Sandbox */
-    protected $sandbox;
-
-    public function __construct(Server $server, Config $config, Sandbox $sandbox)
+    public function __construct(Server $server, Config $config)
     {
-        $this->server  = $server;
-        $this->config  = $config;
-        $this->sandbox = $sandbox;
+        $this->server = $server;
+        $this->config = $config;
     }
 
     /**
