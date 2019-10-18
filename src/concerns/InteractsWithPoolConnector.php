@@ -22,6 +22,7 @@ trait InteractsWithPoolConnector
     public function returnToPool(): bool
     {
         if (!$this->return) {
+            $this->return = false;
             return true;
         }
 

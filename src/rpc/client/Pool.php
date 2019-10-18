@@ -2,6 +2,7 @@
 
 namespace think\swoole\rpc\client;
 
+use RuntimeException;
 use think\helper\Arr;
 use think\swoole\concerns\InteractsWithPool;
 use think\swoole\coroutine\Context;
@@ -34,26 +35,21 @@ class Pool
 
     protected function createClient($name)
     {
-        $client = new \Swoole\Coroutine\Client(SWOOLE_SOCK_TCP);
-
         $host    = $this->getClientConfig($name, 'host', '127.0.0.1');
         $port    = $this->getClientConfig($name, 'port', 9000);
         $timeout = $this->getClientConfig($name, 'timeout', 0.5);
 
-        if (!$client->connect($host, $port, $timeout)) {
-            throw new \Exception(
-                sprintf('Connect failed host=%s port=%d', $host, $port)
-            );
-        }
+        $client = new Client($host, $port, $timeout);
 
+        $this->connectionCount[$name]++;
         return $client;
     }
 
     /**
      * @param $name
-     * @return Client
+     * @return Connection
      */
-    public function client($name)
+    public function connect($name)
     {
         return Context::rememberData("rpc.client.{$name}", function () use ($name) {
 
@@ -65,14 +61,13 @@ class Pool
 
             if ($this->connectionCount[$name] < $this->getMaxActive($name)) {
                 //新建
-                $this->connectionCount[$name]++;
-                return new Client($this->createClient($name), $pool);
+                return new Connection($this->createClient($name), $pool);
             }
 
             $client = $pool->pop($this->getMaxWaitTime($name));
 
             if ($client === false) {
-                throw new \RuntimeException(sprintf(
+                throw new RuntimeException(sprintf(
                     'Borrow the connection timeout in %.2f(s), connections in pool: %d, all connections: %d',
                     $this->getMaxWaitTime($name),
                     $pool->length(),
@@ -80,7 +75,7 @@ class Pool
                 ));
             }
 
-            return new Client($client, $pool);
+            return new Connection($client, $pool);
         });
     }
 }

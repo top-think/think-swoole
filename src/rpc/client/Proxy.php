@@ -8,6 +8,7 @@ use Nette\PhpGenerator\PhpFile;
 use ReflectionClass;
 use RuntimeException;
 use think\swoole\contract\rpc\ParserInterface;
+use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Error;
 use think\swoole\rpc\Protocol;
 
@@ -30,36 +31,23 @@ class Proxy
         $protocol = Protocol::make($this->interface, $method, $params);
         $data     = $this->parser->encode($protocol);
 
-        $client = $this->pool->client($this->client);
+        $client = $this->pool->connect($this->client);
 
-        $client->send($data);
+        try {
+            $response = $client->sendAndRecv($data);
 
-        $response = $client->recv();
+            $client->returnToPool();
 
-        $client->returnToPool();
+            $result = $this->parser->decodeResponse($response);
 
-        $result = $this->parser->decodeResponse($response);
+            if ($result instanceof Error) {
+                throw new RpcResponseException($result);
+            }
 
-        if ($result instanceof Error) {
-            $code      = $result->getCode();
-            $message   = $result->getMessage();
-            $errorData = $result->getData();
-
-            throw new \Exception(
-                sprintf(
-                    'Rpc call error!code=%d message=%s data=%s',
-                    $code, $message, json_encode($errorData)
-                ),
-                $code
-            );
+            return $result;
+        } finally {
+            $client->returnToPool();
         }
-
-        return $result;
-    }
-
-    public function __destruct()
-    {
-        // TODO: Implement __destruct() method.
     }
 
     public static function getClassName($interface)
