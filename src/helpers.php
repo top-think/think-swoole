@@ -14,3 +14,7 @@ if (!defined('SWOOLE_SOCK_TCP')) {
 if (!defined('SWOOLE_PROCESS')) {
     define('SWOOLE_PROCESS', 3);
 }
+
+if (!defined('SWOOLE_HOOK_ALL')) {
+    define('SWOOLE_HOOK_ALL', 1879048191);
+}
