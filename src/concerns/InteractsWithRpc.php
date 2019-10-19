@@ -105,6 +105,7 @@ trait InteractsWithRpc
 
     public function onRpcReceive(Server $server, $fd, $reactorId, $data)
     {
+        $data = rtrim($data, ParserInterface::EOF);
         $this->runInSandbox(function (Dispatcher $dispatcher) use ($fd, $data, $server) {
             $dispatcher->dispatch($fd, $data);
         }, $fd, true);

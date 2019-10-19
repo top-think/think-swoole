@@ -8,7 +8,9 @@ use Nette\PhpGenerator\PhpFile;
 use think\console\Command;
 use think\helper\Arr;
 use think\swoole\contract\rpc\ParserInterface;
+use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\client\Client;
+use think\swoole\rpc\Error;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\server\Dispatcher;
 
@@ -40,6 +42,10 @@ class RpcInterface extends Command
                 $parser = new $parserClass;
 
                 $result = $parser->decodeResponse($response);
+
+                if ($result instanceof Error) {
+                    throw new RpcResponseException($result);
+                }
 
                 $namespace = $file->addNamespace("rpc\\contract\\${name}");
                 foreach ($result as $interface => $methods) {
