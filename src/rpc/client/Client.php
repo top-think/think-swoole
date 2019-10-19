@@ -78,7 +78,7 @@ class Client
         $this->handler = $client;
     }
 
-    protected function __destruct()
+    public function __destruct()
     {
         if ($this->handler) {
             $this->handler->close();
