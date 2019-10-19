@@ -6,6 +6,9 @@ use think\swoole\rpc\Protocol;
 
 interface ParserInterface
 {
+
+    const EOF = "\r\n\r\n";
+
     /**
      * @param Protocol $protocol
      *

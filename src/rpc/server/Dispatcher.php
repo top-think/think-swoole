@@ -163,7 +163,7 @@ class Dispatcher
 
         $data = $this->parser->encodeResponse($result);
 
-        $this->server->send($fd, $data);
+        $this->server->send($fd, $data . ParserInterface::EOF);
     }
 
 }

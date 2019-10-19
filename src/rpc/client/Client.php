@@ -2,12 +2,12 @@
 
 namespace think\swoole\rpc\client;
 
+use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\exception\RpcClientException;
 
 /**
  * Class Client
  * @package think\swoole\rpc\client
- * @mixin \Swoole\Coroutine\Client
  */
 class Client
 {
@@ -25,6 +25,7 @@ class Client
         $this->port    = $port;
         $this->timeout = $timeout;
         $this->options = $options;
+        $this->connect();
     }
 
     public function sendAndRecv(string $data, bool $reconnect = false)
@@ -34,7 +35,7 @@ class Client
         }
 
         try {
-            if (!$this->handler->send($data)) {
+            if (!$this->send($data)) {
                 throw new RpcClientException(swoole_strerror($this->handler->errCode), $this->handler->errCode);
             }
 
@@ -53,9 +54,20 @@ class Client
         }
     }
 
+    public function send($data)
+    {
+        return $this->handler->send($data . ParserInterface::EOF);
+    }
+
     protected function connect()
     {
         $client = new \Swoole\Coroutine\Client(SWOOLE_SOCK_TCP);
+
+        $client->set([
+            'open_eof_check' => true,
+            'open_eof_split' => true,
+            'package_eof'    => ParserInterface::EOF,
+        ]);
 
         if (!$client->connect($this->host, $this->port, $this->timeout)) {
             throw new RpcClientException(

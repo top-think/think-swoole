@@ -19,6 +19,7 @@ use think\swoole\rpc\server\Dispatcher;
  */
 trait InteractsWithRpc
 {
+
     protected $rpcEvents = [
         'connect',
         'receive',
@@ -35,7 +36,12 @@ trait InteractsWithRpc
 
             $rpcServer = $this->getServer()->addlistener($host, $port, SWOOLE_SOCK_TCP);
 
-            $rpcServer->set([]);
+            $rpcServer->set([
+                'open_eof_check' => true,
+                'open_eof_split' => true,
+                'package_eof'    => ParserInterface::EOF,
+            ]);
+
             $this->setRpcServerListeners($rpcServer);
         }
 

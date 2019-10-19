@@ -10,6 +10,7 @@ use RuntimeException;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Error;
+use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\Protocol;
 
 class Proxy
@@ -17,13 +18,18 @@ class Proxy
     protected $client;
     protected $interface;
 
+    /** @var Pool */
     protected $pool;
+
+    /** @var ParserInterface */
     protected $parser;
 
-    public function __construct(Pool $pool, ParserInterface $parser)
+    public function __construct(Pool $pool)
     {
-        $this->pool   = $pool;
-        $this->parser = $parser;
+        $this->pool = $pool;
+
+        $parserClass  = $this->pool->getClientConfig($this->client, 'parser', JsonParser::class);
+        $this->parser = new $parserClass;
     }
 
     protected function proxyCall($method, $params)
@@ -33,21 +39,17 @@ class Proxy
 
         $client = $this->pool->connect($this->client);
 
-        try {
-            $response = $client->sendAndRecv($data);
+        $response = $client->sendAndRecv($data);
 
-            $client->returnToPool();
+        $client->release();
 
-            $result = $this->parser->decodeResponse($response);
+        $result = $this->parser->decodeResponse($response);
 
-            if ($result instanceof Error) {
-                throw new RpcResponseException($result);
-            }
-
-            return $result;
-        } finally {
-            $client->returnToPool();
+        if ($result instanceof Error) {
+            throw new RpcResponseException($result);
         }
+
+        return $result;
     }
 
     public static function getClassName($interface)
