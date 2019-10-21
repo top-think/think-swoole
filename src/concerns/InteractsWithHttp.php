@@ -7,6 +7,7 @@ use Swoole\Http\Response;
 use Swoole\Server;
 use think\App;
 use think\Container;
+use think\Cookie;
 use think\Event;
 use think\exception\Handle;
 use think\Http;
@@ -31,20 +32,19 @@ trait InteractsWithHttp
     public function onRequest($req, $res)
     {
         $args = func_get_args();
-        $this->runInSandbox(function (Http $http, Event $event) use ($args, $req, $res) {
+        $this->runInSandbox(function (Http $http, Event $event, App $app) use ($args, $req, $res) {
             $event->trigger('swoole.request', $args);
 
             $request = $this->prepareRequest($req);
             try {
                 $response = $this->handleRequest($http, $request);
-                $this->sendResponse($res, $response, $request);
             } catch (Throwable $e) {
                 $response = $this->app
                     ->make(Handle::class)
                     ->render($request, $e);
-
-                $this->sendResponse($res, $response, $request);
             }
+
+            $this->sendResponse($res, $response, $app->cookie);
         });
     }
 
@@ -99,7 +99,7 @@ trait InteractsWithHttp
             ->setPathinfo(ltrim($req->server['path_info'], '/'));
     }
 
-    protected function sendResponse(Response $res, \think\Response $response, \think\Request $request)
+    protected function sendResponse(Response $res, \think\Response $response, Cookie $cookie)
     {
         // 发送Header
         foreach ($response->getHeader() as $key => $val) {
@@ -109,7 +109,7 @@ trait InteractsWithHttp
         // 发送状态码
         $res->status($response->getCode());
 
-        foreach ($request->cookie() as $name => $val) {
+        foreach ($cookie->getCookie() as $name => $val) {
             list($value, $expire, $option) = $val;
 
             $res->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false);
