@@ -252,6 +252,15 @@ class Manager
     }
 
     /**
+     * 获取沙箱
+     * @return Sandbox
+     */
+    protected function getSandbox()
+    {
+        return $this->app->make(Sandbox::class);
+    }
+
+    /**
      * 在沙箱中执行
      * @param Closure $callable
      * @param null    $fd
@@ -259,10 +268,7 @@ class Manager
      */
     protected function runInSandbox(Closure $callable, $fd = null, $persistent = false)
     {
-        /** @var Sandbox $sandbox */
-        $sandbox = $this->app->make(Sandbox::class);
-
-        $sandbox->run($callable, $fd, $persistent);
+        $this->getSandbox()->run($callable, $fd, $persistent);
     }
 
     /**

@@ -10,6 +10,7 @@ use think\App;
 use think\Container;
 use think\Event;
 use think\helper\Str;
+use think\Pipeline;
 use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\contract\websocket\ParserInterface;
 use think\swoole\contract\websocket\RoomInterface;
@@ -58,8 +59,9 @@ trait InteractsWithWebsocket
         $websocket = $this->app->make(Websocket::class);
         $websocket->setSender($req->fd);
 
-        $this->runInSandbox(function (Event $event, HandlerInterface $handler) use ($req) {
+        $this->runInSandbox(function (Event $event, HandlerInterface $handler, App $app) use ($req) {
             $request = $this->prepareRequest($req);
+            $request = $this->setRequestThroughMiddleware($app, $request);
 
             if (!$handler->onOpen($req->fd, $request)) {
                 $event->trigger("swoole.websocket.Connect", $request);
@@ -119,6 +121,33 @@ trait InteractsWithWebsocket
                 $websocket->leave();
             }
         }, $fd);
+    }
+
+    /**
+     * @param App            $app
+     * @param \think\Request $request
+     * @return \think\Request
+     */
+    protected function setRequestThroughMiddleware(App $app, \think\Request $request)
+    {
+        $middleware = $this->getConfig('websocket.middleware', []);
+
+        return (new Pipeline())
+            ->send($request)
+            ->through(array_map(function ($middleware) use ($app) {
+                return function ($request, $next) use ($app, $middleware) {
+                    if (is_array($middleware)) {
+                        list($middleware, $param) = $middleware;
+                    }
+                    if (is_string($middleware)) {
+                        $middleware = [$app->make($middleware), 'handle'];
+                    }
+                    return call_user_func($middleware, $request, $next, $param ?? null);
+                };
+            }, $middleware))
+            ->then(function ($request) {
+                return $request;
+            });
     }
 
     /**
