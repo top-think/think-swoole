@@ -62,11 +62,11 @@ class Proxy
 
         $name      = constant($interface . "::RPC");
         $proxyName = class_basename($interface) . "Service";
-        $className = "rpc\\service\\${name}\\{$proxyName}";
+        $className = "rpc\\service\\{$name}\\{$proxyName}";
 
         if (!class_exists($className, false)) {
             $file      = new PhpFile;
-            $namespace = $file->addNamespace("rpc\\service\\${name}");
+            $namespace = $file->addNamespace("rpc\\service\\{$name}");
             $namespace->addUse(Proxy::class);
             $namespace->addUse($interface);
 
