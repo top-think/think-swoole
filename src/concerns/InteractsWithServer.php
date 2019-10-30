@@ -57,7 +57,7 @@ trait InteractsWithServer
 
         $this->bindSwooleTable();
 
-        $this->triggerEvent("workerStart");
+        $this->triggerEvent("workerStart", $this->app);
     }
 
     /**
