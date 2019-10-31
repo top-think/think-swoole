@@ -114,11 +114,11 @@ class Manager
      */
     protected function initialize(): void
     {
-        $this->createTables();
+        $this->prepareTables();
+        $this->preparePools();
         $this->prepareWebsocket();
         $this->setSwooleServerListeners();
         $this->prepareRpc();
-        $this->preparePools();
     }
 
     /**

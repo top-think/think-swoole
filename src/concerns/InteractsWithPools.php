@@ -8,6 +8,7 @@ use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Server;
 use think\App;
 use think\helper\Arr;
+use think\swoole\Pool;
 
 /**
  * Trait InteractsWithRpc
@@ -17,43 +18,37 @@ use think\helper\Arr;
  */
 trait InteractsWithPools
 {
-    use ConnectionPoolTrait;
-
-    public function pullConnectionPoolConfig(&$config)
+    /**
+     * @return Pool
+     */
+    public function getPools()
     {
-        return [
-            'minActive'         => Arr::pull($config, 'min_active', 10),
-            'maxActive'         => Arr::pull($config, 'max_active', 30),
-            'maxWaitTime'       => Arr::pull($config, 'max_wait_time', 5),
-            'maxIdleTime'       => Arr::pull($config, 'max_idle_time', 20),
-            'idleCheckInterval' => Arr::pull($config, 'idle_check_interval', 10),
-        ];
+        return $this->app->make(Pool::class);
     }
 
     protected function preparePools()
     {
         $createPools = function () {
-            $pools = $this->getConfig('pool', []);
+            /** @var Pool $pool */
+            $pools = $this->getPools();
 
-            foreach ($pools as $name => $config) {
+            foreach ($this->getConfig('pool', []) as $name => $config) {
                 $type = Arr::get($config, 'type');
                 if ($type && is_subclass_of($type, ConnectorInterface::class)) {
                     $pool = new ConnectionPool(
-                        $this->pullConnectionPoolConfig($config),
+                        Pool::pullPoolConfig($config),
                         $this->app->make($type),
                         $config
                     );
-
-                    $pool->init();
-                    $this->addConnectionPool($name, $pool);
+                    $pools->add($name, $pool);
                     //注入到app
-                    $this->app->instance("pool.{$name}", $pool);
+                    $this->app->instance("swoole.pool.{$name}", $pool);
                 }
             }
         };
 
         $closePools = function () {
-            $this->closeConnectionPools();
+            $this->getPools()->closeAll();
         };
 
         $this->onEvent('workerStart', $createPools);

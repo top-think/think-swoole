@@ -9,6 +9,7 @@ use Smf\ConnectionPool\Connectors\PhpRedisConnector;
 use think\helper\Arr;
 use think\swoole\contract\websocket\RoomInterface;
 use think\swoole\Manager;
+use think\swoole\Pool;
 
 /**
  * Class RedisRoom
@@ -62,13 +63,11 @@ class Redis implements RoomInterface
         $this->manager->onEvent('workerStart', function () {
             $config     = $this->config;
             $this->pool = new ConnectionPool(
-                $this->manager->pullConnectionPoolConfig($config),
+                Pool::pullPoolConfig($config),
                 new PhpRedisConnector(),
                 $config
             );
-
-            $this->pool->init();
-            $this->manager->addConnectionPool("websocket.room", $this->pool);
+            $this->manager->getPools()->add("websocket.room", $this->pool);
         });
     }
 

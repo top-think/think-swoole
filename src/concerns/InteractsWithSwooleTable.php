@@ -24,19 +24,24 @@ use think\swoole\Table;
  */
 trait InteractsWithSwooleTable
 {
-
     /**
      * @var Table
      */
     protected $currentTable;
 
     /**
-     * Register customized swoole talbes.
+     * Register customized swoole tables.
      */
-    protected function createTables()
+    protected function prepareTables()
     {
         $this->currentTable = new Table();
         $this->registerTables();
+        $this->onEvent('workerStart', function () {
+            $this->app->instance(Table::class, $this->currentTable);
+            foreach ($this->currentTable->getAll() as $name => $table) {
+                $this->app->instance("swoole.table.{$name}", $table);
+            }
+        });
     }
 
     /**
@@ -60,13 +65,5 @@ trait InteractsWithSwooleTable
 
             $this->currentTable->add($key, $table);
         }
-    }
-
-    /**
-     * Bind swoole table to app container.
-     */
-    protected function bindSwooleTable()
-    {
-        $this->app->instance(Table::class, $this->currentTable);
     }
 }
