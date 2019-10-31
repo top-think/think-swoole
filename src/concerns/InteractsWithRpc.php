@@ -2,12 +2,13 @@
 
 namespace think\swoole\concerns;
 
+use Smf\ConnectionPool\ConnectionPool;
 use Swoole\Server;
 use think\App;
 use think\Event;
 use think\helper\Str;
 use think\swoole\contract\rpc\ParserInterface;
-use think\swoole\rpc\client\Pool;
+use think\swoole\pool\Client;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\server\Dispatcher;
 
@@ -72,7 +73,26 @@ trait InteractsWithRpc
     protected function bindRpcClientPool()
     {
         if (!empty($clients = $this->getConfig('rpc.client'))) {
-            $this->app->instance(Pool::class, new Pool($clients));
+            //创建client连接池
+            foreach ($clients as $name => $config) {
+                $pool = new ConnectionPool(
+                    $this->pullConnectionPoolConfig($config),
+                    new Client(),
+                    array_merge(
+                        $config,
+                        [
+                            'open_eof_check' => true,
+                            'open_eof_split' => true,
+                            'package_eof'    => ParserInterface::EOF,
+                        ]
+                    )
+                );
+
+                $pool->init();
+                $this->addConnectionPool("rpc.client.{$name}", $pool);
+                $this->app->instance("rpc.client.{$name}", $pool);
+            }
+
             //引入rpc接口文件
             if (file_exists($rpc = $this->app->getBasePath() . 'rpc.php')) {
                 include_once $rpc;

@@ -21,6 +21,7 @@ use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\App as SwooleApp;
 use think\swoole\concerns\InteractsWithHttp;
+use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithRpc;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
@@ -34,7 +35,12 @@ use Throwable;
  */
 class Manager
 {
-    use InteractsWithServer, InteractsWithSwooleTable, InteractsWithHttp, InteractsWithWebsocket, InteractsWithRpc;
+    use InteractsWithServer,
+        InteractsWithSwooleTable,
+        InteractsWithHttp,
+        InteractsWithWebsocket,
+        InteractsWithPools,
+        InteractsWithRpc;
 
     /**
      * @var App
@@ -60,6 +66,7 @@ class Manager
         'workerStart',
         'workerStop',
         'workerError',
+        'workerExit',
         'packet',
         'task',
         'finish',
@@ -111,6 +118,7 @@ class Manager
         $this->prepareWebsocket();
         $this->setSwooleServerListeners();
         $this->prepareRpc();
+        $this->preparePools();
     }
 
     /**
@@ -140,7 +148,7 @@ class Manager
      * @param        $listener
      * @param bool   $first
      */
-    protected function onEvent(string $event, $listener, bool $first = false): void
+    public function onEvent(string $event, $listener, bool $first = false): void
     {
         $this->container->event->listen("swoole.{$event}", $listener, $first);
     }

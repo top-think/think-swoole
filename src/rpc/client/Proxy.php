@@ -7,28 +7,30 @@ use Nette\PhpGenerator\Factory;
 use Nette\PhpGenerator\PhpFile;
 use ReflectionClass;
 use RuntimeException;
+use Smf\ConnectionPool\ConnectionPool;
+use think\App;
 use think\swoole\contract\rpc\ParserInterface;
+use think\swoole\exception\RpcClientException;
 use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Error;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\Protocol;
 
-class Proxy
+abstract class Proxy
 {
     protected $client;
     protected $interface;
 
-    /** @var Pool */
+    /** @var ConnectionPool */
     protected $pool;
 
     /** @var ParserInterface */
     protected $parser;
 
-    public function __construct(Pool $pool)
+    public function __construct(App $app)
     {
-        $this->pool = $pool;
-
-        $parserClass  = $this->pool->getClientConfig($this->client, 'parser', JsonParser::class);
+        $this->pool   = $app->get("rpc.client.{$this->client}");
+        $parserClass  = $app->config->get("swoole.rpc.client.{$this->client}.parser", JsonParser::class);
         $this->parser = new $parserClass;
     }
 
@@ -36,20 +38,29 @@ class Proxy
     {
         $protocol = Protocol::make($this->interface, $method, $params);
         $data     = $this->parser->encode($protocol);
+        /** @var \Swoole\Coroutine\Client $client */
+        $client = $this->pool->borrow();
 
-        $client = $this->pool->connect($this->client);
+        try {
+            if (!$client->send($data . ParserInterface::EOF)) {
+                throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
+            }
 
-        $response = $client->sendAndRecv($data);
+            $response = $client->recv();
 
-        $client->release();
+            if ($response === false || empty($response)) {
+                throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
+            }
 
-        $result = $this->parser->decodeResponse($response);
+            $result = $this->parser->decodeResponse($response);
 
-        if ($result instanceof Error) {
-            throw new RpcResponseException($result);
+            if ($result instanceof Error) {
+                throw new RpcResponseException($result);
+            }
+            return $result;
+        } finally {
+            $this->pool->return($client);
         }
-
-        return $result;
     }
 
     public static function getClassName($interface)

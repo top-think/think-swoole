@@ -17,7 +17,6 @@ return [
             'reactor_num'           => swoole_cpu_num(),
             'worker_num'            => swoole_cpu_num(),
             'task_worker_num'       => swoole_cpu_num(),
-            'task_enable_coroutine' => true,
             'task_max_request'      => 3000,
             'enable_static_handler' => true,
             'document_root'         => root_path('public'),
@@ -25,7 +24,6 @@ return [
             'buffer_output_size'    => 10 * 1024 * 1024,
             'socket_buffer_size'    => 128 * 1024 * 1024,
             'max_request'           => 3000,
-            'send_yield'            => true,
         ],
     ],
     'websocket'  => [
@@ -43,7 +41,10 @@ return [
                 'client_size' => 2048,
             ],
             'redis' => [
-
+                'host'          => '127.0.0.1',
+                'port'          => 6379,
+                'max_active'    => 3,
+                'max_wait_time' => 5,
             ],
         ],
         'listen'        => [],
@@ -77,6 +78,7 @@ return [
             'max_active'    => 3,
             'max_wait_time' => 5,
         ],
+        //自定义连接池
     ],
     'coroutine'  => [
         'enable' => true,

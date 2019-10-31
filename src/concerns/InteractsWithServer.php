@@ -74,18 +74,6 @@ trait InteractsWithServer
     }
 
     /**
-     * Set onFinish listener.
-     *
-     * @param mixed  $server
-     * @param string $taskId
-     * @param mixed  $data
-     */
-    public function onFinish($server, $taskId, $data)
-    {
-        $this->triggerEvent('finish', func_get_args());
-    }
-
-    /**
      * Set onShutdown listener.
      */
     public function onShutdown()

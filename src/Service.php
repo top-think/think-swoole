@@ -82,6 +82,13 @@ class Service extends \think\Service
 
         $options = $config->get('swoole.server.options');
 
+        $options = array_merge($options, [
+            'task_enable_coroutine' => true,
+            'send_yield'            => true,
+            'reload_async'          => true,
+            'enable_coroutine'      => true,
+        ]);
+
         static::$server->set($options);
     }
 }

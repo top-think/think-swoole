@@ -4,19 +4,17 @@ namespace think\swoole\websocket\room;
 
 use InvalidArgumentException;
 use Redis as PHPRedis;
+use Smf\ConnectionPool\ConnectionPool;
+use Smf\ConnectionPool\Connectors\PhpRedisConnector;
 use think\helper\Arr;
 use think\swoole\contract\websocket\RoomInterface;
+use think\swoole\Manager;
 
 /**
  * Class RedisRoom
  */
 class Redis implements RoomInterface
 {
-    /**
-     * @var PHPRedis
-     */
-    protected $redis;
-
     /**
      * @var array
      */
@@ -27,14 +25,22 @@ class Redis implements RoomInterface
      */
     protected $prefix = 'swoole:';
 
+    /** @var Manager */
+    protected $manager;
+
+    /** @var ConnectionPool */
+    protected $pool;
+
     /**
      * RedisRoom constructor.
      *
-     * @param array $config
+     * @param Manager $manager
+     * @param array   $config
      */
-    public function __construct(array $config)
+    public function __construct(Manager $manager, array $config)
     {
-        $this->config = $config;
+        $this->manager = $manager;
+        $this->config  = $config;
 
         if ($prefix = Arr::get($this->config, 'prefix')) {
             $this->prefix = $prefix;
@@ -46,28 +52,37 @@ class Redis implements RoomInterface
      */
     public function prepare(): RoomInterface
     {
-        $this->cleanRooms();
-
-        //关闭redis
-        $this->redis->close();
-        $this->redis = null;
+        $this->initData();
+        $this->prepareRedis();
         return $this;
     }
 
-    /**
-     * Set redis client.
-     *
-     */
-    protected function getRedis()
+    protected function prepareRedis()
     {
-        if (!$this->redis) {
-            $host = Arr::get($this->config, 'host', '127.0.0.1');
-            $port = Arr::get($this->config, 'port', 6379);
+        $this->manager->onEvent('workerStart', function () {
+            $config     = $this->config;
+            $this->pool = new ConnectionPool(
+                $this->manager->pullConnectionPoolConfig($config),
+                new PhpRedisConnector(),
+                $config
+            );
 
-            $this->redis = new PHPRedis();
-            $this->redis->pconnect($host, $port);
+            $this->pool->init();
+            $this->manager->addConnectionPool("websocket.room", $this->pool);
+        });
+    }
+
+    protected function initData()
+    {
+        $host = Arr::get($this->config, 'host', '127.0.0.1');
+        $port = Arr::get($this->config, 'port', 6379);
+
+        $redis = new PHPRedis();
+        $redis->connect($host, $port);
+        if (count($keys = $redis->keys("{$this->prefix}*"))) {
+            $redis->del($keys);
         }
-        return $this->redis;
+        $redis->close();
     }
 
     /**
@@ -105,6 +120,16 @@ class Redis implements RoomInterface
         }
     }
 
+    protected function runWithRedis(\Closure $callable)
+    {
+        $redis = $this->pool->borrow();
+        try {
+            return $callable($redis);
+        } finally {
+            $this->pool->return($redis);
+        }
+    }
+
     /**
      * Add value to redis.
      *
@@ -119,13 +144,15 @@ class Redis implements RoomInterface
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $pipe = $this->getRedis()->multi(PHPRedis::PIPELINE);
+        $this->runWithRedis(function (PHPRedis $redis) use ($redisKey, $values) {
+            $pipe = $redis->multi(PHPRedis::PIPELINE);
 
-        foreach ($values as $value) {
-            $pipe->sadd($redisKey, $value);
-        }
+            foreach ($values as $value) {
+                $pipe->sadd($redisKey, $value);
+            }
 
-        $pipe->exec();
+            $pipe->exec();
+        });
 
         return $this;
     }
@@ -144,13 +171,13 @@ class Redis implements RoomInterface
         $this->checkTable($table);
         $redisKey = $this->getKey($key, $table);
 
-        $pipe = $this->getRedis()->multi(PHPRedis::PIPELINE);
-
-        foreach ($values as $value) {
-            $pipe->srem($redisKey, $value);
-        }
-
-        $pipe->exec();
+        $this->runWithRedis(function (PHPRedis $redis) use ($redisKey, $values) {
+            $pipe = $redis->multi(PHPRedis::PIPELINE);
+            foreach ($values as $value) {
+                $pipe->srem($redisKey, $value);
+            }
+            $pipe->exec();
+        });
 
         return $this;
     }
@@ -203,7 +230,9 @@ class Redis implements RoomInterface
     {
         $this->checkTable($table);
 
-        return $this->getRedis()->smembers($this->getKey($key, $table));
+        return $this->runWithRedis(function (PHPRedis $redis) use ($table, $key) {
+            return $redis->smembers($this->getKey($key, $table));
+        });
     }
 
     /**
@@ -219,13 +248,4 @@ class Redis implements RoomInterface
         return "{$this->prefix}{$table}:{$key}";
     }
 
-    /**
-     * Clean all rooms.
-     */
-    protected function cleanRooms(): void
-    {
-        if (count($keys = $this->getRedis()->keys("{$this->prefix}*"))) {
-            $this->getRedis()->del($keys);
-        }
-    }
 }
