@@ -46,6 +46,8 @@ trait InteractsWithPools
 
                     $pool->init();
                     $this->addConnectionPool($name, $pool);
+                    //注入到app
+                    $this->app->instance("pool.{$name}", $pool);
                 }
             }
         };
