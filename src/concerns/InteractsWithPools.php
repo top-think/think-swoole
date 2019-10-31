@@ -37,7 +37,7 @@ trait InteractsWithPools
 
             foreach ($pools as $name => $config) {
                 $type = Arr::get($config, 'type');
-                if ($type && $type instanceof ConnectorInterface) {
+                if ($type && is_subclass_of($type, ConnectorInterface::class)) {
                     $pool = new ConnectionPool(
                         $this->pullConnectionPoolConfig($config),
                         $this->app->make($type),
