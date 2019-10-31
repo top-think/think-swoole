@@ -8,6 +8,7 @@ use think\App;
 use think\Event;
 use think\helper\Str;
 use think\swoole\contract\rpc\ParserInterface;
+use think\swoole\Pool;
 use think\swoole\pool\Client;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\server\Dispatcher;
@@ -76,7 +77,7 @@ trait InteractsWithRpc
             //创建client连接池
             foreach ($clients as $name => $config) {
                 $pool = new ConnectionPool(
-                    $this->pullConnectionPoolConfig($config),
+                    Pool::pullPoolConfig($config),
                     new Client(),
                     array_merge(
                         $config,
@@ -87,9 +88,7 @@ trait InteractsWithRpc
                         ]
                     )
                 );
-
-                $pool->init();
-                $this->addConnectionPool("rpc.client.{$name}", $pool);
+                $this->getPools()->add("rpc.client.{$name}", $pool);
                 $this->app->instance("rpc.client.{$name}", $pool);
             }
 
