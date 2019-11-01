@@ -10,7 +10,6 @@ use think\Config;
 use think\Container;
 use think\Event;
 use think\Http;
-use think\service\PaginatorService;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
 use think\swoole\middleware\ResetVarDumper;
