@@ -2,6 +2,7 @@
 
 namespace think\swoole\resetters;
 
+use ReflectionObject;
 use think\Container;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\Sandbox;
@@ -30,6 +31,15 @@ class ResetService implements ResetterInterface
             if (method_exists($service, 'boot')) {
                 $app->invoke([$service, 'boot']);
             }
+        }
+
+        $reflectObject   = new ReflectionObject($app);
+        $reflectProperty = $reflectObject->getProperty('services');
+        $reflectProperty->setAccessible(true);
+        $services = $reflectProperty->getValue($app);
+
+        foreach ($services as $service) {
+            $this->rebindServiceContainer($app, $service);
         }
     }
 

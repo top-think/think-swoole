@@ -194,11 +194,7 @@ class Sandbox
     {
         $app = $this->getBaseApp();
 
-        $services = [
-            PaginatorService::class,
-        ];
-
-        $services = array_merge($services, $this->config->get('swoole.services', []));
+        $services = $this->config->get('swoole.services', []);
 
         foreach ($services as $service) {
             if (class_exists($service) && !in_array($service, $this->services)) {
