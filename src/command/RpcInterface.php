@@ -9,7 +9,7 @@ use think\console\Command;
 use think\helper\Arr;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\exception\RpcResponseException;
-use think\swoole\rpc\client\Client;
+use think\swoole\pool\Client;
 use think\swoole\rpc\Error;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\server\Dispatcher;
@@ -33,9 +33,13 @@ class RpcInterface extends Command
 
             foreach ($clients as $name => $config) {
 
-                $client = new Client($config['host'], $config['port']);
+                $client = new Client();
 
-                $response = $client->sendAndRecv(Dispatcher::ACTION_INTERFACE);
+                $connector = $client->connect($config);
+
+                $connector->send(Dispatcher::ACTION_INTERFACE . ParserInterface::EOF);
+
+                $response = $connector->recv();
 
                 $parserClass = Arr::get($config, 'parser', JsonParser::class);
                 /** @var ParserInterface $parser */

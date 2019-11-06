@@ -12,7 +12,7 @@ class Client implements ConnectorInterface
     /**
      * Connect to the specified Server and returns the connection resource
      * @param array $config
-     * @return mixed
+     * @return \Swoole\Coroutine\Client
      */
     public function connect(array $config)
     {

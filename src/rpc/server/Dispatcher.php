@@ -45,7 +45,7 @@ class Dispatcher
 
     protected $parser;
 
-    protected $services;
+    protected $services = [];
 
     protected $server;
 
