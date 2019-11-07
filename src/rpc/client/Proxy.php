@@ -4,9 +4,8 @@ namespace think\swoole\rpc\client;
 
 use InvalidArgumentException;
 use Nette\PhpGenerator\Factory;
-use Nette\PhpGenerator\PhpFile;
+use Nette\PhpGenerator\PhpNamespace;
 use ReflectionClass;
-use RuntimeException;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Error;
@@ -55,8 +54,8 @@ abstract class Proxy
         $className = "rpc\\service\\{$client}\\{$proxyName}";
 
         if (!class_exists($className, false)) {
-            $file      = new PhpFile;
-            $namespace = $file->addNamespace("rpc\\service\\{$client}");
+
+            $namespace = new PhpNamespace("rpc\\service\\{$client}");
             $namespace->addUse(Proxy::class);
             $namespace->addUse($interface);
 
@@ -74,17 +73,7 @@ abstract class Proxy
                 $class->addMember($method);
             }
 
-            if (function_exists('eval')) {
-                eval($file);
-            } else {
-                $proxyFile = sprintf('%s/%s.php', sys_get_temp_dir(), $proxyName);
-                $result    = file_put_contents($proxyFile, $file);
-                if ($result === false) {
-                    throw new RuntimeException(sprintf('Proxy file(%s) generate fail', $proxyFile));
-                }
-                require $proxyFile;
-                unlink($proxyFile);
-            }
+            eval($namespace);
         }
         return $className;
     }
