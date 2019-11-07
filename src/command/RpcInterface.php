@@ -30,7 +30,7 @@ class RpcInterface extends Command
             $file = new PhpFile;
             $file->addComment('This file is auto-generated.');
             $file->setStrictTypes();
-
+            $services = [];
             foreach ($clients as $name => $config) {
 
                 $client = new Client();
@@ -52,9 +52,12 @@ class RpcInterface extends Command
                 }
 
                 $namespace = $file->addNamespace("rpc\\contract\\${name}");
+
                 foreach ($result as $interface => $methods) {
+
+                    $services[$name][] = $namespace->getName() . "\\{$interface}";
+
                     $class = $namespace->addInterface($interface);
-                    $class->addConstant("RPC", $name);
 
                     foreach ($methods as $methodName => ['parameters' => $parameters, 'returnType' => $returnType, 'comment' => $comment]) {
                         $method = $class->addMethod($methodName)
@@ -75,7 +78,9 @@ class RpcInterface extends Command
                 }
             }
 
-            file_put_contents($this->app->getBasePath() . 'rpc.php', $file);
+            $services = "return " . Helpers::dump($services) . ";";
+
+            file_put_contents($this->app->getBasePath() . 'rpc.php', $file . $services);
 
             $this->output->writeln('<info>Succeed!</info>');
         });

@@ -8,8 +8,11 @@ use think\App;
 use think\Event;
 use think\helper\Str;
 use think\swoole\contract\rpc\ParserInterface;
+use think\swoole\exception\RpcClientException;
 use think\swoole\Pool;
 use think\swoole\pool\Client;
+use think\swoole\rpc\client\Connector;
+use think\swoole\rpc\client\Proxy;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\server\Dispatcher;
 
@@ -18,6 +21,7 @@ use think\swoole\rpc\server\Dispatcher;
  * @package think\swoole\concerns
  * @property App $app
  * @method Server getServer()
+ * @method Pool getPools()
  */
 trait InteractsWithRpc
 {
@@ -89,14 +93,66 @@ trait InteractsWithRpc
                     )
                 );
                 $this->getPools()->add("rpc.client.{$name}", $pool);
-                $this->app->instance("rpc.client.{$name}", $pool);
             }
 
             //引入rpc接口文件
             if (file_exists($rpc = $this->app->getBasePath() . 'rpc.php')) {
-                include_once $rpc;
+                try {
+                    $services = include $rpc;
+                    foreach ((array) $services as $name => $abstracts) {
+                        foreach ($abstracts as $abstract) {
+                            $this->app->bind($abstract, function () use ($name, $abstract) {
+
+                                $connector   = $this->createRpcConnector($name);
+                                $parserClass = $this->getConfig("rpc.client.{$name}.parser", JsonParser::class);
+                                $parser      = $this->app->make($parserClass);
+
+                                return $this->app->invokeClass(Proxy::getClassName($name, $abstract), [$connector, $parser]);
+                            });
+                        }
+                    }
+                } catch (\Exception|\Throwable $e) {
+
+                }
             }
         }
+    }
+
+    protected function createRpcConnector($name)
+    {
+        $pool = $this->getPools()->get("rpc.client.{$name}");
+
+        return new class($pool) implements Connector
+        {
+            protected $pool;
+
+            public function __construct(ConnectionPool $pool)
+            {
+                $this->pool = $pool;
+            }
+
+            public function sendAndRecv($data)
+            {
+                /** @var \Swoole\Coroutine\Client $client */
+                $client = $this->pool->borrow();
+
+                try {
+                    if (!$client->send($data)) {
+                        throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
+                    }
+
+                    $response = $client->recv();
+
+                    if ($response === false || empty($response)) {
+                        throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
+                    }
+
+                    return $response;
+                } finally {
+                    $this->pool->return($client);
+                }
+            }
+        };
     }
 
     protected function bindRpcDispatcher()

@@ -7,63 +7,43 @@ use Nette\PhpGenerator\Factory;
 use Nette\PhpGenerator\PhpFile;
 use ReflectionClass;
 use RuntimeException;
-use Smf\ConnectionPool\ConnectionPool;
-use think\App;
 use think\swoole\contract\rpc\ParserInterface;
-use think\swoole\exception\RpcClientException;
 use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Error;
-use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\Protocol;
 
 abstract class Proxy
 {
-    protected $client;
     protected $interface;
 
-    /** @var ConnectionPool */
-    protected $pool;
+    /** @var Connector */
+    protected $connector;
 
     /** @var ParserInterface */
     protected $parser;
 
-    public function __construct(App $app)
+    public function __construct(Connector $connector, ParserInterface $parser)
     {
-        $this->pool   = $app->get("rpc.client.{$this->client}");
-        $parserClass  = $app->config->get("swoole.rpc.client.{$this->client}.parser", JsonParser::class);
-        $this->parser = new $parserClass;
+        $this->connector = $connector;
+        $this->parser    = $parser;
     }
 
     protected function proxyCall($method, $params)
     {
         $protocol = Protocol::make($this->interface, $method, $params);
         $data     = $this->parser->encode($protocol);
-        /** @var \Swoole\Coroutine\Client $client */
-        $client = $this->pool->borrow();
 
-        try {
-            if (!$client->send($data . ParserInterface::EOF)) {
-                throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
-            }
+        $response = $this->connector->sendAndRecv($data . ParserInterface::EOF);
 
-            $response = $client->recv();
+        $result = $this->parser->decodeResponse($response);
 
-            if ($response === false || empty($response)) {
-                throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
-            }
-
-            $result = $this->parser->decodeResponse($response);
-
-            if ($result instanceof Error) {
-                throw new RpcResponseException($result);
-            }
-            return $result;
-        } finally {
-            $this->pool->return($client);
+        if ($result instanceof Error) {
+            throw new RpcResponseException($result);
         }
+        return $result;
     }
 
-    public static function getClassName($interface)
+    public static function getClassName($client, $interface)
     {
         if (!interface_exists($interface)) {
             throw new InvalidArgumentException(
@@ -71,13 +51,12 @@ abstract class Proxy
             );
         }
 
-        $name      = constant($interface . "::RPC");
         $proxyName = class_basename($interface) . "Service";
-        $className = "rpc\\service\\{$name}\\{$proxyName}";
+        $className = "rpc\\service\\{$client}\\{$proxyName}";
 
         if (!class_exists($className, false)) {
             $file      = new PhpFile;
-            $namespace = $file->addNamespace("rpc\\service\\{$name}");
+            $namespace = $file->addNamespace("rpc\\service\\{$client}");
             $namespace->addUse(Proxy::class);
             $namespace->addUse($interface);
 
@@ -85,7 +64,6 @@ abstract class Proxy
 
             $class->setExtends(Proxy::class);
             $class->addImplement($interface);
-            $class->addProperty('client', $name);
             $class->addProperty('interface', class_basename($interface));
 
             $reflection = new ReflectionClass($interface);

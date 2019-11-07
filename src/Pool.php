@@ -26,11 +26,11 @@ class Pool
     /**
      * @param string $name
      *
-     * @return ConnectionPool $table
+     * @return ConnectionPool
      */
     public function get(string $name)
     {
-        return $this->tables[$name] ?? null;
+        return $this->pools[$name] ?? null;
     }
 
     public function close(string $key)
