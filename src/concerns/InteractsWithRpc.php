@@ -111,7 +111,7 @@ trait InteractsWithRpc
                             });
                         }
                     }
-                } catch (\Exception|\Throwable $e) {
+                } catch (\Exception | \Throwable $e) {
 
                 }
             }
@@ -122,8 +122,7 @@ trait InteractsWithRpc
     {
         $pool = $this->getPools()->get("rpc.client.{$name}");
 
-        return new class($pool) implements Connector
-        {
+        return new class($pool) implements Connector {
             protected $pool;
 
             public function __construct(ConnectionPool $pool)
