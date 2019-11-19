@@ -109,8 +109,7 @@ class Gateway
             );
         }
 
-        return new class($client) implements Connector
-        {
+        return new class($client) implements Connector {
             protected $client;
 
             public function __construct(Client $client)
