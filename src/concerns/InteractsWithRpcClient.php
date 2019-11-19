@@ -82,8 +82,7 @@ trait InteractsWithRpcClient
     {
         $pool = $this->getPools()->get("rpc.client.{$name}");
 
-        return new class($pool) implements Connector
-        {
+        return new class($pool) implements Connector {
             protected $pool;
 
             public function __construct(ConnectionPool $pool)
