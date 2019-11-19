@@ -11,47 +11,20 @@
 
 namespace think\swoole;
 
-use Swoole\Http\Server as HttpServer;
-use Swoole\Server;
-use Swoole\Websocket\Server as WebsocketServer;
 use think\Route;
+use think\swoole\command\Rpc;
 use think\swoole\command\RpcInterface;
 use think\swoole\command\Server as ServerCommand;
 use think\swoole\websocket\socketio\Controller;
 
 class Service extends \think\Service
 {
-    protected $isWebsocket = false;
-
-    /**
-     * @var HttpServer | WebsocketServer
-     */
-    protected static $server;
-
-    public function register()
-    {
-        $this->isWebsocket = $this->app->config->get('swoole.websocket.enable', false);
-
-        $this->app->bind(Server::class, function () {
-            if (is_null(static::$server)) {
-                $this->createSwooleServer();
-            }
-
-            return static::$server;
-        });
-
-        $this->app->bind("swoole.server", Server::class);
-
-        $this->app->bind(PidManager::class, function () {
-            return new PidManager($this->app->config->get("swoole.server.options.pid_file"));
-        });
-    }
 
     public function boot()
     {
-        $this->commands(ServerCommand::class, RpcInterface::class);
+        $this->commands(ServerCommand::class, RpcInterface::class, Rpc::class);
 
-        if ($this->isWebsocket) {
+        if ($this->app->config->get('swoole.websocket.enable', false)) {
             $this->registerRoutes(function (Route $route) {
                 $route->group(function () use ($route) {
                     $route->get('socket.io/', '@upgrade');
@@ -66,29 +39,4 @@ class Service extends \think\Service
         }
     }
 
-    /**
-     * Create swoole server.
-     */
-    protected function createSwooleServer()
-    {
-        $server     = $this->isWebsocket ? WebsocketServer::class : HttpServer::class;
-        $config     = $this->app->config;
-        $host       = $config->get('swoole.server.host');
-        $port       = $config->get('swoole.server.port');
-        $socketType = $config->get('swoole.server.socket_type', SWOOLE_SOCK_TCP);
-        $mode       = $config->get('swoole.server.mode', SWOOLE_PROCESS);
-
-        static::$server = new $server($host, $port, $mode, $socketType);
-
-        $options = $config->get('swoole.server.options');
-
-        $options = array_merge($options, [
-            'task_enable_coroutine' => true,
-            'send_yield'            => true,
-            'reload_async'          => true,
-            'enable_coroutine'      => true,
-        ]);
-
-        static::$server->set($options);
-    }
 }

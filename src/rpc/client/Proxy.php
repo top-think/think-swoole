@@ -6,43 +6,28 @@ use InvalidArgumentException;
 use Nette\PhpGenerator\Factory;
 use Nette\PhpGenerator\PhpNamespace;
 use ReflectionClass;
-use think\swoole\contract\rpc\ParserInterface;
-use think\swoole\exception\RpcResponseException;
-use think\swoole\rpc\Error;
 use think\swoole\rpc\Protocol;
 
 abstract class Proxy
 {
     protected $interface;
 
-    /** @var Connector */
-    protected $connector;
+    /** @var Gateway */
+    protected $gateway;
 
-    /** @var ParserInterface */
-    protected $parser;
-
-    public function __construct(Connector $connector, ParserInterface $parser)
+    final public function __construct(Gateway $gateway)
     {
-        $this->connector = $connector;
-        $this->parser    = $parser;
+        $this->gateway = $gateway;
     }
 
-    protected function proxyCall($method, $params)
+    final protected function proxyCall($method, $params)
     {
         $protocol = Protocol::make($this->interface, $method, $params);
-        $data     = $this->parser->encode($protocol);
 
-        $response = $this->connector->sendAndRecv($data . ParserInterface::EOF);
-
-        $result = $this->parser->decodeResponse($response);
-
-        if ($result instanceof Error) {
-            throw new RpcResponseException($result);
-        }
-        return $result;
+        return $this->gateway->sendAndRecv($protocol);
     }
 
-    public static function getClassName($client, $interface)
+    final public static function getClassName($client, $interface)
     {
         if (!interface_exists($interface)) {
             throw new InvalidArgumentException(

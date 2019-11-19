@@ -3,18 +3,58 @@
 namespace think\swoole\concerns;
 
 use Exception;
+use Swoole\Process;
 use Swoole\Runtime;
+use Swoole\Server;
 use Swoole\Server\Task;
+use think\App;
+use think\console\Output;
 use think\Event;
+use think\exception\Handle;
+use think\helper\Str;
+use think\swoole\FileWatcher;
 use think\swoole\PidManager;
+use Throwable;
 
 /**
  * Trait InteractsWithServer
  * @package think\swoole\concerns
  * @property PidManager $pidManager
+ * @property App        $container
  */
 trait InteractsWithServer
 {
+
+    /**
+     * 启动服务
+     */
+    public function run(): void
+    {
+        $this->getServer()->set([
+            'task_enable_coroutine' => true,
+            'send_yield'            => true,
+            'reload_async'          => true,
+            'enable_coroutine'      => true,
+            'max_request'           => 0,
+            'task_max_request'      => 0,
+        ]);
+        $this->initialize();
+        $this->triggerEvent('init');
+        if ($this->getConfig('hot_update.enable', false)) {
+            //热更新
+            $this->addHotUpdateProcess();
+        }
+
+        $this->getServer()->start();
+    }
+
+    /**
+     * 停止服务
+     */
+    public function stop(): void
+    {
+        $this->getServer()->shutdown();
+    }
 
     /**
      * "onStart" listener.
@@ -80,4 +120,101 @@ trait InteractsWithServer
         $this->pidManager->remove();
     }
 
+    /**
+     * @return Server
+     */
+    public function getServer()
+    {
+        return $this->container->make(Server::class);
+    }
+
+    /**
+     * Set swoole server listeners.
+     */
+    protected function setSwooleServerListeners()
+    {
+        foreach ($this->events as $event) {
+            $listener = Str::camel("on_$event");
+            $callback = method_exists($this, $listener) ? [$this, $listener] : function () use ($event) {
+                $this->triggerEvent($event, func_get_args());
+            };
+
+            $this->getServer()->on($event, $callback);
+        }
+    }
+
+    /**
+     * 热更新
+     */
+    protected function addHotUpdateProcess()
+    {
+        $process = new Process(function () {
+            $watcher = new FileWatcher($this->getConfig('hot_update.include', []), $this->getConfig('hot_update.exclude', []), $this->getConfig('hot_update.name', []));
+
+            $watcher->watch(function () {
+                $this->getServer()->reload();
+            });
+        }, false, 0);
+
+        $this->getServer()->addProcess($process);
+    }
+
+    /**
+     * Add process to http server
+     *
+     * @param Process $process
+     */
+    public function addProcess(Process $process): void
+    {
+        $this->getServer()->addProcess($process);
+    }
+
+    /**
+     * 清除apc、op缓存
+     */
+    protected function clearCache()
+    {
+        if (extension_loaded('apc')) {
+            apc_clear_cache();
+        }
+
+        if (extension_loaded('Zend OPcache')) {
+            opcache_reset();
+        }
+    }
+
+    /**
+     * Set process name.
+     *
+     * @param $process
+     */
+    protected function setProcessName($process)
+    {
+        // Mac OSX不支持进程重命名
+        if (stristr(PHP_OS, 'DAR')) {
+            return;
+        }
+
+        $serverName = 'swoole_http_server';
+        $appName    = $this->container->config->get('app.name', 'ThinkPHP');
+
+        $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
+
+        swoole_set_process_name($name);
+    }
+
+    /**
+     * Log server error.
+     *
+     * @param Throwable|Exception $e
+     */
+    public function logServerError(Throwable $e)
+    {
+        /** @var Handle $handle */
+        $handle = $this->container->make(Handle::class);
+
+        $handle->renderForConsole(new Output(), $e);
+
+        $handle->report($e);
+    }
 }

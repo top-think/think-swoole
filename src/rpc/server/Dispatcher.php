@@ -10,12 +10,13 @@ use Swoole\Server;
 use think\App;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\rpc\Error;
+use think\swoole\rpc\File;
+use think\swoole\rpc\Packer;
+use think\swoole\rpc\Protocol;
 use Throwable;
 
 class Dispatcher
 {
-    const ACTION_INTERFACE = '@action_interface';
-
     /**
      * Parser error
      */
@@ -48,6 +49,8 @@ class Dispatcher
     protected $services = [];
 
     protected $server;
+
+    protected $files = [];
 
     public function __construct(App $app, ParserInterface $parser, Server $server, $services)
     {
@@ -133,37 +136,51 @@ class Dispatcher
 
     /**
      * 调度
-     * @param int    $fd
-     * @param string $data
+     * @param int         $fd
+     * @param string|File $data
      */
-    public function dispatch(int $fd, string $data)
+    public function dispatch(int $fd, $data)
     {
-        try {
-            if ($data === Dispatcher::ACTION_INTERFACE) {
-                $result = $this->getInterfaces();
-            } else {
-                $protocol = $this->parser->decode($data);
+        if ($data instanceof File) {
+            $this->files[$fd][] = $data;
+        } else {
+            try {
+                if ($data === Protocol::ACTION_INTERFACE) {
+                    $result = $this->getInterfaces();
+                } else {
+                    $protocol = $this->parser->decode($data);
 
-                $interface = $protocol->getInterface();
-                $method    = $protocol->getMethod();
-                $params    = $protocol->getParams();
-                $service   = $this->services[$interface] ?? null;
-                if (empty($service)) {
-                    throw new Exception(
-                        sprintf('Service %s is not founded!', $interface),
-                        self::INVALID_REQUEST
-                    );
+                    $interface = $protocol->getInterface();
+                    $method    = $protocol->getMethod();
+                    $params    = $protocol->getParams();
+
+                    //文件参数
+                    foreach ($params as $index => $param) {
+                        if ($param === Protocol::FILE) {
+                            $params[$index] = array_shift($this->files[$fd]);
+                        }
+                    }
+
+                    $service = $this->services[$interface] ?? null;
+                    if (empty($service)) {
+                        throw new Exception(
+                            sprintf('Service %s is not founded!', $interface),
+                            self::INVALID_REQUEST
+                        );
+                    }
+
+                    $result = $this->app->invoke([$this->app->make($service['class']), $method], $params);
                 }
-
-                $result = $this->app->invoke([$this->app->make($service['class']), $method], $params);
+            } catch (Throwable | Exception $e) {
+                $result = Error::make($e->getCode(), $e->getMessage());
             }
-        } catch (Throwable | Exception $e) {
-            $result = Error::make($e->getCode(), $e->getMessage());
+
+            $data = $this->parser->encodeResponse($result);
+
+            $this->server->send($fd, Packer::pack($data));
+            //清空文件缓存
+            unset($this->files[$fd]);
         }
-
-        $data = $this->parser->encodeResponse($result);
-
-        $this->server->send($fd, $data . ParserInterface::EOF);
     }
 
 }

@@ -8,11 +8,8 @@ use Nette\PhpGenerator\PhpFile;
 use think\console\Command;
 use think\helper\Arr;
 use think\swoole\contract\rpc\ParserInterface;
-use think\swoole\exception\RpcResponseException;
-use think\swoole\pool\Client;
-use think\swoole\rpc\Error;
+use think\swoole\rpc\client\Gateway;
 use think\swoole\rpc\JsonParser;
-use think\swoole\rpc\server\Dispatcher;
 
 class RpcInterface extends Command
 {
@@ -24,65 +21,55 @@ class RpcInterface extends Command
 
     public function handle()
     {
-        go(function () {
-            $clients = $this->app->config->get('swoole.rpc.client', []);
+        $clients = $this->app->config->get('swoole.rpc.client', []);
 
-            $file = new PhpFile;
-            $file->addComment('This file is auto-generated.');
-            $file->setStrictTypes();
-            $services = [];
-            foreach ($clients as $name => $config) {
+        $file = new PhpFile;
+        $file->addComment('This file is auto-generated.');
+        $file->setStrictTypes();
+        $services = [];
+        foreach ($clients as $name => $config) {
 
-                $client = new Client();
+            $parserClass = Arr::get($config, 'parser', JsonParser::class);
+            /** @var ParserInterface $parser */
+            $parser = new $parserClass;
 
-                $connector = $client->connect($config);
+            $gateway = new Gateway($config, $parser);
 
-                $connector->send(Dispatcher::ACTION_INTERFACE . ParserInterface::EOF);
+            $result = $gateway->getServices();
 
-                $response = $connector->recv();
+            $namespace = $file->addNamespace("rpc\\contract\\${name}");
 
-                $parserClass = Arr::get($config, 'parser', JsonParser::class);
-                /** @var ParserInterface $parser */
-                $parser = new $parserClass;
+            foreach ($result as $interface => $methods) {
 
-                $result = $parser->decodeResponse($response);
+                $services[$name][] = $namespace->getName() . "\\{$interface}";
 
-                if ($result instanceof Error) {
-                    throw new RpcResponseException($result);
-                }
+                $class = $namespace->addInterface($interface);
 
-                $namespace = $file->addNamespace("rpc\\contract\\${name}");
+                foreach ($methods as $methodName => ['parameters' => $parameters, 'returnType' => $returnType, 'comment' => $comment]) {
+                    $method = $class->addMethod($methodName)
+                        ->setVisibility(ClassType::VISIBILITY_PUBLIC)
+                        ->setComment(Helpers::unformatDocComment($comment))
+                        ->setReturnType($returnType);
 
-                foreach ($result as $interface => $methods) {
+                    foreach ($parameters as $parameter) {
+                        if ($parameter['type'] && (class_exists($parameter['type']) || interface_exists($parameter['type']))) {
+                            $namespace->addUse($parameter['type']);
+                        }
+                        $param = $method->addParameter($parameter['name'])
+                            ->setTypeHint($parameter['type']);
 
-                    $services[$name][] = $namespace->getName() . "\\{$interface}";
-
-                    $class = $namespace->addInterface($interface);
-
-                    foreach ($methods as $methodName => ['parameters' => $parameters, 'returnType' => $returnType, 'comment' => $comment]) {
-                        $method = $class->addMethod($methodName)
-                            ->setVisibility(ClassType::VISIBILITY_PUBLIC)
-                            ->setComment(Helpers::unformatDocComment($comment))
-                            ->setReturnType($returnType);
-
-                        foreach ($parameters as $parameter) {
-
-                            $param = $method->addParameter($parameter['name'])
-                                ->setTypeHint($parameter['type']);
-
-                            if (array_key_exists("default", $parameter)) {
-                                $param->setDefaultValue($parameter['default']);
-                            }
+                        if (array_key_exists("default", $parameter)) {
+                            $param->setDefaultValue($parameter['default']);
                         }
                     }
                 }
             }
+        }
 
-            $services = "return " . Helpers::dump($services) . ";";
+        $services = "return " . Helpers::dump($services) . ";";
 
-            file_put_contents($this->app->getBasePath() . 'rpc.php', $file . $services);
+        file_put_contents($this->app->getBasePath() . 'rpc.php', $file . $services);
 
-            $this->output->writeln('<info>Succeed!</info>');
-        });
+        $this->output->writeln('<info>Succeed!</info>');
     }
 }

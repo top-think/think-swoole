@@ -18,9 +18,9 @@ class Client implements ConnectorInterface
     {
         $client = new \Swoole\Coroutine\Client(SWOOLE_SOCK_TCP);
 
-        $host    = Arr::get($config, 'host');
-        $port    = Arr::get($config, 'port');
-        $timeout = Arr::get($config, 'timeout');
+        $host    = Arr::pull($config, 'host');
+        $port    = Arr::pull($config, 'port');
+        $timeout = Arr::pull($config, 'timeout');
 
         $client->set($config);
 

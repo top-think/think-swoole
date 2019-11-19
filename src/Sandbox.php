@@ -28,9 +28,6 @@ class Sandbox
      */
     protected $snapshots = [];
 
-    /** @var Manager */
-    protected $manager;
-
     /** @var App */
     protected $app;
 
@@ -44,9 +41,8 @@ class Sandbox
     protected $resetters = [];
     protected $services  = [];
 
-    public function __construct(Container $app, Manager $manager)
+    public function __construct(Container $app)
     {
-        $this->manager = $manager;
         $this->setBaseApp($app);
         $this->initialize();
     }
@@ -88,7 +84,7 @@ class Sandbox
         try {
             $this->getApplication()->invoke($callable, [$this]);
         } catch (Throwable $e) {
-            $this->manager->logServerError($e);
+            throw $e;
         } finally {
             $this->clear(!$persistent);
         }

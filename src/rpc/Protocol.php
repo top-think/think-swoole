@@ -4,6 +4,8 @@ namespace think\swoole\rpc;
 
 class Protocol
 {
+    const ACTION_INTERFACE = '@action_interface';
+    const FILE             = '@file';
 
     /**
      * @var string
