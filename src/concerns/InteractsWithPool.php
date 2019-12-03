@@ -34,7 +34,7 @@ trait InteractsWithPool
             $this->connectionCount[$name] = 0;
         }
 
-        if ($this->connectionCount[$name] < $this->getPoolMaxActive($name)) {
+        if ($pool->isEmpty() && $this->connectionCount[$name] < $this->getPoolMaxActive($name)) {
             //新建
             $connection = $this->createPoolConnection($name);
             $this->connectionCount[$name]++;
