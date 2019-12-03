@@ -93,7 +93,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function setMultiple($values, $ttl = null)
     {
-        return $this->setMultiple($values, $ttl);
+        return $this->handler->setMultiple($values, $ttl);
     }
 
     /**
@@ -101,6 +101,6 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function deleteMultiple($keys)
     {
-        return $this->deleteMultiple($keys);
+        return $this->handler->deleteMultiple($keys);
     }
 }
