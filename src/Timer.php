@@ -99,7 +99,7 @@ class Timer
                 $obj->run();
                 unset($obj);
             });
-        }else if (\is_array($class)){
+        }elseif (\is_array($class)){
             foreach($class as $one){
                 TaskF::async(function () use ($one) {
                     $obj = new $one();
