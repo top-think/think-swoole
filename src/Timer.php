@@ -111,8 +111,8 @@ class Timer
     public function taskDispenser($class)
     {
         if (class_exists($class)){
-            TaskF::async(function () use ($one) {
-                $obj = new $one();
+            TaskF::async(function () use ($class) {
+                $obj = new $class();
                 $obj->run();
                 unset($obj);
             });
