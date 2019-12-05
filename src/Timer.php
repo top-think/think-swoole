@@ -94,19 +94,28 @@ class Timer
     public function syncTask($class)
     {
         if (is_string($class) && class_exists($class)) {
-            TaskF::async(function () use ($class) {
-                $obj = new $class();
+            $this->taskDispenser($class);
+        }elseif (\is_array($class)){
+            foreach($class as $one){
+                $this->taskDispenser($one);
+            }
+        }
+    }
+
+    /**
+     * 任务分发投递
+     *
+     * @param [type] $class
+     * @return void
+     */
+    public function taskDispenser($class)
+    {
+        if (class_exists($class)){
+            TaskF::async(function () use ($one) {
+                $obj = new $one();
                 $obj->run();
                 unset($obj);
             });
-        }elseif (\is_array($class)){
-            foreach($class as $one){
-                TaskF::async(function () use ($one) {
-                    $obj = new $one();
-                    $obj->run();
-                    unset($obj);
-                });
-            }
         }
     }
 
