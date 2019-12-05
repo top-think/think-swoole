@@ -12,5 +12,6 @@
  */
 
 return [
-    '*/5 * * * * *' => '\\app\\lib\\Timer',
+    // '*/5 * * * * *' => '\\app\\lib\\Timer',
+    //'*/5 * * * * *'  => ['\\app\\lib\\Timer1','\\app\\lib\\Timer2'],
 ];
