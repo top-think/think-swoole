@@ -3,6 +3,7 @@
 namespace think\swoole\resetters;
 
 use think\Container;
+use think\swoole\concerns\ModifyProperty;
 use think\swoole\Sandbox;
 use think\swoole\contract\ResetterInterface;
 
@@ -13,18 +14,12 @@ use think\swoole\contract\ResetterInterface;
  */
 class ResetEvent implements ResetterInterface
 {
+    use ModifyProperty;
 
     public function handle(Container $app, Sandbox $sandbox)
     {
         $event = clone $sandbox->getEvent();
-
-        $closure = function () use ($app) {
-            $this->app = $app;
-        };
-
-        $resetEvent = $closure->bindTo($event, $event);
-        $resetEvent();
-
+        $this->modifyProperty($event, $app);
         $app->instance('event', $event);
 
         return $app;

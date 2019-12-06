@@ -2,8 +2,8 @@
 
 namespace think\swoole\resetters;
 
-use ReflectionObject;
 use think\Container;
+use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\Sandbox;
 
@@ -14,6 +14,7 @@ use think\swoole\Sandbox;
  */
 class ResetService implements ResetterInterface
 {
+    use ModifyProperty;
 
     /**
      * "handle" function for resetting app.
@@ -24,7 +25,7 @@ class ResetService implements ResetterInterface
     public function handle(Container $app, Sandbox $sandbox)
     {
         foreach ($sandbox->getServices() as $service) {
-            $this->rebindServiceContainer($app, $service);
+            $this->modifyProperty($service, $app);
             if (method_exists($service, 'register')) {
                 $service->register();
             }
@@ -32,24 +33,6 @@ class ResetService implements ResetterInterface
                 $app->invoke([$service, 'boot']);
             }
         }
-
-        $reflectObject   = new ReflectionObject($app);
-        $reflectProperty = $reflectObject->getProperty('services');
-        $reflectProperty->setAccessible(true);
-        $services = $reflectProperty->getValue($app);
-
-        foreach ($services as $service) {
-            $this->rebindServiceContainer($app, $service);
-        }
     }
 
-    protected function rebindServiceContainer($app, $service)
-    {
-        $closure = function () use ($app) {
-            $this->app = $app;
-        };
-
-        $resetService = $closure->bindTo($service, $service);
-        $resetService();
-    }
 }

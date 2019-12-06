@@ -21,7 +21,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function has($name)
     {
-        return $this->handler->has($name);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -29,7 +29,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function get($name, $default = null)
     {
-        return $this->handler->get($name, $default);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -37,7 +37,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function set($name, $value, $expire = null)
     {
-        return $this->handler->set($name, $value, $expire);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -45,7 +45,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function inc(string $name, int $step = 1)
     {
-        return $this->handler->inc($name, $step);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -53,7 +53,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function dec(string $name, int $step = 1)
     {
-        return $this->handler->dec($name, $step);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -61,7 +61,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function delete($name)
     {
-        return $this->handler->delete($name);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -69,7 +69,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function clear()
     {
-        return $this->handler->clear();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -77,7 +77,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function clearTag(array $keys)
     {
-        return $this->handler->clearTag($keys);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -85,7 +85,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function getMultiple($keys, $default = null)
     {
-        return $this->handler->getMultiple($keys, $default);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -93,7 +93,7 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function setMultiple($values, $ttl = null)
     {
-        return $this->handler->setMultiple($values, $ttl);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -101,6 +101,6 @@ class Store implements CacheHandlerInterface, CacheInterface
      */
     public function deleteMultiple($keys)
     {
-        return $this->handler->deleteMultiple($keys);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 }

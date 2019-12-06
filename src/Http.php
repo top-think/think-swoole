@@ -4,6 +4,7 @@ namespace think\swoole;
 
 use think\Middleware;
 use think\Route;
+use think\swoole\concerns\ModifyProperty;
 
 /**
  * Class Http
@@ -12,6 +13,8 @@ use think\Route;
  */
 class Http extends \think\Http
 {
+    use ModifyProperty;
+
     /** @var Middleware */
     protected static $middleware;
 
@@ -23,18 +26,11 @@ class Http extends \think\Http
         if (!isset(self::$middleware)) {
             parent::loadMiddleware();
             self::$middleware = clone $this->app->middleware;
+            $this->modifyProperty(self::$middleware, null);
         }
 
         $middleware = clone self::$middleware;
-
-        $app     = $this->app;
-        $closure = function () use ($app) {
-            $this->app = $app;
-        };
-
-        $resetMiddleware = $closure->bindTo($middleware, $middleware);
-        $resetMiddleware();
-
+        $this->modifyProperty($middleware, $this->app);
         $this->app->instance("middleware", $middleware);
     }
 
@@ -42,25 +38,23 @@ class Http extends \think\Http
     {
         if (!isset(self::$route)) {
             parent::loadRoutes();
-            self::$route = clone $this->app->route;
+            self::$route = $this->app->route;
         }
     }
 
     protected function dispatchToRoute($request)
     {
         if (isset(self::$route)) {
-            $newRoute = clone self::$route;
-            $app      = $this->app;
-            $closure  = function () use ($app) {
-                $this->app = $app;
-            };
-
-            $resetRouter = $closure->bindTo($newRoute, $newRoute);
-            $resetRouter();
-
+            $newRoute = self::$route;
+            $this->modifyProperty($newRoute, $this->app);
             $this->app->instance("route", $newRoute);
         }
 
-        return parent::dispatchToRoute($request);
+        $response = parent::dispatchToRoute($request);
+
+        $this->modifyProperty(self::$route, null);
+        $this->modifyProperty(self::$route, null, 'request');
+
+        return $response;
     }
 }

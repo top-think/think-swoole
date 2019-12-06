@@ -24,7 +24,7 @@ class Connection implements ConnectionInterface
      */
     public function getQueryClass(): string
     {
-        return $this->handler->getQueryClass();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -36,7 +36,7 @@ class Connection implements ConnectionInterface
      */
     public function connect(array $config = [], $linkNum = 0)
     {
-        return $this->handler->connect($config, $linkNum);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -47,7 +47,7 @@ class Connection implements ConnectionInterface
      */
     public function setDb(DbManager $db)
     {
-        $this->handler->setDb($db);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -58,7 +58,7 @@ class Connection implements ConnectionInterface
      */
     public function setCache(CacheInterface $cache)
     {
-        $this->handler->setCache($cache);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -69,7 +69,7 @@ class Connection implements ConnectionInterface
      */
     public function getConfig(string $config = '')
     {
-        return $this->handler->getConfig($config);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -78,7 +78,7 @@ class Connection implements ConnectionInterface
      */
     public function close()
     {
-        return $this->handler->close();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -89,7 +89,7 @@ class Connection implements ConnectionInterface
      */
     public function find(BaseQuery $query): array
     {
-        return $this->handler->find($query);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -100,7 +100,7 @@ class Connection implements ConnectionInterface
      */
     public function select(BaseQuery $query): array
     {
-        return $this->handler->select($query);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -112,7 +112,7 @@ class Connection implements ConnectionInterface
      */
     public function insert(BaseQuery $query, bool $getLastInsID = false)
     {
-        return $this->handler->insert($query, $getLastInsID);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -126,7 +126,7 @@ class Connection implements ConnectionInterface
      */
     public function insertAll(BaseQuery $query, array $dataSet = []): int
     {
-        return $this->handler->insertAll($query, $dataSet);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -137,7 +137,7 @@ class Connection implements ConnectionInterface
      */
     public function update(BaseQuery $query): int
     {
-        return $this->handler->update($query);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -148,7 +148,7 @@ class Connection implements ConnectionInterface
      */
     public function delete(BaseQuery $query): int
     {
-        return $this->handler->delete($query);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -161,7 +161,7 @@ class Connection implements ConnectionInterface
      */
     public function value(BaseQuery $query, string $field, $default = null)
     {
-        return $this->handler->value($query, $field, $default);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -174,7 +174,7 @@ class Connection implements ConnectionInterface
      */
     public function column(BaseQuery $query, string $column, string $key = ''): array
     {
-        return $this->handler->column($query, $column, $key);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -186,7 +186,7 @@ class Connection implements ConnectionInterface
      */
     public function transaction(callable $callback)
     {
-        return $this->handler->transaction($callback);
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -197,7 +197,7 @@ class Connection implements ConnectionInterface
      */
     public function startTrans()
     {
-        $this->handler->startTrans();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -207,7 +207,7 @@ class Connection implements ConnectionInterface
      */
     public function commit()
     {
-        $this->handler->commit();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -217,7 +217,7 @@ class Connection implements ConnectionInterface
      */
     public function rollback()
     {
-        $this->handler->commit();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -227,7 +227,7 @@ class Connection implements ConnectionInterface
      */
     public function getLastSql(): string
     {
-        return $this->handler->getLastSql();
+        return $this->__call(__FUNCTION__, func_get_args());
     }
 
 }

@@ -5,12 +5,15 @@ namespace think\swoole\concerns;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Server;
+use Symfony\Component\VarDumper\VarDumper;
 use think\App;
 use think\Container;
 use think\Cookie;
 use think\Event;
 use think\exception\Handle;
 use think\Http;
+use think\Middleware;
+use think\swoole\middleware\ResetVarDumper;
 use Throwable;
 
 /**
@@ -32,8 +35,13 @@ trait InteractsWithHttp
     public function onRequest($req, $res)
     {
         $args = func_get_args();
-        $this->runInSandbox(function (Http $http, Event $event, App $app) use ($args, $req, $res) {
+        $this->runInSandbox(function (Http $http, Event $event, App $app, Middleware $middleware) use ($args, $req, $res) {
             $event->trigger('swoole.request', $args);
+
+            //兼容var-dumper
+            if (class_exists(VarDumper::class)) {
+                $middleware->add(ResetVarDumper::class);
+            }
 
             $request = $this->prepareRequest($req);
             try {
@@ -110,7 +118,7 @@ trait InteractsWithHttp
         $res->status($response->getCode());
 
         foreach ($cookie->getCookie() as $name => $val) {
-            list($value, $expire, $option) = $val;
+            [$value, $expire, $option] = $val;
 
             $res->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false);
         }

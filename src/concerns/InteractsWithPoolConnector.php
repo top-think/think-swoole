@@ -2,6 +2,7 @@
 
 namespace think\swoole\concerns;
 
+use RuntimeException;
 use Swoole\Coroutine\Channel;
 
 trait InteractsWithPoolConnector
@@ -10,7 +11,7 @@ trait InteractsWithPoolConnector
 
     protected $pool;
 
-    protected $release = true;
+    protected $released = false;
 
     public function __construct($handler, Channel $pool)
     {
@@ -20,15 +21,19 @@ trait InteractsWithPoolConnector
 
     public function __call($method, $arguments)
     {
+        if ($this->released) {
+            throw new RuntimeException("Connection already has been released!");
+        }
+
         return $this->handler->{$method}(...$arguments);
     }
 
     public function release()
     {
-        if (!$this->release) {
+        if ($this->released) {
             return;
         }
-        $this->release = false;
+        $this->released = true;
 
         if (!$this->pool->isFull()) {
             $this->pool->push($this->handler, 0.001);
@@ -37,6 +42,8 @@ trait InteractsWithPoolConnector
 
     public function __destruct()
     {
-        $this->release();
+        go(function () {
+            $this->release();
+        });
     }
 }

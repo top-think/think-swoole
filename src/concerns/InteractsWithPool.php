@@ -65,13 +65,6 @@ trait InteractsWithPool
     public function __destruct()
     {
         foreach ($this->pools as $pool) {
-            while (true) {
-                if ($pool->isEmpty()) {
-                    break;
-                }
-                $handler = $pool->pop(0.001);
-                unset($handler);
-            }
             $pool->close();
         }
     }
