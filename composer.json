@@ -9,14 +9,17 @@
         }
     ],
     "require": {
+        "php": ">7.1",
         "ext-json": "*",
-        "ext-swoole": ">=4.0.0",
         "topthink/framework": "^6.0",
         "topthink/think-helper": "^3.0.4",
         "symfony/finder": "^4.3.2",
         "swoole/ide-helper": "^4.3",
         "nette/php-generator": "^3.2",
         "open-smf/connection-pool": "~1.0"
+    },
+    "suggest": {
+        "ext-swoole": "Swoole"
     },
     "autoload": {
         "psr-4": {
