@@ -162,10 +162,10 @@ trait InteractsWithHttp
 
         return $request->withHeader($header)
             ->withServer($server)
+            ->withInput($req->rawContent())
             ->withGet($req->get ?: [])
             ->withPost($req->post ?: [])
             ->withCookie($req->cookie ?: [])
-            ->withInput($req->rawContent())
             ->withFiles($req->files ?: [])
             ->setBaseUrl($req->server['request_uri'])
             ->setUrl($req->server['request_uri'] . (!empty($req->server['query_string']) ? '?' . $req->server['query_string'] : ''))
