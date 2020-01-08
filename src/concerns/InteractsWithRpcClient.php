@@ -102,20 +102,26 @@ trait InteractsWithRpcClient
                 try {
                     foreach ($data as $string) {
                         if (!$client->send($string)) {
-                            throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
+                            $this->onError($client);
                         }
                     }
 
                     $response = $client->recv();
 
                     if ($response === false || empty($response)) {
-                        throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
+                        $this->onError($client);
                     }
 
                     return $response;
                 } finally {
                     $this->pool->return($client);
                 }
+            }
+
+            protected function onError(\Swoole\Coroutine\Client $client)
+            {
+                $client->close();
+                throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
             }
 
         };
