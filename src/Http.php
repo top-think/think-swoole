@@ -3,7 +3,6 @@
 namespace think\swoole;
 
 use think\Middleware;
-use think\Response;
 use think\Route;
 use think\swoole\concerns\ModifyProperty;
 
@@ -39,7 +38,7 @@ class Http extends \think\Http
     {
         if (!isset(self::$route)) {
             parent::loadRoutes();
-            self::$route = $this->app->route;
+            self::$route = clone $this->app->route;
             $this->modifyProperty(self::$route, null);
             $this->modifyProperty(self::$route, null, 'request');
         }
