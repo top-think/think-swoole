@@ -40,13 +40,15 @@ class Http extends \think\Http
         if (!isset(self::$route)) {
             parent::loadRoutes();
             self::$route = $this->app->route;
+            $this->modifyProperty(self::$route, null);
+            $this->modifyProperty(self::$route, null, 'request');
         }
     }
 
     protected function dispatchToRoute($request)
     {
         if (isset(self::$route)) {
-            $newRoute = self::$route;
+            $newRoute = clone self::$route;
             $this->modifyProperty($newRoute, $this->app);
             $this->app->instance("route", $newRoute);
         }
@@ -54,11 +56,4 @@ class Http extends \think\Http
         return parent::dispatchToRoute($request);
     }
 
-    public function end(Response $response): void
-    {
-        parent::end($response);
-
-        $this->modifyProperty(self::$route, null);
-        $this->modifyProperty(self::$route, null, 'request');
-    }
 }
