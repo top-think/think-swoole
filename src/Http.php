@@ -3,7 +3,6 @@
 namespace think\swoole;
 
 use think\Middleware;
-use think\Response;
 use think\Route;
 use think\swoole\concerns\ModifyProperty;
 
