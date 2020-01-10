@@ -3,6 +3,7 @@
 namespace think\swoole;
 
 use think\Middleware;
+use think\Response;
 use think\Route;
 use think\swoole\concerns\ModifyProperty;
 
@@ -50,11 +51,14 @@ class Http extends \think\Http
             $this->app->instance("route", $newRoute);
         }
 
-        $response = parent::dispatchToRoute($request);
+        return parent::dispatchToRoute($request);
+    }
+
+    public function end(Response $response): void
+    {
+        parent::end($response);
 
         $this->modifyProperty(self::$route, null);
         $this->modifyProperty(self::$route, null, 'request');
-
-        return $response;
     }
 }

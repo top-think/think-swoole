@@ -20,7 +20,7 @@ use Throwable;
  * Trait InteractsWithServer
  * @package think\swoole\concerns
  * @property PidManager $pidManager
- * @property App        $container
+ * @property App $container
  */
 trait InteractsWithServer
 {
@@ -87,7 +87,10 @@ trait InteractsWithServer
      */
     public function onWorkerStart($server)
     {
-        Runtime::enableCoroutine($this->getConfig('coroutine.enable', true), $this->getConfig('coroutine.flags', SWOOLE_HOOK_ALL));
+        Runtime::enableCoroutine(
+            $this->getConfig('coroutine.enable', true),
+            $this->getConfig('coroutine.flags', SWOOLE_HOOK_ALL)
+        );
 
         $this->clearCache();
 
@@ -102,7 +105,7 @@ trait InteractsWithServer
      * Set onTask listener.
      *
      * @param mixed $server
-     * @param Task  $task
+     * @param Task $task
      */
     public function onTask($server, Task $task)
     {
