@@ -191,6 +191,22 @@ trait InteractsWithHttp
 
         $content = $response->getContent();
 
-        $res->end($content);
+        $this->sendByChunk($res, $content);
+    }
+
+    protected function sendByChunk(Response $res, $content)
+    {
+        $chunkSize = 8192;
+
+        if (strlen($content) <= $chunkSize) {
+            $res->end($content);
+            return;
+        }
+
+        foreach (str_split($content, $chunkSize) as $chunk) {
+            $res->write($chunk);
+        }
+
+        $res->end();
     }
 }

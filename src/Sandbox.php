@@ -106,7 +106,6 @@ class Sandbox
 
         Context::clear();
         $this->setInstance($this->getBaseApp());
-        gc_collect_cycles();
     }
 
     public function getApplication()

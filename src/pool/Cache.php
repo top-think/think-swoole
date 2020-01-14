@@ -2,10 +2,8 @@
 
 namespace think\swoole\pool;
 
-use Swoole\Coroutine\Channel;
 use think\swoole\concerns\InteractsWithPool;
 use think\swoole\coroutine\Context;
-use think\swoole\pool\cache\Store;
 
 class Cache extends \think\Cache
 {
@@ -33,11 +31,6 @@ class Cache extends \think\Cache
         return Context::rememberData("cache.store.{$name}", function () use ($name) {
             return $this->getPoolConnection($name);
         });
-    }
-
-    protected function buildPoolConnection($connection, Channel $pool)
-    {
-        return new Store($connection, $pool);
     }
 
     protected function createPoolConnection(string $name)

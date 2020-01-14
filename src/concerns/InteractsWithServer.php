@@ -152,7 +152,11 @@ trait InteractsWithServer
     protected function addHotUpdateProcess()
     {
         $process = new Process(function () {
-            $watcher = new FileWatcher($this->getConfig('hot_update.include', []), $this->getConfig('hot_update.exclude', []), $this->getConfig('hot_update.name', []));
+            $watcher = new FileWatcher(
+                $this->getConfig('hot_update.include', []),
+                $this->getConfig('hot_update.exclude', []),
+                $this->getConfig('hot_update.name', [])
+            );
 
             $watcher->watch(function () {
                 $this->getServer()->reload();

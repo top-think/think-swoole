@@ -32,7 +32,7 @@ trait InteractsWithPools
             $pools = $this->getPools();
 
             foreach ($this->getConfig('pool', []) as $name => $config) {
-                $type = Arr::get($config, 'type');
+                $type = Arr::pull($config, 'type');
                 if ($type && is_subclass_of($type, ConnectorInterface::class)) {
                     $pool = new ConnectionPool(
                         Pool::pullPoolConfig($config),

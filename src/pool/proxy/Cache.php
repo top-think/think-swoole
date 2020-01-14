@@ -1,10 +1,10 @@
 <?php
 
-namespace think\swoole\pool\cache;
+namespace think\swoole\pool\proxy;
 
 use Psr\SimpleCache\CacheInterface;
 use think\contract\CacheHandlerInterface;
-use think\swoole\concerns\InteractsWithPoolConnector;
+use think\swoole\pool\Proxy;
 
 /**
  * Class Store
@@ -12,10 +12,8 @@ use think\swoole\concerns\InteractsWithPoolConnector;
  *
  * @property CacheHandlerInterface|CacheInterface $handler
  */
-class Store implements CacheHandlerInterface, CacheInterface
+class Cache extends Proxy implements CacheHandlerInterface, CacheInterface
 {
-    use InteractsWithPoolConnector;
-
     /**
      * @inheritDoc
      */

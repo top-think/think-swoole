@@ -1,21 +1,20 @@
 <?php
 
-namespace think\swoole\pool\db;
+namespace think\swoole\pool\proxy;
 
 use Psr\SimpleCache\CacheInterface;
 use think\db\BaseQuery;
 use think\db\ConnectionInterface;
 use think\DbManager;
-use think\swoole\concerns\InteractsWithPoolConnector;
+use think\swoole\pool\Proxy;
 
 /**
  * Class Connection
  * @package think\swoole\pool\db
  * @property ConnectionInterface $handler
  */
-class Connection implements ConnectionInterface
+class Db extends Proxy implements ConnectionInterface
 {
-    use InteractsWithPoolConnector;
 
     /**
      * 获取当前连接器类对应的Query类
@@ -30,7 +29,7 @@ class Connection implements ConnectionInterface
     /**
      * 连接数据库方法
      * @access public
-     * @param array   $config  接参数
+     * @param array $config 接参数
      * @param integer $linkNum 连接序号
      * @return mixed
      */
@@ -106,8 +105,8 @@ class Connection implements ConnectionInterface
     /**
      * 插入记录
      * @access public
-     * @param BaseQuery $query        查询对象
-     * @param boolean   $getLastInsID 返回自增主键
+     * @param BaseQuery $query 查询对象
+     * @param boolean $getLastInsID 返回自增主键
      * @return mixed
      */
     public function insert(BaseQuery $query, bool $getLastInsID = false)
@@ -118,8 +117,8 @@ class Connection implements ConnectionInterface
     /**
      * 批量插入记录
      * @access public
-     * @param BaseQuery $query   查询对象
-     * @param mixed     $dataSet 数据集
+     * @param BaseQuery $query 查询对象
+     * @param mixed $dataSet 数据集
      * @return integer
      * @throws \Exception
      * @throws \Throwable
@@ -154,9 +153,9 @@ class Connection implements ConnectionInterface
     /**
      * 得到某个字段的值
      * @access public
-     * @param BaseQuery $query   查询对象
-     * @param string    $field   字段名
-     * @param mixed     $default 默认值
+     * @param BaseQuery $query 查询对象
+     * @param string $field 字段名
+     * @param mixed $default 默认值
      * @return mixed
      */
     public function value(BaseQuery $query, string $field, $default = null)
@@ -167,9 +166,9 @@ class Connection implements ConnectionInterface
     /**
      * 得到某个列的数组
      * @access public
-     * @param BaseQuery $query  查询对象
-     * @param string    $column 字段名 多个字段用逗号分隔
-     * @param string    $key    索引
+     * @param BaseQuery $query 查询对象
+     * @param string $column 字段名 多个字段用逗号分隔
+     * @param string $key 索引
      * @return array
      */
     public function column(BaseQuery $query, string $column, string $key = ''): array

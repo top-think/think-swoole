@@ -51,10 +51,20 @@ trait InteractsWithPool
             }
         }
 
-        return $this->buildPoolConnection($connection, $pool);
+        return $this->wrapProxy($pool, $connection);
     }
 
-    abstract protected function buildPoolConnection($connection, Channel $pool);
+    protected function wrapProxy(Channel $pool, $connection)
+    {
+        defer(function () use ($pool, $connection) {
+            //自动归还
+            if (!$pool->isFull()) {
+                $pool->push($connection, 0.001);
+            }
+        });
+
+        return $connection;
+    }
 
     abstract protected function createPoolConnection(string $name);
 
@@ -62,10 +72,4 @@ trait InteractsWithPool
 
     abstract protected function getPoolMaxWaitTime($name): int;
 
-    public function __destruct()
-    {
-        foreach ($this->pools as $pool) {
-            $pool->close();
-        }
-    }
 }

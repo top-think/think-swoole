@@ -1,11 +1,11 @@
 <?php
 
-namespace think\swoole\concerns;
+namespace think\swoole\pool;
 
 use RuntimeException;
 use Swoole\Coroutine\Channel;
 
-trait InteractsWithPoolConnector
+abstract class Proxy
 {
     protected $handler;
 
