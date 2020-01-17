@@ -2,7 +2,6 @@
 
 namespace think\swoole\pool;
 
-use RuntimeException;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use think\helper\Arr;
 
