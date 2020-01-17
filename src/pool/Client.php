@@ -24,11 +24,7 @@ class Client implements ConnectorInterface
 
         $client->set($config);
 
-        if (!$client->connect($host, $port, $timeout)) {
-            throw new RuntimeException(
-                sprintf('Connect failed host=%s port=%d', $host, $port)
-            );
-        }
+        $client->connect($host, $port, $timeout);
 
         return $client;
     }
@@ -56,7 +52,7 @@ class Client implements ConnectorInterface
     /**
      * Reset the connection
      * @param \Swoole\Coroutine\Client $connection
-     * @param array                    $config
+     * @param array $config
      * @return mixed
      */
     public function reset($connection, array $config)
