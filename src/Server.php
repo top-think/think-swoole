@@ -118,6 +118,6 @@ abstract class Server
      */
     public function __call($method, $args)
     {
-        call_user_func_array([$this->swoole, $method], $args);
+        return call_user_func_array([$this->swoole, $method], $args);
     }
 }
