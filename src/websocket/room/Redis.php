@@ -78,6 +78,9 @@ class Redis implements RoomInterface
 
         $redis = new PHPRedis();
         $redis->connect($host, $port);
+        if ($password = Arr::get($this->config, 'password')) {
+            $redis->auth($password);
+        }
         if (count($keys = $redis->keys("{$this->prefix}*"))) {
             $redis->del($keys);
         }
