@@ -18,3 +18,11 @@ if (!defined('SWOOLE_PROCESS')) {
 if (!defined('SWOOLE_HOOK_ALL')) {
     define('SWOOLE_HOOK_ALL', 1879048191);
 }
+
+if (!function_exists('defer')) {
+    function defer($callback){}
+}
+
+if (!function_exists('go')) {
+    function go($func){}
+}
