@@ -3,6 +3,7 @@
 namespace think\swoole\concerns;
 
 use RuntimeException;
+use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 
 trait InteractsWithPool
@@ -56,7 +57,7 @@ trait InteractsWithPool
 
     protected function wrapProxy(Channel $pool, $connection)
     {
-        defer(function () use ($pool, $connection) {
+        Coroutine::defer(function () use ($pool, $connection) {
             //自动归还
             if (!$pool->isFull()) {
                 $pool->push($connection, 0.001);

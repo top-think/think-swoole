@@ -36,7 +36,7 @@ class Redis implements RoomInterface
      * RedisRoom constructor.
      *
      * @param Manager $manager
-     * @param array   $config
+     * @param array $config
      */
     public function __construct(Manager $manager, array $config)
     {
@@ -73,15 +73,15 @@ class Redis implements RoomInterface
 
     protected function initData()
     {
-        $host = Arr::get($this->config, 'host', '127.0.0.1');
-        $port = Arr::get($this->config, 'port', 6379);
+        $connector = new PhpRedisConnector();
 
-        $redis = new PHPRedis();
-        $redis->connect($host, $port);
-        if (count($keys = $redis->keys("{$this->prefix}*"))) {
-            $redis->del($keys);
+        $connection = $connector->connect($this->config);
+
+        if (count($keys = $connection->keys("{$this->prefix}*"))) {
+            $connection->del($keys);
         }
-        $redis->close();
+
+        $connector->disconnect($connection);
     }
 
     /**
@@ -133,7 +133,7 @@ class Redis implements RoomInterface
      * Add value to redis.
      *
      * @param        $key
-     * @param array  $values
+     * @param array $values
      * @param string $table
      *
      * @return $this
@@ -160,7 +160,7 @@ class Redis implements RoomInterface
      * Remove value from reddis.
      *
      * @param        $key
-     * @param array  $values
+     * @param array $values
      * @param string $table
      *
      * @return $this

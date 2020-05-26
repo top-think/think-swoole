@@ -2,6 +2,7 @@
 
 namespace think\swoole\rpc\server;
 
+use Swoole\Coroutine;
 use think\swoole\rpc\Packer;
 use think\swoole\rpc\server\channel\Buffer;
 use think\swoole\rpc\server\channel\File;
@@ -15,9 +16,9 @@ class Channel
     public function __construct($header)
     {
         $this->header = $header;
-        $this->queue  = new \Swoole\Coroutine\Channel(1);
+        $this->queue  = new Coroutine\Channel(1);
 
-        go(function () use ($header) {
+        Coroutine::create(function () use ($header) {
             switch ($header['type']) {
                 case Packer::TYPE_BUFFER:
                     $type = Buffer::class;

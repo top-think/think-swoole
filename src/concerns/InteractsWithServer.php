@@ -40,8 +40,9 @@ trait InteractsWithServer
         ]);
         $this->initialize();
         $this->triggerEvent('init');
+
+        //热更新
         if ($this->getConfig('hot_update.enable', false)) {
-            //热更新
             $this->addHotUpdateProcess();
         }
 
@@ -163,7 +164,7 @@ trait InteractsWithServer
             });
         }, false, 0);
 
-        $this->getServer()->addProcess($process);
+        $this->addProcess($process);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace think\swoole\pool;
 
 use RuntimeException;
+use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 
 abstract class Proxy
@@ -42,7 +43,7 @@ abstract class Proxy
 
     public function __destruct()
     {
-        go(function () {
+        Coroutine::create(function () {
             $this->release();
         });
     }

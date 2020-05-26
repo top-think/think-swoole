@@ -66,7 +66,7 @@ class Manager
 
     /**
      * Manager constructor.
-     * @param App        $container
+     * @param App $container
      * @param PidManager $pidManager
      */
     public function __construct(App $container, PidManager $pidManager)

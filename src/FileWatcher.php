@@ -2,6 +2,7 @@
 
 namespace think\swoole;
 
+use Swoole\Timer;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -34,7 +35,7 @@ class FileWatcher
     {
         $this->files = $this->findFiles();
 
-        swoole_timer_tick(1000, function () use ($callback) {
+        Timer::tick(1000, function () use ($callback) {
 
             $files = $this->findFiles();
 

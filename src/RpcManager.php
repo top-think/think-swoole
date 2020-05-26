@@ -2,6 +2,7 @@
 
 namespace think\swoole;
 
+use Swoole\Coroutine;
 use Swoole\Server;
 use Swoole\Server\Port;
 use think\App;
@@ -66,7 +67,7 @@ class RpcManager
 
     /**
      * Manager constructor.
-     * @param App        $container
+     * @param App $container
      * @param PidManager $pidManager
      */
     public function __construct(App $container, PidManager $pidManager)
@@ -156,7 +157,7 @@ class RpcManager
         $result = $handle->write($data);
 
         if (!empty($result)) {
-            go($callback, $result);
+            Coroutine::create($callback, $result);
             $this->channels[$fd]->close();
         } else {
             $this->channels[$fd]->push($handle);
