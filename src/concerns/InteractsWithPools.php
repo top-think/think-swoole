@@ -52,7 +52,7 @@ trait InteractsWithPools
 
         $this->onEvent('workerStart', $createPools);
         $this->onEvent('workerStop', $closePools);
-        $this->onEvent('WorkerError', $closePools);
-        $this->onEvent('WorkerExit', $closePools);
+        $this->onEvent('workerError', $closePools);
+        $this->onEvent('workerExit', $closePools);
     }
 }
