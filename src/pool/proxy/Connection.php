@@ -13,7 +13,7 @@ use think\swoole\pool\Proxy;
  * @package think\swoole\pool\db
  * @property ConnectionInterface $handler
  */
-class Db extends Proxy implements ConnectionInterface
+class Connection extends Proxy implements ConnectionInterface
 {
 
     /**
@@ -229,4 +229,13 @@ class Db extends Proxy implements ConnectionInterface
         return $this->__call(__FUNCTION__, func_get_args());
     }
 
+    public function table($table)
+    {
+        return $this->__call(__FUNCTION__, func_get_args());
+    }
+
+    public function name($name)
+    {
+        return $this->__call(__FUNCTION__, func_get_args());
+    }
 }

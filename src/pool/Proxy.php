@@ -2,49 +2,103 @@
 
 namespace think\swoole\pool;
 
+use Closure;
 use RuntimeException;
+use Smf\ConnectionPool\ConnectionPool;
+use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine;
-use Swoole\Coroutine\Channel;
+use think\swoole\coroutine\Context;
+use think\swoole\Pool;
 
 abstract class Proxy
 {
-    protected $handler;
+    const KEY_RELEASED = '__released';
 
     protected $pool;
 
-    protected $released = false;
-
-    public function __construct($handler, Channel $pool)
+    /**
+     * Proxy constructor.
+     * @param Closure $creator
+     * @param array $config
+     */
+    public function __construct($creator, $config)
     {
-        $this->handler = $handler;
-        $this->pool    = $pool;
+        $this->pool = new ConnectionPool(
+            Pool::pullPoolConfig($config),
+            new class($creator) implements ConnectorInterface {
+
+                protected $creator;
+
+                public function __construct($creator)
+                {
+                    $this->creator = $creator;
+                }
+
+                public function connect(array $config)
+                {
+                    return call_user_func($this->creator);
+                }
+
+                public function disconnect($connection)
+                {
+
+                }
+
+                public function isConnected($connection): bool
+                {
+                    return true;
+                }
+
+                public function reset($connection, array $config)
+                {
+
+                }
+
+                public function validate($connection): bool
+                {
+                    return true;
+                }
+            },
+            []
+        );
+
+        $this->pool->init();
     }
 
-    public function __call($method, $arguments)
+    protected function getPoolConnection()
     {
-        if ($this->released) {
-            throw new RuntimeException("Connection already has been released!");
-        }
+        return Context::rememberData("connection." . static::class, function () {
+            $connection = $this->pool->borrow();
 
-        return $this->handler->{$method}(...$arguments);
+            $connection->{static::KEY_RELEASED} = false;
+
+            Coroutine::defer(function () use ($connection) {
+                //自动归还
+                $connection->{static::KEY_RELEASED} = true;
+                $this->pool->return($connection);
+            });
+
+            return $connection;
+        });
     }
 
     public function release()
     {
-        if ($this->released) {
+        $connection = $this->getPoolConnection();
+        if ($connection->{static::KEY_RELEASED}) {
             return;
         }
-        $this->released = true;
-
-        if (!$this->pool->isFull()) {
-            $this->pool->push($this->handler, 0.001);
-        }
+        $this->pool->return($connection);
     }
 
-    public function __destruct()
+    public function __call($method, $arguments)
     {
-        Coroutine::create(function () {
-            $this->release();
-        });
+        $connection = $this->getPoolConnection();
+        if ($connection->{static::KEY_RELEASED}) {
+            throw new RuntimeException("Connection already has been released!");
+        }
+
+        return $connection->{$method}(...$arguments);
     }
+
 }

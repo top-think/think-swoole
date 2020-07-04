@@ -6,13 +6,7 @@ use Psr\SimpleCache\CacheInterface;
 use think\contract\CacheHandlerInterface;
 use think\swoole\pool\Proxy;
 
-/**
- * Class Store
- * @package think\swoole\pool\cache
- *
- * @property CacheHandlerInterface|CacheInterface $handler
- */
-class Cache extends Proxy implements CacheHandlerInterface, CacheInterface
+class Store extends Proxy implements CacheHandlerInterface, CacheInterface
 {
     /**
      * @inheritDoc

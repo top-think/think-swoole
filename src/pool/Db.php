@@ -4,8 +4,7 @@ namespace think\swoole\pool;
 
 use think\Config;
 use think\db\ConnectionInterface;
-use think\swoole\concerns\InteractsWithPool;
-use think\swoole\coroutine\Context;
+use think\swoole\pool\proxy\Connection;
 
 /**
  * Class Db
@@ -14,43 +13,12 @@ use think\swoole\coroutine\Context;
  */
 class Db extends \think\Db
 {
-    use InteractsWithPool;
 
-    protected function getPoolMaxActive($name): int
+    protected function createConnection(string $name): ConnectionInterface
     {
-        return $this->config->get('swoole.pool.db.max_active', 3);
-    }
-
-    protected function getPoolMaxWaitTime($name): int
-    {
-        return $this->config->get('swoole.pool.db.max_wait_time', 3);
-    }
-
-    /**
-     * 创建数据库连接实例
-     * @access protected
-     * @param string|null $name 连接标识
-     * @param bool $force 强制重新连接
-     * @return ConnectionInterface
-     */
-    protected function instance(string $name = null, bool $force = false): ConnectionInterface
-    {
-        if (empty($name)) {
-            $name = $this->getConfig('default', 'mysql');
-        }
-
-        if ($force) {
-            return $this->createConnection($name);
-        }
-
-        return Context::rememberData("db.connection.{$name}", function () use ($name) {
-            return $this->getPoolConnection($name);
-        });
-    }
-
-    protected function createPoolConnection(string $name)
-    {
-        return $this->createConnection($name);
+        return new Connection(function () use ($name) {
+            return parent::createConnection($name);
+        }, $this->config->get('swoole.pool.db', []));
     }
 
     protected function getConnectionConfig(string $name): array
