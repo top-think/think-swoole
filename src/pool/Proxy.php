@@ -71,7 +71,7 @@ abstract class Proxy
 
     protected function getPoolConnection()
     {
-        return Context::rememberData("connection." . static::class, function () {
+        return Context::rememberData("connection." . spl_object_id($this), function () {
             $connection = $this->pool->borrow();
 
             $connection->{static::KEY_RELEASED} = false;
