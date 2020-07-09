@@ -8,29 +8,14 @@ use Swoole\Coroutine;
 class Context
 {
 
-    /**
-     * The data in different coroutine environment.
-     *
-     * @var array
-     */
-    protected static $data = [];
-
-    /**
-     * Get data by current coroutine id.
-     *
-     * @param string $key
-     *
-     * @param null   $default
-     * @return mixed|null
-     */
     public static function getData(string $key, $default = null)
     {
-        return static::$data[static::getCoroutineId()][$key] ?? $default;
+        return Coroutine::getContext()['data'][$key] ?? $default;
     }
 
     public static function hasData(string $key)
     {
-        return isset(static::$data[static::getCoroutineId()]) && array_key_exists($key, static::$data[static::getCoroutineId()]);
+        return isset(Coroutine::getContext()['data']) && array_key_exists($key, Coroutine::getContext()['data']);
     }
 
     public static function rememberData(string $key, $value)
@@ -49,46 +34,28 @@ class Context
         return $value;
     }
 
-    /**
-     * Set data by current coroutine id.
-     *
-     * @param string $key
-     * @param        $value
-     */
     public static function setData(string $key, $value)
     {
-        static::$data[static::getCoroutineId()][$key] = $value;
+        Coroutine::getContext()['data'][$key] = $value;
     }
 
-    /**
-     * Remove data by current coroutine id.
-     *
-     * @param string $key
-     */
     public static function removeData(string $key)
     {
-        unset(static::$data[static::getCoroutineId()][$key]);
+        unset(Coroutine::getContext()['data'][$key]);
     }
 
-    /**
-     * Get data keys by current coroutine id.
-     */
     public static function getDataKeys()
     {
-        return array_keys(static::$data[static::getCoroutineId()] ?? []);
+        return array_keys(Coroutine::getContext()['data'] ?? []);
     }
 
-    /**
-     * Clear data by current coroutine id.
-     */
     public static function clear()
     {
-        unset(static::$data[static::getCoroutineId()]);
+        if (isset(Coroutine::getContext()['data'])) {
+            unset(Coroutine::getContext()['data']);
+        }
     }
 
-    /**
-     * Get current coroutine id.
-     */
     public static function getCoroutineId()
     {
         return Coroutine::getuid();
