@@ -109,7 +109,7 @@ trait InteractsWithServer
     {
         $this->runInSandbox(function (Event $event) use ($task) {
             $event->trigger('swoole.task', $task);
-        });
+        }, $task->id);
     }
 
     /**
