@@ -62,12 +62,8 @@ class PidManager
     {
         $pids = $this->getPids();
 
-        if (!count($pids)) {
-            return false;
-        }
-
-        $masterPid  = $pids['masterPid'] ?? null;
-        $managerPid = $pids['managerPid'] ?? null;
+        $masterPid  = $pids['masterPid'];
+        $managerPid = $pids['managerPid'];
 
         if ($managerPid) {
             // Swoole process mode
