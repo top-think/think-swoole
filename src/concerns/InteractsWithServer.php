@@ -13,13 +13,11 @@ use think\Event;
 use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\FileWatcher;
-use think\swoole\PidManager;
 use Throwable;
 
 /**
  * Trait InteractsWithServer
  * @package think\swoole\concerns
- * @property PidManager $pidManager
  * @property App $container
  */
 trait InteractsWithServer
@@ -63,7 +61,6 @@ trait InteractsWithServer
     public function onStart()
     {
         $this->setProcessName('master process');
-        $this->pidManager->create($this->getServer()->master_pid, $this->getServer()->manager_pid ?? 0);
 
         $this->triggerEvent("start", func_get_args());
     }
@@ -121,7 +118,6 @@ trait InteractsWithServer
     public function onShutdown()
     {
         $this->triggerEvent('shutdown');
-        $this->pidManager->remove();
     }
 
     /**

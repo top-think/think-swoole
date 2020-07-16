@@ -2,56 +2,25 @@
 
 namespace think\swoole;
 
-use RuntimeException;
 use Swoole\Process;
-use think\helper\Arr;
 
 class PidManager
 {
     /** @var string */
     protected $file;
 
-    public function __construct(string $file = null)
+    public function __construct(string $file)
     {
-        $this->file = $file ?? (sys_get_temp_dir() . '/swoole.pid');
+        $this->file = $file;
     }
 
-    public function create(int $masterPid, int $managerPid)
+    public function getPid()
     {
-        if (!is_writable($this->file)
-            && !is_writable(dirname($this->file))
-        ) {
-            throw new RuntimeException(
-                sprintf('Pid file "%s" is not writable', $this->file)
-            );
-        }
-
-        file_put_contents($this->file, $masterPid . ',' . $managerPid);
-    }
-
-    public function getMasterPid()
-    {
-        return $this->getPids()['masterPid'];
-    }
-
-    public function getManagerPid()
-    {
-        return $this->getPids()['managerPid'];
-    }
-
-    public function getPids(): array
-    {
-        $pids = [];
-
         if (is_readable($this->file)) {
-            $content = file_get_contents($this->file);
-            $pids    = explode(',', $content);
+            return (int) file_get_contents($this->file);
         }
 
-        return [
-            'masterPid'  => $pids[0] ?? null,
-            'managerPid' => $pids[1] ?? null,
-        ];
+        return 0;
     }
 
     /**
@@ -60,18 +29,9 @@ class PidManager
      */
     public function isRunning()
     {
-        $pids = $this->getPids();
+        $pid = $this->getPid();
 
-        $masterPid  = $pids['masterPid'];
-        $managerPid = $pids['managerPid'];
-
-        if ($managerPid) {
-            // Swoole process mode
-            return $masterPid && $managerPid && Process::kill((int) $managerPid, 0);
-        }
-
-        // Swoole base mode, no manager process
-        return $masterPid && Process::kill((int) $masterPid, 0);
+        return $pid > 0 && Process::kill($pid, 0);
     }
 
     /**
@@ -84,10 +44,8 @@ class PidManager
      */
     public function killProcess($sig, $wait = 0)
     {
-        Process::kill(
-            Arr::first($this->getPids()),
-            $sig
-        );
+        $pid = $this->getPid();
+        $pid > 0 && Process::kill($pid, $sig);
 
         if ($wait) {
             $start = time();
@@ -104,12 +62,4 @@ class PidManager
         return $this->isRunning();
     }
 
-    public function remove(): bool
-    {
-        if (is_writable($this->file)) {
-            return unlink($this->file);
-        }
-
-        return false;
-    }
 }

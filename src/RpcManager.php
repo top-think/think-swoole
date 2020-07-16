@@ -33,9 +33,6 @@ class RpcManager
      */
     protected $container;
 
-    /** @var PidManager */
-    protected $pidManager;
-
     /**
      * Server events.
      *
@@ -68,12 +65,10 @@ class RpcManager
     /**
      * Manager constructor.
      * @param App $container
-     * @param PidManager $pidManager
      */
-    public function __construct(App $container, PidManager $pidManager)
+    public function __construct(App $container)
     {
-        $this->container  = $container;
-        $this->pidManager = $pidManager;
+        $this->container = $container;
     }
 
     /**
