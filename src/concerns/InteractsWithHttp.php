@@ -198,11 +198,6 @@ trait InteractsWithHttp
     {
         $chunkSize = 8192;
 
-        if (strlen($content) <= $chunkSize) {
-            $res->end($content);
-            return;
-        }
-
         foreach (str_split($content, $chunkSize) as $chunk) {
             $res->write($chunk);
         }
