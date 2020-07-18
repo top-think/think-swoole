@@ -199,7 +199,9 @@ trait InteractsWithHttp
         $chunkSize = 8192;
 
         foreach (str_split($content, $chunkSize) as $chunk) {
-            $res->write($chunk);
+            if(!empty($chunk)) {
+                $res->write($chunk);
+            }
         }
 
         $res->end();
