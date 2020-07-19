@@ -54,7 +54,11 @@ abstract class Proxy
 
             foreach ($reflection->getMethods() as $methodRef) {
                 $method = (new Factory)->fromMethodReflection($methodRef);
-                $method->setBody("return \$this->proxyCall('{$methodRef->getName()}', func_get_args());");
+                $body   = "\$this->proxyCall('{$methodRef->getName()}', func_get_args());";
+                if ($method->getReturnType() != 'void') {
+                    $body = "return {$body}";
+                }
+                $method->setBody($body);
                 $class->addMember($method);
             }
 
