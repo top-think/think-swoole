@@ -89,7 +89,7 @@ class Gateway
     {
         $class = Coroutine::getCid() > -1 ? Coroutine\Client::class : Client::class;
 
-        /** @var Client $client */
+        /** @var Client|Coroutine\Client $client */
         $client = new $class(SWOOLE_SOCK_TCP);
 
         $host    = Arr::pull($config, 'host');
@@ -112,7 +112,11 @@ class Gateway
         return new class($client) implements Connector {
             protected $client;
 
-            public function __construct(Client $client)
+            /**
+             *  constructor.
+             * @param Client|Coroutine\Client $client
+             */
+            public function __construct($client)
             {
                 $this->client = $client;
             }
