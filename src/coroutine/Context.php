@@ -36,7 +36,10 @@ class Context
      */
     public static function getData(string $key, $default = null)
     {
-        return self::getDataObject()->offsetGet($key) ?? $default;
+        if (self::hasData($key)) {
+            return self::getDataObject()->offsetGet($key);
+        }
+        return $default;
     }
 
     /**
@@ -60,6 +63,17 @@ class Context
     }
 
     /**
+     * 删除数据
+     * @param string $key
+     */
+    public static function removeData(string $key)
+    {
+        if (self::hasData($key)) {
+            self::getDataObject()->offsetUnset($key);
+        }
+    }
+
+    /**
      * 如果不存在则写入数据
      * @param string $key
      * @param $value
@@ -79,15 +93,6 @@ class Context
         self::setData($key, $value);
 
         return $value;
-    }
-
-    /**
-     * 删除数据
-     * @param string $key
-     */
-    public static function removeData(string $key)
-    {
-        @self::getDataObject()->offsetUnset($key);
     }
 
     /**
