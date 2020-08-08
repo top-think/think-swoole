@@ -36,7 +36,7 @@ class Context
      */
     public static function getData(string $key, $default = null)
     {
-        return self::getDataObject()[$key] ?? $default;
+        return self::getDataObject()->offsetGet($key) ?? $default;
     }
 
     /**
@@ -46,7 +46,7 @@ class Context
      */
     public static function hasData(string $key)
     {
-        return array_key_exists($key, self::getDataObject());
+        return self::getDataObject()->offsetExists($key);
     }
 
     /**
@@ -56,7 +56,7 @@ class Context
      */
     public static function setData(string $key, $value)
     {
-        self::getDataObject()[$key] = $value;
+        self::getDataObject()->offsetSet($key, $value);
     }
 
     /**
@@ -87,7 +87,7 @@ class Context
      */
     public static function removeData(string $key)
     {
-        unset(self::getDataObject()[$key]);
+        @self::getDataObject()->offsetUnset($key);
     }
 
     /**
