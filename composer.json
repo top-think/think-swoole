@@ -18,6 +18,9 @@
         "nette/php-generator": "^3.2",
         "open-smf/connection-pool": "~1.0"
     },
+    "require-dev": {
+        "symfony/var-dumper": "^4.3|^5.1"
+    },
     "autoload": {
         "psr-4": {
             "think\\swoole\\": "src"
@@ -36,7 +39,8 @@
             }
         }
     },
-    "require-dev": {
-        "symfony/var-dumper": "^4.3|^5.1"
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true
     }
 }
