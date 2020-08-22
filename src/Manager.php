@@ -12,6 +12,7 @@
 namespace think\swoole;
 
 use think\App;
+use think\console\Output;
 use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithRpcServer;
@@ -34,6 +35,11 @@ class Manager
         InteractsWithRpcClient,
         InteractsWithRpcServer,
         WithApplication;
+
+    /**
+     * @var Output
+     */
+    protected $consoleOutput;
 
     /**
      * @var App
@@ -83,4 +89,19 @@ class Manager
         $this->prepareRpcClient();
     }
 
+    /**
+     * @return Output
+     */
+    public function getConsoleOutput():? Output
+    {
+        return $this->consoleOutput;
+    }
+
+    /**
+     * @param Output $consoleOutput
+     */
+    public function setConsoleOutput(Output $consoleOutput): void
+    {
+        $this->consoleOutput = $consoleOutput;
+    }
 }

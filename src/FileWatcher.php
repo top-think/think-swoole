@@ -41,7 +41,7 @@ class FileWatcher
 
             foreach ($files as $path => $time) {
                 if (empty($this->files[$path]) || $this->files[$path] != $time) {
-                    call_user_func($callback);
+                    call_user_func($callback, $path);
                     break;
                 }
             }

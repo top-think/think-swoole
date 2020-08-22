@@ -97,6 +97,7 @@ class Server extends Command
         $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
         $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
+        $manager->setConsoleOutput($this->output);
         $manager->run();
     }
 

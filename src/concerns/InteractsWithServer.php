@@ -20,6 +20,7 @@ use Throwable;
  * Trait InteractsWithServer
  * @package think\swoole\concerns
  * @property App $container
+ * @property Output $consoleOutput
  */
 trait InteractsWithServer
 {
@@ -168,7 +169,8 @@ trait InteractsWithServer
                 $this->getConfig('hot_update.name', [])
             );
 
-            $watcher->watch(function () {
+            $watcher->watch(function (string $path) {
+                $this->consoleOutput->info("[FW] {$path} <comment>reload</comment>");
                 $this->getServer()->reload();
             });
         }, false, 0, true);
