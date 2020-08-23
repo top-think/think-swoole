@@ -202,7 +202,9 @@ trait InteractsWithHttp
         if ($contentSize > $chunkSize) {
             $sendSize = 0;
             do {
-                $res->write(\substr($content, $sendSize, $chunkSize));
+                if (!$res->write(\substr($content, $sendSize, $chunkSize))) {
+                    break;
+                }
             } while  (($sendSize += $chunkSize) < $contentSize);
             $res->end();
         } else {
