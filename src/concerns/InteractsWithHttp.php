@@ -196,15 +196,17 @@ trait InteractsWithHttp
 
     protected function sendByChunk(Response $res, $content)
     {
-        if (!empty($content)) {
-            $chunkSize = 8192;
-            $contentLen = strlen($content);
-            $sendLen = 0;
+        $contentSize = \strlen($content);
+        $chunkSize = 8192;
 
+        if ($contentSize > $chunkSize) {
+            $sendSize = 0;
             do {
-                $res->write(substr($content, $sendLen, $chunkSize));
-            } while  (($sendLen += $chunkSize) < $contentLen);
+                $res->write(\substr($content, $sendSize, $chunkSize));
+            } while  (($sendSize += $chunkSize) < $contentSize);
+            $res->end();
+        } else {
+            $res->end($content);
         }
-        $res->end();
     }
 }
