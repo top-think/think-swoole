@@ -73,7 +73,6 @@ trait InteractsWithRpcClient
                     }
                 }
             } catch (\Exception | \Throwable $e) {
-
             }
         }
     }
@@ -123,8 +122,6 @@ trait InteractsWithRpcClient
                 $client->close();
                 throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
             }
-
         };
     }
-
 }
