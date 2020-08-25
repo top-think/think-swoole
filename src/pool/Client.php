@@ -45,7 +45,7 @@ class Client implements ConnectorInterface
      */
     public function isConnected($connection): bool
     {
-        return $connection->isConnected();
+        return $connection->isConnected() && $connection->peek() !== '';
     }
 
     /**
