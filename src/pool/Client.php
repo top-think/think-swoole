@@ -19,7 +19,7 @@ class Client implements ConnectorInterface
 
         $host    = Arr::pull($config, 'host');
         $port    = Arr::pull($config, 'port');
-        $timeout = Arr::pull($config, 'timeout');
+        $timeout = Arr::pull($config, 'timeout', 5);
 
         $client->set($config);
 
@@ -56,7 +56,6 @@ class Client implements ConnectorInterface
      */
     public function reset($connection, array $config)
     {
-
     }
 
     /**
