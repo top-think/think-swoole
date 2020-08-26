@@ -29,12 +29,12 @@ trait InteractsWithServer
     public function run(): void
     {
         $this->getServer()->set([
-            'task_enable_coroutine' => true,
-            'send_yield'            => true,
-            'reload_async'          => true,
-            'enable_coroutine'      => true,
-            'max_request'           => 0,
-            'task_max_request'      => 0,
+            'task_enable_coroutine' => $this->getConfig('server.options.task_enable_coroutine', true),
+            'send_yield'            => $this->getConfig('server.options.send_yield', true),
+            'reload_async'          => $this->getConfig('server.options.reload_async', true),
+            'enable_coroutine'      => $this->getConfig('server.options.enable_coroutine', true),
+            'max_request'           => $this->getConfig('server.options.max_request', 0),
+            'task_max_request'      => $this->getConfig('server.options.task_max_request', 0),
         ]);
         $this->initialize();
         $this->triggerEvent('init');
