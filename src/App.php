@@ -10,4 +10,9 @@ class App extends \think\App
     {
         return Context::hasData('_fd');
     }
+
+    public function clearInstances()
+    {
+        $this->instances = [];
+    }
 }

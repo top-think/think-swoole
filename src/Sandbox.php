@@ -18,18 +18,20 @@ use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetEvent;
 use think\swoole\resetters\ResetService;
 use Throwable;
+use think\swoole\App as SwooleApp;
 
 class Sandbox
 {
     use ModifyProperty;
+
     /**
      * The app containers in different coroutine environment.
      *
-     * @var array
+     * @var SwooleApp[]
      */
     protected $snapshots = [];
 
-    /** @var App */
+    /** @var SwooleApp */
     protected $app;
 
     /** @var Config */
@@ -100,7 +102,8 @@ class Sandbox
 
     public function clear($snapshot = true)
     {
-        if ($snapshot) {
+        if ($snapshot && $app = $this->getSnapshot()) {
+            $app->clearInstances();
             unset($this->snapshots[$this->getSnapshotId()]);
         }
 
