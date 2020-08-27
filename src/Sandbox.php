@@ -101,6 +101,12 @@ class Sandbox
     public function clear($snapshot = true)
     {
         if ($snapshot) {
+            $snapshotInstance = $this->getSnapshot();
+            if($snapshotInstance) {
+                foreach($snapshotInstance as $k => $v) {
+                    unset($snapshotInstance[$k]);
+                }
+            }
             unset($this->snapshots[$this->getSnapshotId()]);
         }
 
