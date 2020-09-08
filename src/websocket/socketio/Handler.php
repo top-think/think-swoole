@@ -26,7 +26,7 @@ class Handler implements HandlerInterface
     /**
      * "onOpen" listener.
      *
-     * @param int     $fd
+     * @param int $fd
      * @param Request $request
      */
     public function onOpen($fd, Request $request)
@@ -43,8 +43,10 @@ class Handler implements HandlerInterface
             $initPayload    = Packet::OPEN . $payload;
             $connectPayload = Packet::MESSAGE . Packet::CONNECT;
 
-            $this->server->push($fd, $initPayload);
-            $this->server->push($fd, $connectPayload);
+            if ($this->server->isEstablished($fd)) {
+                $this->server->push($fd, $initPayload);
+                $this->server->push($fd, $connectPayload);
+            }
         }
     }
 
@@ -91,7 +93,7 @@ class Handler implements HandlerInterface
             $payload .= substr($packet, 1, $packetLength - 1);
         }
 
-        if ($isPing) {
+        if ($isPing && $this->server->isEstablished($fd)) {
             $this->server->push($fd, $payload);
         }
     }

@@ -10,7 +10,7 @@ use Swoole\Server;
 class Pusher
 {
     /**
-     * @var Server
+     * @var Server|\Swoole\WebSocket\Server
      */
     protected $server;
 
@@ -43,10 +43,10 @@ class Pusher
      * Push constructor.
      *
      * @param Server $server
-     * @param int    $sender
-     * @param array  $descriptors
-     * @param bool   $broadcast
-     * @param bool   $assigned
+     * @param int $sender
+     * @param array $descriptors
+     * @param bool $broadcast
+     * @param bool $assigned
      * @param string $payload
      */
     public function __construct(
@@ -169,7 +169,7 @@ class Pusher
      */
     protected function shouldPushToDescriptor(int $fd): bool
     {
-        if (!$this->server->exist($fd)) {
+        if (!$this->server->isEstablished($fd)) {
             return false;
         }
 
