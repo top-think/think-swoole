@@ -99,6 +99,22 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
+        /**
+         * tiymeng update start
+         * @Author: TinyMeng <666@majiameng.com>
+         * @Time: 2020-04-01 
+         */
+        $httpRequest = config("swoole.websocket.httpRequest");
+        if(!empty($httpRequest)){
+            if(isset($req->get['websocket'])){
+                $websocket = new $httpRequest($this->getServer());
+                return $websocket->onRequest($req,$res);
+            }else{
+                //return true;
+            }
+        }
+        /** tinymeng update end */
+        
         $args = func_get_args();
         $this->runInSandbox(function (Http $http, Event $event, App $app, Middleware $middleware) use ($args, $req, $res) {
             $event->trigger('swoole.request', $args);
