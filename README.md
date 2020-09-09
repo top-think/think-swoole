@@ -5,7 +5,7 @@ ThinkPHP Swoole 扩展
 
 首先按照Swoole官网说明安装swoole扩展，然后使用
 ~~~
-composer require topthink/think-swoole
+composer require tinymeng/think-swoole
 ~~~
 安装swoole扩展。
 
@@ -34,3 +34,24 @@ swoole的相关参数可以在`config/swoole.php`里面配置（具体参考配�
 ~~~
 php think swoole [start|stop|reload|restart]
 ~~~
+
+tinymeng  新增请求
+
+通过http主动发送到socket
+
+修改配置文件,添加 httpRequest 参数
+
+ ```
+     'websocket'  => [
+        'enable'        => true,
+        'handler'       => SocketHandler::class,
+        'httpRequest'   => WebsocketMessage::class,//监听onRequest回调
+        'parser'        => Parser::class,
+        'ping_interval' => 25000,
+        'ping_timeout'  => 60000,
+        'room'          => [],
+        'listen'        => [],
+        'subscribe'     => [],
+    ],
+ ```
+
