@@ -1,5 +1,5 @@
 {
-    "name": "topthink/think-swoole",
+    "name": "tinymneg/think-swoole",
     "description": "Swoole extend for thinkphp",
     "license": "Apache-2.0",
     "authors": [
