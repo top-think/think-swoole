@@ -95,4 +95,12 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function tag($name)
+    {
+        return $this->__call(__FUNCTION__, func_get_args());
+    }
 }
