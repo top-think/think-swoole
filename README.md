@@ -2,6 +2,7 @@ ThinkPHP Swoole 扩展
 ===============
 
 ## 安装
+fork自tp官方扩展
 
 首先按照Swoole官网说明安装swoole扩展，然后使用
 ~~~
