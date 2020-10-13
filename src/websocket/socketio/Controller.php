@@ -3,14 +3,13 @@
 namespace think\swoole\websocket\socketio;
 
 use think\Config;
-use think\Cookie;
 use think\Request;
 
 class Controller
 {
     protected $transports = ['polling', 'websocket'];
 
-    public function upgrade(Request $request, Config $config, Cookie $cookie)
+    public function upgrade(Request $request, Config $config)
     {
         if (!in_array($request->param('transport'), $this->transports)) {
             return json(
@@ -25,8 +24,8 @@ class Controller
         if ($request->has('sid')) {
             $response = response('1:6');
         } else {
-            $sid     = base64_encode(uniqid());
-            $payload = json_encode(
+            $sid      = base64_encode(uniqid());
+            $payload  = json_encode(
                 [
                     'sid'          => $sid,
                     'upgrades'     => ['websocket'],
@@ -34,8 +33,7 @@ class Controller
                     'pingTimeout'  => $config->get('swoole.websocket.ping_timeout'),
                 ]
             );
-            $cookie->set('io', $sid);
-            $response = response('97:0' . $payload . '2:40');
+            $response = response(strlen($payload) + 1 . ':0' . $payload . '2:40');
         }
 
         return $response->contentType('text/plain');
