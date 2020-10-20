@@ -99,6 +99,8 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
+        $this->getCoordinator()->waitEvent('workerStart');
+
         $args = func_get_args();
         $this->runInSandbox(function (Http $http, Event $event, App $app, Middleware $middleware) use ($args, $req, $res) {
             $event->trigger('swoole.request', $args);
@@ -197,7 +199,7 @@ trait InteractsWithHttp
     protected function sendByChunk(Response $res, $content)
     {
         $contentSize = \strlen($content);
-        $chunkSize = 8192;
+        $chunkSize   = 8192;
 
         if ($contentSize > $chunkSize) {
             $sendSize = 0;
@@ -205,7 +207,7 @@ trait InteractsWithHttp
                 if (!$res->write(\substr($content, $sendSize, $chunkSize))) {
                     break;
                 }
-            } while  (($sendSize += $chunkSize) < $contentSize);
+            } while (($sendSize += $chunkSize) < $contentSize);
             $res->end();
         } else {
             $res->end($content);
