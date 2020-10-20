@@ -7,30 +7,23 @@ use Swoole\Coroutine\Channel;
 class Coordinator
 {
     /**
-     * @var Channel[]
+     * @var Channel
      */
-    private $channel = [];
+    private $channel;
 
-    public function waitEvent($event, $timeout = -1): bool
+    public function __construct()
     {
-        $channel = $this->getChannel($event);
-
-        $channel->pop((float) $timeout);
-        return $channel->errCode === SWOOLE_CHANNEL_CLOSED;
+        $this->channel = new Channel(1);
     }
 
-    public function triggerEvent($event): void
+    public function yield($timeout = -1): bool
     {
-        $channel = $this->getChannel($event);
-        $channel->close();
+        $this->channel->pop((float) $timeout);
+        return $this->channel->errCode === SWOOLE_CHANNEL_CLOSED;
     }
 
-    private function getChannel($name)
+    public function resume(): void
     {
-        if (empty($this->channel[$name])) {
-            $this->channel[$name] = new Channel(1);
-        }
-
-        return $this->channel[$name];
+        $this->channel->close();
     }
 }

@@ -55,7 +55,7 @@ trait InteractsWithWebsocket
      */
     public function onOpen($server, $req)
     {
-        $this->getCoordinator()->waitEvent('workerStart');
+        $this->waitEvent('workerStart');
 
         /** @var Websocket $websocket */
         $websocket = $this->app->make(Websocket::class);

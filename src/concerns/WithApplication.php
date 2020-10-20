@@ -6,6 +6,7 @@ use Closure;
 use Swoole\Server;
 use think\App;
 use think\swoole\App as SwooleApp;
+use think\swoole\Coordinator;
 use think\swoole\pool\Cache;
 use think\swoole\pool\Db;
 use think\swoole\Sandbox;
@@ -18,6 +19,12 @@ use Throwable;
  */
 trait WithApplication
 {
+    protected $waitEvents = [
+        'workerStart',
+        'workerExit',
+    ];
+
+    protected $coordinator = [];
 
     /**
      * @var SwooleApp
@@ -27,12 +34,25 @@ trait WithApplication
     /**
      * 获取配置
      * @param string $name
-     * @param null   $default
+     * @param null $default
      * @return mixed
      */
     public function getConfig(string $name, $default = null)
     {
         return $this->container->config->get("swoole.{$name}", $default);
+    }
+
+    /**
+     * @param string $name
+     * @return Coordinator
+     */
+    public function getCoordinator(string $name)
+    {
+        if (!isset($this->coordinator[$name])) {
+            $this->coordinator[$name] = new Coordinator();
+        }
+
+        return $this->coordinator[$name];
     }
 
     /**
@@ -43,17 +63,31 @@ trait WithApplication
     protected function triggerEvent(string $event, $params = null): void
     {
         $this->container->event->trigger("swoole.{$event}", $params);
+        if (in_array($event, $this->waitEvents)) {
+            $this->getCoordinator($event)->resume();
+        }
     }
 
     /**
      * 监听事件
      * @param string $event
      * @param        $listener
-     * @param bool   $first
+     * @param bool $first
      */
     public function onEvent(string $event, $listener, bool $first = false): void
     {
         $this->container->event->listen("swoole.{$event}", $listener, $first);
+    }
+
+    /**
+     * 等待事件
+     * @param string $event
+     * @param int $timeout
+     * @return bool
+     */
+    protected function waitEvent(string $event, $timeout = -1): bool
+    {
+       return $this->getCoordinator($event)->yield($timeout);
     }
 
     protected function prepareApplication()
@@ -103,8 +137,8 @@ trait WithApplication
     /**
      * 在沙箱中执行
      * @param Closure $callable
-     * @param null    $fd
-     * @param bool    $persistent
+     * @param null $fd
+     * @param bool $persistent
      */
     protected function runInSandbox(Closure $callable, $fd = null, $persistent = false)
     {

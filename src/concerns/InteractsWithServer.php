@@ -12,7 +12,6 @@ use think\console\Output;
 use think\Event;
 use think\exception\Handle;
 use think\helper\Str;
-use think\swoole\Coordinator;
 use think\swoole\FileWatcher;
 use Throwable;
 
@@ -98,8 +97,6 @@ trait InteractsWithServer
         $this->prepareApplication();
 
         $this->triggerEvent("workerStart", $this->app);
-
-        $this->getCoordinator()->triggerEvent("workerStart");
     }
 
     /**
@@ -121,14 +118,6 @@ trait InteractsWithServer
     public function onShutdown()
     {
         $this->triggerEvent('shutdown');
-    }
-
-    /**
-     * @return Coordinator
-     */
-    public function getCoordinator()
-    {
-        return $this->container->make(Coordinator::class);
     }
 
     /**
