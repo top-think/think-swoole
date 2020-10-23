@@ -43,19 +43,6 @@ trait WithApplication
     }
 
     /**
-     * @param string $name
-     * @return Coordinator
-     */
-    public function getCoordinator(string $name)
-    {
-        if (!isset($this->coordinator[$name])) {
-            $this->coordinator[$name] = new Coordinator();
-        }
-
-        return $this->coordinator[$name];
-    }
-
-    /**
      * 触发事件
      * @param $event
      * @param $params
@@ -64,7 +51,7 @@ trait WithApplication
     {
         $this->container->event->trigger("swoole.{$event}", $params);
         if (in_array($event, $this->waitEvents)) {
-            $this->getCoordinator($event)->resume();
+            $this->app->getCoordinator($event)->resume();
         }
     }
 
@@ -87,7 +74,7 @@ trait WithApplication
      */
     protected function waitEvent(string $event, $timeout = -1): bool
     {
-       return $this->getCoordinator($event)->yield($timeout);
+       return $this->app->getCoordinator($event)->yield($timeout);
     }
 
     protected function prepareApplication()
