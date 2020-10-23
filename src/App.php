@@ -6,17 +6,17 @@ use think\swoole\coroutine\Context;
 
 class App extends \think\App
 {
-	protected $coordinator = [];
+	protected $coordinator=[];
 	
-	public function runningInConsole()
-	{
-		return Context::hasData('_fd');
-	}
-	
-	public function clearInstances()
-	{
-		$this->instances = [];
-	}
+    public function runningInConsole()
+    {
+        return Context::hasData('_fd');
+    }
+
+    public function clearInstances()
+    {
+        $this->instances = [];
+    }
 	
 	public function getCoordinator(string $name)
 	{
