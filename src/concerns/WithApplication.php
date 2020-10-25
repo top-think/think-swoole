@@ -24,8 +24,6 @@ trait WithApplication
         'workerExit',
     ];
 
-    protected $coordinator = [];
-
     /**
      * @var SwooleApp
      */
@@ -48,11 +46,14 @@ trait WithApplication
      */
     public function getCoordinator(string $name)
     {
-        if (!isset($this->coordinator[$name])) {
-            $this->coordinator[$name] = new Coordinator();
+        $abstract = "coordinator.{$name}";
+        if (!$this->container->has($abstract)) {
+            $this->container->bind($abstract, function () {
+                return new Coordinator();
+            });
         }
 
-        return $this->coordinator[$name];
+        return $this->container->make($abstract);
     }
 
     /**
@@ -87,7 +88,7 @@ trait WithApplication
      */
     protected function waitEvent(string $event, $timeout = -1): bool
     {
-       return $this->getCoordinator($event)->yield($timeout);
+        return $this->getCoordinator($event)->yield($timeout);
     }
 
     protected function prepareApplication()
