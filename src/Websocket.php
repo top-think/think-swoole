@@ -148,7 +148,7 @@ class Websocket
             $result = $this->server->task([
                 'action' => static::PUSH_ACTION,
                 'data'   => [
-                    'sender'      => $this->getSender(),
+                    'sender'      => $this->getSender()?:0,
                     'descriptors' => $fds,
                     'broadcast'   => $this->isBroadcast(),
                     'assigned'    => $assigned,
