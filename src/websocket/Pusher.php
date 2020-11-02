@@ -52,13 +52,13 @@ class Pusher
     public function __construct(
         Server $server,
         string $payload,
-        int $sender = 0,
+        ?int $sender = 0,
         array $descriptors = [],
         bool $broadcast = false,
         bool $assigned = false
     )
     {
-        $this->sender      = $sender;
+        $this->sender      = $sender ?: 0;
         $this->descriptors = $descriptors;
         $this->broadcast   = $broadcast;
         $this->assigned    = $assigned;
