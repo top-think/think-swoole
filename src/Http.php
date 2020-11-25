@@ -107,7 +107,7 @@ class Http extends Server
     {
         // 设置参数
         if (!empty($option)) {
-            $this->swoole->set($option);
+            $this->swoole->set(checkOptions($option));
         }
 
         foreach ($this->event as $event) {

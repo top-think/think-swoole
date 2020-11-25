@@ -17,6 +17,7 @@ use think\console\input\Option;
 use think\facade\Config;
 use think\facade\Env;
 use think\swoole\Server as ThinkServer;
+use function think\swoole\checkOptions;
 
 /**
  * Swoole 命令行，支持操作：start|stop|restart|reload
@@ -108,7 +109,7 @@ class Server extends Swoole
             }
 
             // 设置服务器参数
-            $swoole->set($this->config);
+            $swoole->set(checkOptions($this->config));
 
             $this->output->writeln("Swoole {$type} server started: <{$host}:{$port}>");
             $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
