@@ -23,7 +23,7 @@
     },
     "files": [
       "src/command.php",
-      "src/checkOptions"
+      "src/checkOptions.php"
     ]
   },
   "extra": {
