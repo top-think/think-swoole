@@ -63,6 +63,7 @@ trait InteractsWithWebsocket
 
         $this->runInSandbox(function (Event $event, HandlerInterface $handler, App $app) use ($req) {
             $request = $this->prepareRequest($req);
+            $app->instance('request', $request);
             $request = $this->setRequestThroughMiddleware($app, $request);
 
             if (!$handler->onOpen($req->fd, $request)) {

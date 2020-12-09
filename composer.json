@@ -41,6 +41,11 @@
     },
     "config": {
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "platform-check": false,
+        "platform": {
+            "ext-swoole": "4.4.8",
+            "ext-fileinfo": "1.0.4"
+        }
     }
 }

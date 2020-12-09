@@ -15,6 +15,12 @@ use Swoole\Table as SwooleTable;
 
 class Table
 {
+    public const TYPE_INT = 1;
+
+    public const TYPE_STRING = 3;
+
+    public const TYPE_FLOAT = 2;
+
     /**
      * Registered swoole tables.
      *
@@ -25,7 +31,7 @@ class Table
     /**
      * Add a swoole table to existing tables.
      *
-     * @param string      $name
+     * @param string $name
      * @param SwooleTable $table
      *
      * @return Table
@@ -62,11 +68,11 @@ class Table
     /**
      * Dynamically access table.
      *
-     * @param  string $key
+     * @param string $key
      *
      * @return SwooleTable
      */
-    public function __get($key)
+    public function __get(string $key)
     {
         return $this->get($key);
     }

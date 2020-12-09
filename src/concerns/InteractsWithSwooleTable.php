@@ -20,7 +20,7 @@ use think\swoole\Table;
  * Trait InteractsWithSwooleTable
  *
  * @property Container $container
- * @property App       $app
+ * @property App $app
  */
 trait InteractsWithSwooleTable
 {
