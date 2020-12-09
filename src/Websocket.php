@@ -34,8 +34,8 @@ class Websocket
     /**
      * Websocket constructor.
      *
-     * @param Server          $server
-     * @param Room            $room
+     * @param Server $server
+     * @param Room $room
      * @param ParserInterface $parser
      */
     public function __construct(Server $server, Room $room, ParserInterface $parser)
@@ -172,6 +172,11 @@ class Websocket
     public function close(int $fd = null)
     {
         return $this->server->close($fd ?: $this->getSender());
+    }
+
+    public function isEstablished(int $fd = null)
+    {
+        return $this->server->isEstablished($fd ?: $this->getSender());
     }
 
     /**
