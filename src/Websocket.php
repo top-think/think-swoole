@@ -174,9 +174,24 @@ class Websocket
         return $this->server->close($fd ?: $this->getSender());
     }
 
-    public function isEstablished(int $fd = null)
+    /**
+     * @param int|null $fd
+     * @return bool
+     */
+    public function isEstablished(int $fd = null): bool
     {
         return $this->server->isEstablished($fd ?: $this->getSender());
+    }
+
+    /**
+     * @param int|null $fd
+     * @param int $code
+     * @param string $reason
+     * @return bool
+     */
+    public function disconnect(int $fd = null, int $code = 1000, string $reason = ''): bool
+    {
+        return $this->server->disconnect($fd ?: $this->getSender(), $code, $reason);
     }
 
     /**
