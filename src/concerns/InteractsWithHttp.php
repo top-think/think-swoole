@@ -188,7 +188,7 @@ trait InteractsWithHttp
         foreach ($cookie->getCookie() as $name => $val) {
             [$value, $expire, $option] = $val;
 
-            $res->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false);
+            $res->cookie($name, $value, $expire, $option['path'], $option['domain'], $option['secure'] ? true : false, $option['httponly'] ? true : false, $option['samesite']);
         }
 
         $content = $response->getContent();
