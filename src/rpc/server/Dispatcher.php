@@ -6,6 +6,7 @@ use Exception;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
+use RuntimeException;
 use Swoole\Server;
 use think\App;
 use think\swoole\contract\rpc\ParserInterface;
@@ -136,18 +137,23 @@ class Dispatcher
 
     /**
      * 调度
-     * @param int         $fd
-     * @param string|File $data
+     * @param int $fd
+     * @param string|File|Error $data
      */
     public function dispatch(int $fd, $data)
     {
-        if ($data instanceof File) {
-            $this->files[$fd][] = $data;
-        } else {
-            try {
-                if ($data === Protocol::ACTION_INTERFACE) {
+        try {
+            switch (true) {
+                case $data instanceof File:
+                    $this->files[$fd][] = $data;
+                    return;
+                case $data instanceof Error:
+                    $result = $data;
+                    break;
+                case $data === Protocol::ACTION_INTERFACE:
                     $result = $this->getInterfaces();
-                } else {
+                    break;
+                default:
                     $protocol = $this->parser->decode($data);
 
                     $interface = $protocol->getInterface();
@@ -163,24 +169,23 @@ class Dispatcher
 
                     $service = $this->services[$interface] ?? null;
                     if (empty($service)) {
-                        throw new Exception(
+                        throw new RuntimeException(
                             sprintf('Service %s is not founded!', $interface),
                             self::INVALID_REQUEST
                         );
                     }
 
                     $result = $this->app->invoke([$this->app->make($service['class']), $method], $params);
-                }
-            } catch (Throwable | Exception $e) {
-                $result = Error::make($e->getCode(), $e->getMessage());
             }
-
-            $data = $this->parser->encodeResponse($result);
-
-            $this->server->send($fd, Packer::pack($data));
-            //清空文件缓存
-            unset($this->files[$fd]);
+        } catch (Throwable | Exception $e) {
+            $result = Error::make($e->getCode(), $e->getMessage());
         }
+
+        $data = $this->parser->encodeResponse($result);
+
+        $this->server->send($fd, Packer::pack($data));
+        //清空文件缓存
+        unset($this->files[$fd]);
     }
 
 }
