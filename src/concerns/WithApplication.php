@@ -101,13 +101,14 @@ trait WithApplication
             //绑定连接池
             if ($this->getConfig('pool.db.enable', true)) {
                 $this->app->bind('db', function () {
-                    return $this->container->make(Db::class);
+                    /** @var Db $db */
+                    $db = $this->app->make(Db::class);
+                    $db->setLog($this->container->log);
+                    return $db;
                 });
             }
             if ($this->getConfig('pool.cache.enable', true)) {
-                $this->app->bind('cache', function () {
-                    return $this->container->make(Cache::class);
-                });
+                $this->app->bind('cache', Cache::class);
             }
             $this->app->initialize();
             $this->prepareConcretes();
