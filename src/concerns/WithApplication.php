@@ -100,10 +100,14 @@ trait WithApplication
             $this->app->bind("swoole.server", Server::class);
             //绑定连接池
             if ($this->getConfig('pool.db.enable', true)) {
-                $this->app->bind('db', Db::class);
+                $this->app->bind('db', function () {
+                    return $this->container->make(Db::class);
+                });
             }
             if ($this->getConfig('pool.cache.enable', true)) {
-                $this->app->bind('cache', Cache::class);
+                $this->app->bind('cache', function () {
+                    return $this->container->make(Cache::class);
+                });
             }
             $this->app->initialize();
             $this->prepareConcretes();
