@@ -62,7 +62,7 @@ trait InteractsWithServer
     {
         $this->setProcessName('master process');
 
-        $this->triggerEvent("start", func_get_args());
+        $this->triggerEvent('start', func_get_args());
     }
 
     /**
@@ -73,7 +73,7 @@ trait InteractsWithServer
     public function onManagerStart()
     {
         $this->setProcessName('manager process');
-        $this->triggerEvent("managerStart", func_get_args());
+        $this->triggerEvent('managerStart', func_get_args());
     }
 
     /**
@@ -96,7 +96,7 @@ trait InteractsWithServer
 
         $this->prepareApplication();
 
-        $this->triggerEvent("workerStart", $this->app);
+        $this->triggerEvent('workerStart', $this->app);
     }
 
     /**
@@ -134,7 +134,7 @@ trait InteractsWithServer
     protected function setSwooleServerListeners()
     {
         foreach ($this->events as $event) {
-            $listener = Str::camel("on_$event");
+            $listener = Str::camel("on_{$event}");
             $callback = method_exists($this, $listener) ? [$this, $listener] : function () use ($event) {
                 $this->triggerEvent($event, func_get_args());
             };

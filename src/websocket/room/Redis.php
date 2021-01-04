@@ -67,7 +67,7 @@ class Redis implements RoomInterface
                 new PhpRedisConnector(),
                 $config
             );
-            $this->manager->getPools()->add("websocket.room", $this->pool);
+            $this->manager->getPools()->add('websocket.room', $this->pool);
         });
     }
 
@@ -246,5 +246,4 @@ class Redis implements RoomInterface
     {
         return "{$this->prefix}{$table}:{$key}";
     }
-
 }

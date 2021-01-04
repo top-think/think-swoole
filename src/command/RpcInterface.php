@@ -58,7 +58,7 @@ class RpcInterface extends Command
                         $param = $method->addParameter($parameter['name'])
                             ->setTypeHint($parameter['type']);
 
-                        if (array_key_exists("default", $parameter)) {
+                        if (array_key_exists('default', $parameter)) {
                             $param->setDefaultValue($parameter['default']);
                         }
                     }
@@ -66,7 +66,7 @@ class RpcInterface extends Command
             }
         }
 
-        $services = "return " . Helpers::dump($services) . ";";
+        $services = 'return ' . Helpers::dump($services) . ';';
 
         file_put_contents($this->app->getBasePath() . 'rpc.php', $file . $services);
 

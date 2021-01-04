@@ -155,7 +155,7 @@ trait InteractsWithHttp
         $server = $req->server ?: [];
 
         foreach ($header as $key => $value) {
-            $server["http_" . str_replace('-', '_', $key)] = $value;
+            $server['http_' . str_replace('-', '_', $key)] = $value;
         }
 
         // 重新实例化请求对象 处理swoole请求数据

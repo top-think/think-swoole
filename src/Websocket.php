@@ -74,7 +74,7 @@ class Websocket
     {
         $values = is_string($values) || is_integer($values) ? func_get_args() : $values;
 
-        $to = Context::getData("websocket._to", []);
+        $to = Context::getData('websocket._to', []);
 
         foreach ($values as $value) {
             if (!in_array($value, $to)) {
@@ -82,7 +82,7 @@ class Websocket
             }
         }
 
-        Context::setData("websocket._to", $to);
+        Context::setData('websocket._to', $to);
 
         return $this;
     }
@@ -92,7 +92,7 @@ class Websocket
      */
     public function getTo()
     {
-        return Context::getData("websocket._to", []);
+        return Context::getData('websocket._to', []);
     }
 
     /**
@@ -242,7 +242,7 @@ class Websocket
 
     protected function reset()
     {
-        Context::removeData("websocket._to");
+        Context::removeData('websocket._to');
         Context::removeData('websocket._broadcast');
     }
 }

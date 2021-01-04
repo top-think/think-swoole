@@ -26,7 +26,8 @@ abstract class Proxy
     {
         $this->pool = new ConnectionPool(
             Pool::pullPoolConfig($config),
-            new class($creator) implements ConnectorInterface {
+            new class($creator) implements ConnectorInterface
+            {
 
                 protected $creator;
 
@@ -44,7 +45,7 @@ abstract class Proxy
                 {
                     //强制回收内存，完成连接释放
                     Event::defer(function () {
-                        go("gc_collect_cycles");
+                        go('gc_collect_cycles');
                     });
                 }
 
@@ -55,7 +56,6 @@ abstract class Proxy
 
                 public function reset($connection, array $config)
                 {
-
                 }
 
                 public function validate($connection): bool
@@ -71,7 +71,7 @@ abstract class Proxy
 
     protected function getPoolConnection()
     {
-        return Context::rememberData("connection." . spl_object_id($this), function () {
+        return Context::rememberData('connection.' . spl_object_id($this), function () {
             $connection = $this->pool->borrow();
 
             $connection->{static::KEY_RELEASED} = false;
@@ -99,10 +99,9 @@ abstract class Proxy
     {
         $connection = $this->getPoolConnection();
         if ($connection->{static::KEY_RELEASED}) {
-            throw new RuntimeException("Connection already has been released!");
+            throw new RuntimeException('Connection already has been released!');
         }
 
         return $connection->{$method}(...$arguments);
     }
-
 }

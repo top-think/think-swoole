@@ -35,7 +35,7 @@ abstract class Proxy
             );
         }
 
-        $proxyName = class_basename($interface) . "Service";
+        $proxyName = class_basename($interface) . 'Service';
         $className = "rpc\\service\\{$client}\\{$proxyName}";
 
         if (!class_exists($className, false)) {

@@ -67,7 +67,7 @@ trait InteractsWithWebsocket
             $request = $this->setRequestThroughMiddleware($app, $request);
 
             if (!$handler->onOpen($req->fd, $request)) {
-                $event->trigger("swoole.websocket.Connect", $request);
+                $event->trigger('swoole.websocket.Connect', $request);
             }
         }, $req->fd, true);
     }
@@ -91,7 +91,7 @@ trait InteractsWithWebsocket
                 ['event' => $name, 'data' => $data] = $payload;
                 $name = Str::studly($name);
                 if (!in_array($name, ['Close', 'Connect'])) {
-                    $event->trigger("swoole.websocket." . $name, $data);
+                    $event->trigger("swoole.websocket.{$name}", $data);
                 }
             }
         }, $frame->fd, true);
@@ -117,7 +117,7 @@ trait InteractsWithWebsocket
         $this->runInSandbox(function (Event $event, HandlerInterface $handler) use ($websocket, $fd, $reactorId) {
             try {
                 if (!$handler->onClose($fd, $reactorId)) {
-                    $event->trigger("swoole.websocket.Close");
+                    $event->trigger('swoole.websocket.Close');
                 }
             } finally {
                 // leave all rooms

@@ -29,7 +29,7 @@ class Server extends Command
     public function configure()
     {
         $this->setName('swoole')
-            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
+            ->addArgument('action', Argument::OPTIONAL, 'start|stop|restart|reload', 'start')
             ->setDescription('Swoole HTTP Server for ThinkPHP');
     }
 
@@ -40,7 +40,7 @@ class Server extends Command
         });
 
         $this->app->bind(PidManager::class, function () {
-            return new PidManager($this->app->config->get("swoole.server.options.pid_file"));
+            return new PidManager($this->app->config->get('swoole.server.options.pid_file'));
         });
     }
 
@@ -188,5 +188,4 @@ class Server extends Command
         $server->set($options);
         return $server;
     }
-
 }

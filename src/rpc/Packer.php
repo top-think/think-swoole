@@ -7,8 +7,8 @@ use RuntimeException;
 class Packer
 {
     public const HEADER_SIZE   = 8;
-    public const HEADER_STRUCT = "Nlength/Ntype";
-    public const HEADER_PACK   = "NN";
+    public const HEADER_STRUCT = 'Nlength/Ntype';
+    public const HEADER_PACK   = 'NN';
 
     public const TYPE_BUFFER = 0;
     public const TYPE_FILE   = 1;
@@ -22,7 +22,7 @@ class Packer
     {
         $header = unpack(self::HEADER_STRUCT, substr($data, 0, self::HEADER_SIZE));
         if ($header === false) {
-            throw new RuntimeException("Invalid Header");
+            throw new RuntimeException('Invalid Header');
         }
         $data = substr($data, self::HEADER_SIZE);
 

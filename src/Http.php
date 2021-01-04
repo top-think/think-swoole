@@ -31,7 +31,7 @@ class Http extends \think\Http
 
         $middleware = clone self::$middleware;
         $this->modifyProperty($middleware, $this->app);
-        $this->app->instance("middleware", $middleware);
+        $this->app->instance('middleware', $middleware);
     }
 
     protected function loadRoutes(): void
@@ -49,10 +49,9 @@ class Http extends \think\Http
         if (isset(self::$route)) {
             $newRoute = clone self::$route;
             $this->modifyProperty($newRoute, $this->app);
-            $this->app->instance("route", $newRoute);
+            $this->app->instance('route', $newRoute);
         }
 
         return parent::dispatchToRoute($request);
     }
-
 }

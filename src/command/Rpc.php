@@ -14,7 +14,7 @@ class Rpc extends Command
     public function configure()
     {
         $this->setName('swoole:rpc')
-            ->addArgument('action', Argument::OPTIONAL, "start|stop|restart|reload", 'start')
+            ->addArgument('action', Argument::OPTIONAL, 'start|stop|restart|reload', 'start')
             ->setDescription('Swoole RPC Server for ThinkPHP');
     }
 
@@ -25,7 +25,7 @@ class Rpc extends Command
         });
 
         $this->app->bind(PidManager::class, function () {
-            return new PidManager($this->app->config->get("swoole.server.options.pid_file"));
+            return new PidManager($this->app->config->get('swoole.server.options.pid_file'));
         });
     }
 

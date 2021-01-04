@@ -12,7 +12,7 @@ class JsonParser implements ParserInterface
      */
     const VERSION = '2.0';
 
-    const DELIMITER = "@";
+    const DELIMITER = '@';
 
     /**
      * @param Protocol $protocol

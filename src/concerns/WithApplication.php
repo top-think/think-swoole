@@ -97,7 +97,7 @@ trait WithApplication
             $this->app = new SwooleApp($this->container->getRootPath());
             $this->app->bind(SwooleApp::class, App::class);
             $this->app->bind(Server::class, $this->getServer());
-            $this->app->bind("swoole.server", Server::class);
+            $this->app->bind('swoole.server', Server::class);
             //绑定连接池
             if ($this->getConfig('pool.db.enable', true)) {
                 $this->app->bind('db', Db::class);
@@ -152,5 +152,4 @@ trait WithApplication
             $this->logServerError($e);
         }
     }
-
 }

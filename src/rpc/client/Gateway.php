@@ -42,7 +42,7 @@ class Gateway
         //有文件,先传输
         foreach ($params as $index => $param) {
             if ($param instanceof File) {
-                $handle = fopen($param->getPathname(), "rb");
+                $handle = fopen($param->getPathname(), 'rb');
                 yield pack(Packer::HEADER_PACK, $param->getSize(), Packer::TYPE_FILE);
                 while (!feof($handle)) {
                     yield fread($handle, 8192);
@@ -109,7 +109,8 @@ class Gateway
             );
         }
 
-        return new class($client) implements Connector {
+        return new class($client) implements Connector
+        {
             protected $client;
 
             /**

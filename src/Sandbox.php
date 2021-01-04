@@ -127,7 +127,7 @@ class Sandbox
     protected function getSnapshotId()
     {
         if ($fd = Context::getData('_fd')) {
-            return "fd_" . $fd;
+            return 'fd_' . $fd;
         } else {
             return Context::getCoroutineId();
         }
@@ -245,5 +245,4 @@ class Sandbox
             $resetter->handle($app, $this);
         }
     }
-
 }

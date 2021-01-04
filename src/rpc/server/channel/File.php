@@ -10,7 +10,7 @@ class File
 
     public function __construct($length)
     {
-        $this->name   = tempnam(sys_get_temp_dir(), "swoole_rpc_");
+        $this->name   = tempnam(sys_get_temp_dir(), 'swoole_rpc_');
         $this->handle = fopen($this->name, 'ab');
         $this->length = $length;
     }
