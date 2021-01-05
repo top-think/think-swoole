@@ -61,6 +61,7 @@ trait InteractsWithWebsocket
             /** @var Websocket $websocket */
             $websocket = $app->make(Websocket::class, [], true);
             $websocket->setSender($req->fd);
+            $app->instance(Websocket::class, $websocket);
 
             $request = $this->prepareRequest($req);
             $app->instance('request', $request);
