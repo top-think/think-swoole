@@ -5,7 +5,6 @@ namespace think\swoole;
 use Swoole\Server;
 use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\contract\websocket\ParserInterface;
-use think\swoole\coroutine\Context;
 use think\swoole\websocket\Room;
 
 /**
