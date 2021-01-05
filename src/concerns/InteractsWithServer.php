@@ -98,7 +98,7 @@ trait InteractsWithServer
 
         $this->triggerEvent("workerStart", $this->app);
 
-        $this->getCoordinator('workerStart')->resume();
+        $this->resumeCoordinator('workerStart');
     }
 
     /**

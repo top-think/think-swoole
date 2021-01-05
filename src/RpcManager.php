@@ -169,7 +169,7 @@ class RpcManager
 
     public function onReceive(Server $server, $fd, $reactorId, $data)
     {
-        $this->getCoordinator('workerStart')->yield();
+        $this->waitCoordinator('workerStart');
 
         $this->recv($server, $fd, $data, function ($data) use ($fd) {
             $this->runInSandbox(function (Dispatcher $dispatcher) use ($fd, $data) {

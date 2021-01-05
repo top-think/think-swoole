@@ -6,18 +6,21 @@ use think\swoole\Coordinator;
 
 trait InteractsWithCoordinator
 {
+    /** @var Coordinator[] */
     protected $coordinators = [];
 
-    /**
-     * @param string $name
-     * @return Coordinator
-     */
-    public function getCoordinator(string $name)
+    public function resumeCoordinator($name)
     {
         if (!isset($this->coordinators[$name])) {
             $this->coordinators[$name] = new Coordinator();
         }
+        $this->coordinators[$name]->resume();
+    }
 
-        return $this->coordinators[$name];
+    public function waitCoordinator($name, $timeout = -1)
+    {
+        if (isset($this->coordinators[$name])) {
+            $this->coordinators[$name]->yield($timeout);
+        }
     }
 }
