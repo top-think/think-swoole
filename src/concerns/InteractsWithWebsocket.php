@@ -57,11 +57,9 @@ trait InteractsWithWebsocket
     {
         $this->waitCoordinator('workerStart');
 
-        $this->runInSandbox(function (Event $event, HandlerInterface $handler, App $app) use ($req) {
-            /** @var Websocket $websocket */
-            $websocket = $app->make(Websocket::class, [], true);
+        $this->runInSandbox(function (Event $event, HandlerInterface $handler, App $app, Websocket $websocket) use ($req) {
             $websocket->setSender($req->fd);
-            $app->instance(Websocket::class, $websocket);
+
             $request = $this->prepareRequest($req);
             $app->instance('request', $request);
 
@@ -84,6 +82,7 @@ trait InteractsWithWebsocket
     {
         $this->runInSandbox(function (Event $event, ParserInterface $parser, HandlerInterface $handler, Websocket $websocket) use ($frame) {
             $websocket->waitCoordinator('onOpen');
+            $websocket->setSender($frame->fd);
             if (!$handler->onMessage($frame)) {
                 $payload = $parser->decode($frame);
 
@@ -111,6 +110,7 @@ trait InteractsWithWebsocket
 
         $this->runInSandbox(function (Event $event, HandlerInterface $handler, Websocket $websocket) use ($fd, $reactorId) {
             $websocket->waitCoordinator('onOpen');
+            $websocket->setSender($fd);
             try {
                 if (!$handler->onClose($fd, $reactorId)) {
                     $event->trigger("swoole.websocket.Close");

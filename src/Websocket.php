@@ -221,7 +221,7 @@ class Websocket
     public function setSender(int $fd)
     {
         $this->sender = $fd;
-
+        $this->reset();
         return $this;
     }
 
