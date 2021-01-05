@@ -158,7 +158,7 @@ class Pusher
     protected function getWebsocketConnections(): array
     {
         return array_filter(iterator_to_array($this->server->connections), function ($fd) {
-            return (bool) $this->server->getClientInfo($fd)['websocket_status'] ?? false;
+            return (bool) ($this->server->getClientInfo($fd)['websocket_status'] ?? false);
         });
     }
 

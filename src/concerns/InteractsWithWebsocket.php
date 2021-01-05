@@ -55,13 +55,13 @@ trait InteractsWithWebsocket
      */
     public function onOpen($server, $req)
     {
-        $this->waitEvent('workerStart');
-
-        /** @var Websocket $websocket */
-        $websocket = $this->app->make(Websocket::class);
-        $websocket->setSender($req->fd);
+        $this->getCoordinator('workerStart')->yield();
 
         $this->runInSandbox(function (Event $event, HandlerInterface $handler, App $app) use ($req) {
+            /** @var Websocket $websocket */
+            $websocket = $app->make(Websocket::class, [], true);
+            $websocket->setSender($req->fd);
+
             $request = $this->prepareRequest($req);
             $app->instance('request', $request);
             $request = $this->setRequestThroughMiddleware($app, $request);
@@ -69,6 +69,7 @@ trait InteractsWithWebsocket
             if (!$handler->onOpen($req->fd, $request)) {
                 $event->trigger("swoole.websocket.Connect", $request);
             }
+            $websocket->getCoordinator('onOpen')->resume();
         }, $req->fd, true);
     }
 
@@ -80,11 +81,8 @@ trait InteractsWithWebsocket
      */
     public function onMessage($server, $frame)
     {
-        /** @var Websocket $websocket */
-        $websocket = $this->app->make(Websocket::class);
-        $websocket->setSender($frame->fd);
-
-        $this->runInSandbox(function (Event $event, ParserInterface $parser, HandlerInterface $handler) use ($frame) {
+        $this->runInSandbox(function (Event $event, ParserInterface $parser, HandlerInterface $handler, Websocket $websocket) use ($frame) {
+            $websocket->getCoordinator('onOpen')->yield();
             if (!$handler->onMessage($frame)) {
                 $payload = $parser->decode($frame);
 
@@ -106,15 +104,12 @@ trait InteractsWithWebsocket
      */
     public function onClose($server, $fd, $reactorId)
     {
-        if (!$this->isWebsocketServer($fd) || !$server instanceof Server) {
+        if (!$server instanceof Server || !$this->isWebsocketServer($fd)) {
             return;
         }
 
-        /** @var Websocket $websocket */
-        $websocket = $this->app->make(Websocket::class);
-        $websocket->setSender($fd);
-
-        $this->runInSandbox(function (Event $event, HandlerInterface $handler) use ($websocket, $fd, $reactorId) {
+        $this->runInSandbox(function (Event $event, HandlerInterface $handler, Websocket $websocket) use ($fd, $reactorId) {
+            $websocket->getCoordinator('onOpen')->yield();
             try {
                 if (!$handler->onClose($fd, $reactorId)) {
                     $event->trigger("swoole.websocket.Close");
@@ -145,7 +140,7 @@ trait InteractsWithWebsocket
                     if (is_string($middleware)) {
                         $middleware = [$app->make($middleware), 'handle'];
                     }
-                    return call_user_func($middleware, $request, $next, $param ?? null);
+                    return $middleware($request, $next, $param ?? null);
                 };
             }, $middleware))
             ->then(function ($request) {

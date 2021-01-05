@@ -99,7 +99,7 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->waitEvent('workerStart');
+        $this->getCoordinator('workerStart')->yield();
 
         $args = func_get_args();
         $this->runInSandbox(function (Http $http, Event $event, App $app, Middleware $middleware) use ($args, $req, $res) {

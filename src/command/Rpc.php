@@ -161,7 +161,6 @@ class Rpc extends Command
         $socketType = $config->get('swoole.server.socket_type', SWOOLE_SOCK_TCP);
         $mode       = $config->get('swoole.server.mode', SWOOLE_PROCESS);
 
-        /** @var \Swoole\Server $server */
         $server = new \Swoole\Server($host, $port, $mode, $socketType);
 
         $options = $config->get('swoole.server.options');

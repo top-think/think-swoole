@@ -3,6 +3,7 @@
 namespace think\swoole;
 
 use Swoole\Server;
+use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\contract\websocket\ParserInterface;
 use think\swoole\coroutine\Context;
 use think\swoole\websocket\Room;
@@ -12,9 +13,10 @@ use think\swoole\websocket\Room;
  */
 class Websocket
 {
+    use InteractsWithCoordinator;
 
-    const PUSH_ACTION   = 'push';
-    const EVENT_CONNECT = 'connect';
+    public const PUSH_ACTION   = 'push';
+    public const EVENT_CONNECT = 'connect';
 
     /**
      * @var Server
@@ -30,6 +32,27 @@ class Websocket
      * @var ParserInterface
      */
     protected $parser;
+
+    /**
+     * Scoket sender's fd.
+     *
+     * @var integer
+     */
+    protected $sender;
+
+    /**
+     * Recepient's fd or room name.
+     *
+     * @var array
+     */
+    protected $to = [];
+
+    /**
+     * Determine if to broadcast.
+     *
+     * @var boolean
+     */
+    protected $isBroadcast = false;
 
     /**
      * Websocket constructor.
@@ -50,7 +73,7 @@ class Websocket
      */
     public function broadcast(): self
     {
-        Context::setData('websocket._broadcast', true);
+        $this->isBroadcast = true;
 
         return $this;
     }
@@ -60,29 +83,25 @@ class Websocket
      */
     public function isBroadcast()
     {
-        return Context::getData('websocket._broadcast', false);
+        return $this->isBroadcast;
     }
 
     /**
      * Set multiple recipients fd or room names.
      *
-     * @param integer, string, array
+     * @param integer|string|array
      *
      * @return $this
      */
     public function to($values): self
     {
-        $values = is_string($values) || is_integer($values) ? func_get_args() : $values;
-
-        $to = Context::getData("websocket._to", []);
+        $values = is_string($values) || is_int($values) ? func_get_args() : $values;
 
         foreach ($values as $value) {
-            if (!in_array($value, $to)) {
-                $to[] = $value;
+            if (!in_array($value, $this->to)) {
+                $this->to[] = $value;
             }
         }
-
-        Context::setData("websocket._to", $to);
 
         return $this;
     }
@@ -92,19 +111,19 @@ class Websocket
      */
     public function getTo()
     {
-        return Context::getData("websocket._to", []);
+        return $this->to;
     }
 
     /**
      * Join sender to multiple rooms.
      *
-     * @param string, array $rooms
+     * @param string|integer|array $rooms
      *
      * @return $this
      */
     public function join($rooms): self
     {
-        $rooms = is_string($rooms) || is_integer($rooms) ? func_get_args() : $rooms;
+        $rooms = is_string($rooms) || is_int($rooms) ? func_get_args() : $rooms;
 
         $this->room->add($this->getSender(), $rooms);
 
@@ -114,13 +133,13 @@ class Websocket
     /**
      * Make sender leave multiple rooms.
      *
-     * @param array $rooms
+     * @param array|string|integer $rooms
      *
      * @return $this
      */
     public function leave($rooms = []): self
     {
-        $rooms = is_string($rooms) || is_integer($rooms) ? func_get_args() : $rooms;
+        $rooms = is_string($rooms) || is_int($rooms) ? func_get_args() : $rooms;
 
         $this->room->delete($this->getSender(), $rooms);
 
@@ -165,8 +184,7 @@ class Websocket
     /**
      * Close current connection.
      *
-     * @param integer
-     *
+     * @param int|null $fd
      * @return boolean
      */
     public function close(int $fd = null)
@@ -203,7 +221,7 @@ class Websocket
      */
     public function setSender(int $fd)
     {
-        Context::setData('websocket._sender', $fd);
+        $this->sender = $fd;
 
         return $this;
     }
@@ -213,7 +231,7 @@ class Websocket
      */
     public function getSender()
     {
-        return Context::getData('websocket._sender');
+        return $this->sender;
     }
 
     /**
@@ -223,7 +241,7 @@ class Websocket
     {
         $to    = $this->getTo();
         $fds   = array_filter($to, function ($value) {
-            return is_integer($value);
+            return is_int($value);
         });
         $rooms = array_diff($to, $fds);
 
@@ -242,7 +260,7 @@ class Websocket
 
     protected function reset()
     {
-        Context::removeData("websocket._to");
-        Context::removeData('websocket._broadcast');
+        $this->isBroadcast = false;
+        $this->to          = [];
     }
 }
