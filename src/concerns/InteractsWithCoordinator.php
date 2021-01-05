@@ -9,11 +9,10 @@ trait InteractsWithCoordinator
     /** @var Coordinator[] */
     protected $coordinators = [];
 
-    public function resumeCoordinator($name)
+    public function resumeCoordinator($name, $callback)
     {
-        if (!isset($this->coordinators[$name])) {
-            $this->coordinators[$name] = new Coordinator();
-        }
+        $this->coordinators[$name] = new Coordinator();
+        $callback();
         $this->coordinators[$name]->resume();
     }
 

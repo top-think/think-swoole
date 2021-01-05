@@ -62,15 +62,15 @@ trait InteractsWithWebsocket
             $websocket = $app->make(Websocket::class, [], true);
             $websocket->setSender($req->fd);
             $app->instance(Websocket::class, $websocket);
-
             $request = $this->prepareRequest($req);
             $app->instance('request', $request);
-            $request = $this->setRequestThroughMiddleware($app, $request);
 
-            if (!$handler->onOpen($req->fd, $request)) {
-                $event->trigger("swoole.websocket.Connect", $request);
-            }
-            $websocket->resumeCoordinator('onOpen');
+            $websocket->resumeCoordinator('onOpen', function () use ($event, $req, $handler, $request, $app) {
+                $request = $this->setRequestThroughMiddleware($app, $request);
+                if (!$handler->onOpen($req->fd, $request)) {
+                    $event->trigger("swoole.websocket.Connect", $request);
+                }
+            });
         }, $req->fd, true);
     }
 
