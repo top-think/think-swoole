@@ -160,7 +160,7 @@ trait InteractsWithServer
             $watcher->watch(function () {
                 $this->getServer()->reload();
             });
-        }, false, 0);
+        }, false, 0, true);
 
         $this->addProcess($process);
     }
