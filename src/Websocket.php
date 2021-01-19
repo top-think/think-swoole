@@ -3,8 +3,10 @@
 namespace think\swoole;
 
 use Swoole\Server;
-use think\swoole\concerns\InteractsWithCoordinator;
-use think\swoole\contract\websocket\ParserInterface;
+use Swoole\WebSocket\Frame;
+use think\Event;
+use think\Request;
+use think\swoole\websocket\Pusher;
 use think\swoole\websocket\Room;
 
 /**
@@ -12,11 +14,6 @@ use think\swoole\websocket\Room;
  */
 class Websocket
 {
-    use InteractsWithCoordinator;
-
-    public const PUSH_ACTION   = 'push';
-    public const EVENT_CONNECT = 'connect';
-
     /**
      * @var Server
      */
@@ -26,11 +23,6 @@ class Websocket
      * @var Room
      */
     protected $room;
-
-    /**
-     * @var ParserInterface
-     */
-    protected $parser;
 
     /**
      * Scoket sender's fd.
@@ -53,18 +45,53 @@ class Websocket
      */
     protected $isBroadcast = false;
 
+    /** @var Event */
+    protected $event;
+
     /**
      * Websocket constructor.
      *
      * @param Server $server
      * @param Room $room
-     * @param ParserInterface $parser
+     * @param Event $event
      */
-    public function __construct(Server $server, Room $room, ParserInterface $parser)
+    public function __construct(Server $server, Room $room, Event $event)
     {
         $this->server = $server;
         $this->room   = $room;
-        $this->parser = $parser;
+        $this->event  = $event;
+    }
+
+    /**
+     * "onOpen" listener.
+     *
+     * @param int $fd
+     * @param Request $request
+     */
+    public function onOpen($fd, Request $request)
+    {
+        $this->event->trigger("swoole.websocket.Open", $request);
+    }
+
+    /**
+     * "onMessage" listener.
+     *
+     * @param Frame $frame
+     */
+    public function onMessage(Frame $frame)
+    {
+        $this->event->trigger("swoole.websocket.Event", $this->decode($frame->data));
+    }
+
+    /**
+     * "onClose" listener.
+     *
+     * @param int $fd
+     * @param int $reactorId
+     */
+    public function onClose($fd, $reactorId)
+    {
+        $this->event->trigger("swoole.websocket.Close", $reactorId);
     }
 
     /**
@@ -145,6 +172,24 @@ class Websocket
         return $this;
     }
 
+    protected function encode(string $event, $data)
+    {
+        return json_encode([
+            'type' => $event,
+            'data' => $data,
+        ]);
+    }
+
+    protected function decode($payload)
+    {
+        $data = json_decode($payload, true);
+
+        return [
+            'type' => $data['type'] ?? null,
+            'data' => $data['data'] ?? null,
+        ];
+    }
+
     /**
      * Emit data and reset some status.
      *
@@ -163,16 +208,15 @@ class Websocket
                 return false;
             }
 
-            $result = $this->server->task([
-                'action' => static::PUSH_ACTION,
-                'data'   => [
-                    'sender'      => $this->getSender() ?: 0,
-                    'descriptors' => $fds,
-                    'broadcast'   => $this->isBroadcast(),
-                    'assigned'    => $assigned,
-                    'payload'     => $this->parser->encode($event, $data),
-                ],
+            $job = new Job([Pusher::class, 'push'], [
+                'sender'      => $this->getSender() ?: 0,
+                'descriptors' => $fds,
+                'broadcast'   => $this->isBroadcast(),
+                'assigned'    => $assigned,
+                'payload'     => $this->encode($event, $data),
             ]);
+
+            $result = $this->server->task($job);
 
             return $result !== false;
         } finally {

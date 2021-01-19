@@ -2,25 +2,26 @@
 
 namespace think\swoole\websocket\socketio;
 
+use Exception;
 use Swoole\Server;
 use Swoole\Websocket\Frame;
-use Swoole\WebSocket\Server as WebsocketServer;
 use think\Config;
+use think\Event;
 use think\Request;
-use think\swoole\contract\websocket\HandlerInterface;
+use think\swoole\Websocket;
+use think\swoole\websocket\Room;
 
-class Handler implements HandlerInterface
+class Handler extends Websocket
 {
-    /** @var WebsocketServer */
-    protected $server;
-
     /** @var Config */
     protected $config;
 
-    public function __construct(Server $server, Config $config)
+    protected $eio;
+
+    public function __construct(Server $server, Room $room, Event $event, Config $config)
     {
-        $this->server = $server;
         $this->config = $config;
+        parent::__construct($server, $room, $event);
     }
 
     /**
@@ -31,40 +32,62 @@ class Handler implements HandlerInterface
      */
     public function onOpen($fd, Request $request)
     {
-        if (!$request->param('sid')) {
-            $payload        = json_encode(
-                [
-                    'sid'          => base64_encode(uniqid()),
-                    'upgrades'     => [],
-                    'pingInterval' => $this->config->get('swoole.websocket.ping_interval'),
-                    'pingTimeout'  => $this->config->get('swoole.websocket.ping_timeout'),
-                ]
-            );
-            $initPayload    = Packet::OPEN . $payload;
-            $connectPayload = Packet::MESSAGE . Packet::CONNECT;
+        $this->eio = $request->param('EIO');
 
-            if ($this->server->isEstablished($fd)) {
-                $this->server->push($fd, $initPayload);
-                $this->server->push($fd, $connectPayload);
-            }
+        $payload     = json_encode(
+            [
+                'sid'          => base64_encode(uniqid()),
+                'upgrades'     => [],
+                'pingInterval' => $this->config->get('swoole.websocket.ping_interval'),
+                'pingTimeout'  => $this->config->get('swoole.websocket.ping_timeout'),
+            ]
+        );
+        $initPayload = Packet::OPEN . $payload;
+
+        if ($this->server->isEstablished($fd)) {
+            $this->server->push($fd, $initPayload);
         }
     }
 
     /**
      * "onMessage" listener.
-     *  only triggered when event handler not found
      *
      * @param Frame $frame
      * @return bool
      */
     public function onMessage(Frame $frame)
     {
-        $packet = $frame->data;
-        if (Packet::getPayload($packet)) {
-            return false;
-        }
+        $packet = new Packet($frame->data);
 
-        $this->checkHeartbeat($frame->fd, $packet);
+        switch ($packet->getEngineType()) {
+            case Packet::MESSAGE:
+                switch ($packet->getSocketType()) {
+                    case Packet::CONNECT:
+                        try {
+                            $this->event->trigger('swoole.websocket.Connect');
+                            $payload = Packet::MESSAGE . Packet::CONNECT;
+                            if ($this->eio >= 4) {
+                                $payload .= json_encode(['sid' => base64_encode(uniqid())]);
+                            }
+                        } catch (Exception $exception) {
+                            $payload = sprintf(Packet::MESSAGE . Packet::CONNECT_ERROR . '"%s"', $exception->getMessage());
+                        }
+                        if ($this->server->isEstablished($frame->fd)) {
+                            $this->server->push($frame->fd, $payload);
+                        }
+                        break;
+                    case Packet::EVENT:
+                        $payload = substr($packet->getPayload(), 1);
+                        $this->event->trigger('swoole.websocket.Event', $this->decode($payload));
+                        break;
+                }
+                break;
+            case Packet::PING:
+                if ($this->server->isEstablished($frame->fd)) {
+                    $this->server->push($frame->fd, Packet::PONG . $packet->getPayload());
+                }
+                break;
+        }
 
         return true;
     }
@@ -74,27 +97,30 @@ class Handler implements HandlerInterface
      *
      * @param int $fd
      * @param int $reactorId
+     * @return bool
      */
     public function onClose($fd, $reactorId)
     {
-        return;
+
     }
 
-    protected function checkHeartbeat($fd, $packet)
+    protected function decode($payload)
     {
-        $packetLength = strlen($packet);
-        $payload      = '';
+        $data = json_decode($payload, true);
 
-        if ($isPing = Packet::isSocketType($packet, 'ping')) {
-            $payload .= Packet::PONG;
-        }
+        return [
+            'type' => $data[0],
+            'data' => $data[1] ?? null,
+        ];
+    }
 
-        if ($isPing && $packetLength > 1) {
-            $payload .= substr($packet, 1, $packetLength - 1);
-        }
+    protected function encode(string $event, $data)
+    {
+        $packet       = Packet::MESSAGE . Packet::EVENT;
+        $shouldEncode = is_array($data) || is_object($data);
+        $data         = $shouldEncode ? json_encode($data) : $data;
+        $format       = $shouldEncode ? '["%s",%s]' : '["%s","%s"]';
 
-        if ($isPing && $this->server->isEstablished($fd)) {
-            $this->server->push($fd, $payload);
-        }
+        return $packet . sprintf($format, $event, $data);
     }
 }

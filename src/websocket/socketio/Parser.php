@@ -2,16 +2,14 @@
 
 namespace think\swoole\websocket\socketio;
 
-use think\swoole\contract\websocket\ParserInterface;
-
-class Parser implements ParserInterface
+class Parser
 {
 
     /**
      * Encode output payload for websocket push.
      *
      * @param string $event
-     * @param mixed  $data
+     * @param mixed $data
      *
      * @return mixed
      */

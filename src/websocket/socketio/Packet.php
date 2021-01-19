@@ -63,9 +63,9 @@ class Packet
     const ACK = 3;
 
     /**
-     * Engine.io packet type `error`.
+     * Engine.io packet type `connect_error`.
      */
-    const ERROR = 4;
+    const CONNECT_ERROR = 4;
 
     /**
      * Engine.io packet type 'binary event'
@@ -77,95 +77,25 @@ class Packet
      */
     const BINARY_ACK = 6;
 
-    /**
-     * Socket.io packet types.
-     */
-    public static $socketTypes = [
-        0 => 'OPEN',
-        1 => 'CLOSE',
-        2 => 'PING',
-        3 => 'PONG',
-        4 => 'MESSAGE',
-        5 => 'UPGRADE',
-        6 => 'NOOP',
-    ];
+    protected $packet = "";
 
-    /**
-     * Engine.io packet types.
-     */
-    public static $engineTypes = [
-        0 => 'CONNECT',
-        1 => 'DISCONNECT',
-        2 => 'EVENT',
-        3 => 'ACK',
-        4 => 'ERROR',
-        5 => 'BINARY_EVENT',
-        6 => 'BINARY_ACK',
-    ];
-
-    /**
-     * Get socket packet type of a raw payload.
-     *
-     * @param string $packet
-     *
-     * @return int|null
-     */
-    public static function getSocketType(string $packet)
+    public function __construct(string $packet)
     {
-        $type = $packet[0] ?? null;
-
-        if (!array_key_exists($type, static::$socketTypes)) {
-            return;
-        }
-
-        return (int) $type;
+        $this->packet = $packet;
     }
 
-    /**
-     * Get data packet from a raw payload.
-     *
-     * @param string $packet
-     *
-     * @return array|null
-     */
-    public static function getPayload(string $packet)
+    public function getEngineType()
     {
-        $packet = trim($packet);
-        $start  = strpos($packet, '[');
-
-        if ($start === false || substr($packet, -1) !== ']') {
-            return;
-        }
-
-        $data = substr($packet, $start, strlen($packet) - $start);
-        $data = json_decode($data, true);
-
-        if (is_null($data)) {
-            return;
-        }
-
-        return [
-            'event' => $data[0],
-            'data'  => $data[1] ?? null,
-        ];
+        return $this->packet[0] ?? null;
     }
 
-    /**
-     * Return if a socket packet belongs to specific type.
-     *
-     * @param        $packet
-     * @param string $typeName
-     *
-     * @return bool
-     */
-    public static function isSocketType($packet, string $typeName)
+    public function getSocketType()
     {
-        $type = array_search(strtoupper($typeName), static::$socketTypes);
+        return $this->packet[1] ?? null;
+    }
 
-        if ($type === false) {
-            return false;
-        }
-
-        return static::getSocketType($packet) === $type;
+    public function getPayload()
+    {
+        return substr($this->packet, 1) ?: '';
     }
 }

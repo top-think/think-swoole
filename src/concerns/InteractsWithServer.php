@@ -13,6 +13,7 @@ use think\Event;
 use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\FileWatcher;
+use think\swoole\Job;
 use Throwable;
 
 /**
@@ -109,8 +110,18 @@ trait InteractsWithServer
      */
     public function onTask($server, Task $task)
     {
-        $this->runInSandbox(function (Event $event) use ($task) {
-            $event->trigger('swoole.task', $task);
+        $this->runInSandbox(function (Event $event, App $app) use ($task) {
+            if ($task->data instanceof Job) {
+                if (is_array($task->data->name)) {
+                    [$class, $method] = $task->data->name;
+                    $object = $app->invokeClass($class, $task->data->params);
+                    $object->{$method}();
+                } else {
+                    $app->invoke($task->data->name, $task->data->params);
+                }
+            } else {
+                $event->trigger('swoole.task', $task);
+            }
         }, $task->id);
     }
 
