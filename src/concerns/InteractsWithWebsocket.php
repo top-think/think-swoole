@@ -9,7 +9,6 @@ use think\App;
 use think\Container;
 use think\helper\Str;
 use think\Pipeline;
-use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\contract\websocket\RoomInterface;
 use think\swoole\Websocket;
 use think\swoole\websocket\Room;
