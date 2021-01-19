@@ -47,6 +47,25 @@ class Handler extends Websocket
         if ($this->server->isEstablished($fd)) {
             $this->server->push($fd, $initPayload);
         }
+        if ($this->eio < 4) {
+            $this->onConnect($fd);
+        }
+    }
+
+    protected function onConnect($fd, $data = null)
+    {
+        try {
+            $this->event->trigger('swoole.websocket.Connect', $data);
+            $payload = Packet::MESSAGE . Packet::CONNECT;
+            if ($this->eio >= 4) {
+                $payload .= json_encode(['sid' => base64_encode(uniqid())]);
+            }
+        } catch (Exception $exception) {
+            $payload = sprintf(Packet::MESSAGE . Packet::CONNECT_ERROR . '"%s"', $exception->getMessage());
+        }
+        if ($this->server->isEstablished($fd)) {
+            $this->server->push($fd, $payload);
+        }
     }
 
     /**
@@ -61,24 +80,25 @@ class Handler extends Websocket
 
         switch ($packet->getEngineType()) {
             case Packet::MESSAGE:
+                $payload = substr($packet->getPayload(), 1);
                 switch ($packet->getSocketType()) {
                     case Packet::CONNECT:
-                        try {
-                            $this->event->trigger('swoole.websocket.Connect');
-                            $payload = Packet::MESSAGE . Packet::CONNECT;
-                            if ($this->eio >= 4) {
-                                $payload .= json_encode(['sid' => base64_encode(uniqid())]);
-                            }
-                        } catch (Exception $exception) {
-                            $payload = sprintf(Packet::MESSAGE . Packet::CONNECT_ERROR . '"%s"', $exception->getMessage());
-                        }
-                        if ($this->server->isEstablished($frame->fd)) {
-                            $this->server->push($frame->fd, $payload);
-                        }
+                        $this->onConnect($frame->fd, $payload);
                         break;
                     case Packet::EVENT:
-                        $payload = substr($packet->getPayload(), 1);
-                        $this->event->trigger('swoole.websocket.Event', $this->decode($payload));
+                    case Packet::ACK:
+                        $start = strpos($payload, '[');
+
+                        if ($start > 0) {
+                            $id      = substr($payload, 0, $start);
+                            $payload = substr($payload, $start);
+                        }
+
+                        $result = $this->event->trigger('swoole.websocket.Event', $this->decode($payload));
+
+                        if (isset($id)) {
+                            $this->server->push($frame->fd, $this->pack(Packet::ACK . $id, end($result)));
+                        }
                         break;
                 }
                 break;
@@ -114,13 +134,19 @@ class Handler extends Websocket
         ];
     }
 
+    protected function pack($type, ...$args)
+    {
+        $packet = Packet::MESSAGE . $type;
+
+        $data = implode(",", array_map(function ($arg) {
+            return json_encode($arg);
+        }, $args));
+
+        return "{$packet}[{$data}]";
+    }
+
     protected function encode(string $event, $data)
     {
-        $packet       = Packet::MESSAGE . Packet::EVENT;
-        $shouldEncode = is_array($data) || is_object($data);
-        $data         = $shouldEncode ? json_encode($data) : $data;
-        $format       = $shouldEncode ? '["%s",%s]' : '["%s","%s"]';
-
-        return $packet . sprintf($format, $event, $data);
+        return $this->pack(Packet::EVENT, $event, $data);
     }
 }

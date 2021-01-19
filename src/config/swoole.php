@@ -1,7 +1,6 @@
 <?php
 
 use think\swoole\websocket\socketio\Handler;
-use think\swoole\websocket\socketio\Parser;
 
 return [
     'server'     => [

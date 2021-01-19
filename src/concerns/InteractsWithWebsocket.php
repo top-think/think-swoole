@@ -9,11 +9,9 @@ use think\App;
 use think\Container;
 use think\helper\Str;
 use think\Pipeline;
-use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\contract\websocket\RoomInterface;
 use think\swoole\Websocket;
 use think\swoole\websocket\Room;
-use think\swoole\websocket\socketio\Handler;
 
 /**
  * Trait InteractsWithWebsocket
@@ -190,7 +188,8 @@ trait InteractsWithWebsocket
      */
     protected function bindWebsocketHandler()
     {
-        if (($handlerClass = $this->getConfig('websocket.handler')) && $handlerClass instanceof Websocket) {
+        $handlerClass = $this->getConfig('websocket.handler');
+        if ($handlerClass && is_subclass_of($handlerClass, Websocket::class)) {
             $this->app->bind(Websocket::class, $handlerClass);
         }
     }
