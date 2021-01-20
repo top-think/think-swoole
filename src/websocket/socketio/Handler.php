@@ -10,6 +10,7 @@ use think\Event;
 use think\Request;
 use think\swoole\Websocket;
 use think\swoole\websocket\Room;
+use think\helper\Str;
 
 class Handler extends Websocket
 {
@@ -94,7 +95,8 @@ class Handler extends Websocket
                             $payload = substr($payload, $start);
                         }
 
-                        $result = $this->event->trigger('swoole.websocket.Event', $this->decode($payload));
+                        $payload = $this->decode($payload);
+                        $result = $this->event->trigger('swoole.websocket.' . Str::studly($payload['type']), $payload['data']);
 
                         if (isset($id)) {
                             $this->server->push($frame->fd, $this->pack(Packet::ACK . $id, end($result)));
@@ -121,7 +123,6 @@ class Handler extends Websocket
      */
     public function onClose($fd, $reactorId)
     {
-
     }
 
     protected function decode($payload)
