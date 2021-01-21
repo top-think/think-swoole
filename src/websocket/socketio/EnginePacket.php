@@ -71,7 +71,7 @@ class EnginePacket
 
     public static function fromString(string $packet)
     {
-        return new static($packet{0}, substr($packet, 1) ?? '');
+        return new static(substr($packet, 0, 1), substr($packet, 1) ?? '');
     }
 
     public function toString()

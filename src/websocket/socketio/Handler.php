@@ -85,14 +85,14 @@ class Handler extends Websocket
                         $this->onConnect($packet->data);
                         break;
                     case Packet::EVENT:
-                    case Packet::ACK:
-                        $result = $this->event->trigger('swoole.websocket.Event', $packet->data);
+                        [$type, $data] = $packet->data;
+                        $result = $this->event->trigger('swoole.websocket.Event', ['type' => $type, 'data' => $data]);
 
                         if ($packet->id !== null) {
                             $responsePacket = Packet::create(Packet::ACK, [
                                 'id'   => $packet->id,
                                 'nsp'  => $packet->nsp,
-                                'data' => end($result),
+                                'data' => $result,
                             ]);
 
                             $this->push($responsePacket);
@@ -160,7 +160,7 @@ class Handler extends Websocket
     protected function schedulePing()
     {
         Timer::clear($this->pingIntervalTimer);
-        $this->pingIntervalTimer = Timer::after($this->pingIntervalTimer, function () {
+        $this->pingIntervalTimer = Timer::after($this->pingInterval, function () {
             $this->push(EnginePacket::ping());
             $this->resetPingTimeout($this->pingTimeout);
         });
