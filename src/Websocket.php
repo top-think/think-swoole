@@ -80,6 +80,7 @@ class Websocket
      */
     public function onMessage(Frame $frame)
     {
+        $this->event->trigger("swoole.websocket.Message", $frame);
         $this->event->trigger("swoole.websocket.Event", $this->decode($frame->data));
     }
 
@@ -172,33 +173,7 @@ class Websocket
         return $this;
     }
 
-    protected function encode(string $event, $data)
-    {
-        return json_encode([
-            'type' => $event,
-            'data' => $data,
-        ]);
-    }
-
-    protected function decode($payload)
-    {
-        $data = json_decode($payload, true);
-
-        return [
-            'type' => $data['type'] ?? null,
-            'data' => $data['data'] ?? null,
-        ];
-    }
-
-    /**
-     * Emit data and reset some status.
-     *
-     * @param string
-     * @param mixed
-     *
-     * @return boolean
-     */
-    public function emit(string $event, $data = null): bool
+    public function push($data)
     {
         $fds      = $this->getFds();
         $assigned = !empty($this->getTo());
@@ -213,7 +188,7 @@ class Websocket
                 'descriptors' => $fds,
                 'broadcast'   => $this->isBroadcast(),
                 'assigned'    => $assigned,
-                'payload'     => $this->encode($event, $data),
+                'payload'     => $data,
             ]);
 
             $result = $this->server->task($job);
@@ -222,6 +197,29 @@ class Websocket
         } finally {
             $this->reset();
         }
+    }
+
+    public function emit(string $event, $data = null): bool
+    {
+        return $this->push($this->encode([
+            'type' => $event,
+            'data' => $data,
+        ]));
+    }
+
+    protected function encode($packet)
+    {
+        return json_encode($packet);
+    }
+
+    protected function decode($payload)
+    {
+        $data = json_decode($payload, true);
+
+        return [
+            'type' => $data['type'] ?? null,
+            'data' => $data['data'] ?? null,
+        ];
     }
 
     /**

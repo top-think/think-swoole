@@ -4,6 +4,7 @@ namespace think\swoole\websocket\socketio;
 
 use Exception;
 use Swoole\Server;
+use Swoole\Timer;
 use Swoole\Websocket\Frame;
 use think\Config;
 use think\Event;
@@ -18,9 +19,17 @@ class Handler extends Websocket
 
     protected $eio;
 
+    protected $pingTimeoutTimer  = null;
+    protected $pingIntervalTimer = null;
+
+    protected $pingInterval;
+    protected $pingTimeout;
+
     public function __construct(Server $server, Room $room, Event $event, Config $config)
     {
-        $this->config = $config;
+        $this->config       = $config;
+        $this->pingInterval = $this->config->get('swoole.websocket.ping_interval', 25000);
+        $this->pingTimeout  = $this->config->get('swoole.websocket.ping_timeout', 60000);
         parent::__construct($server, $room, $event);
     }
 
@@ -34,37 +43,24 @@ class Handler extends Websocket
     {
         $this->eio = $request->param('EIO');
 
-        $payload     = json_encode(
+        $payload = json_encode(
             [
                 'sid'          => base64_encode(uniqid()),
                 'upgrades'     => [],
-                'pingInterval' => $this->config->get('swoole.websocket.ping_interval'),
-                'pingTimeout'  => $this->config->get('swoole.websocket.ping_timeout'),
+                'pingInterval' => $this->pingInterval,
+                'pingTimeout'  => $this->pingTimeout,
             ]
         );
-        $initPayload = Packet::OPEN . $payload;
 
-        if ($this->server->isEstablished($fd)) {
-            $this->server->push($fd, $initPayload);
-        }
+        $this->push(EnginePacket::open($payload));
+
+        $this->event->trigger("swoole.websocket.Open", $request);
+
         if ($this->eio < 4) {
-            $this->onConnect($fd);
-        }
-    }
-
-    protected function onConnect($fd, $data = null)
-    {
-        try {
-            $this->event->trigger('swoole.websocket.Connect', $data);
-            $payload = Packet::MESSAGE . Packet::CONNECT;
-            if ($this->eio >= 4) {
-                $payload .= json_encode(['sid' => base64_encode(uniqid())]);
-            }
-        } catch (Exception $exception) {
-            $payload = Packet::MESSAGE . Packet::CONNECT_ERROR . json_encode(['message' => $exception->getMessage()]);
-        }
-        if ($this->server->isEstablished($fd)) {
-            $this->server->push($fd, $payload);
+            $this->resetPingTimeout($this->pingInterval + $this->pingTimeout);
+            $this->onConnect();
+        } else {
+            $this->schedulePing();
         }
     }
 
@@ -72,72 +68,130 @@ class Handler extends Websocket
      * "onMessage" listener.
      *
      * @param Frame $frame
-     * @return bool
      */
     public function onMessage(Frame $frame)
     {
-        $packet = new Packet($frame->data);
+        $enginePacket = EnginePacket::fromString($frame->data);
 
-        switch ($packet->getEngineType()) {
-            case Packet::MESSAGE:
-                $payload = substr($packet->getPayload(), 1);
-                switch ($packet->getSocketType()) {
+        $this->event->trigger("swoole.websocket.Message", $enginePacket);
+
+        $this->resetPingTimeout($this->pingInterval + $this->pingTimeout);
+
+        switch ($enginePacket->type) {
+            case EnginePacket::MESSAGE:
+                $packet = $this->decode($enginePacket->data);
+                switch ($packet->type) {
                     case Packet::CONNECT:
-                        $this->onConnect($frame->fd, $payload);
+                        $this->onConnect($packet->data);
                         break;
                     case Packet::EVENT:
                     case Packet::ACK:
-                        $start = strpos($payload, '[');
+                        $result = $this->event->trigger('swoole.websocket.Event', $packet->data);
 
-                        if ($start > 0) {
-                            $id      = substr($payload, 0, $start);
-                            $payload = substr($payload, $start);
-                        }
+                        if ($packet->id !== null) {
+                            $responsePacket = Packet::create(Packet::ACK, [
+                                'id'   => $packet->id,
+                                'nsp'  => $packet->nsp,
+                                'data' => end($result),
+                            ]);
 
-                        $result = $this->event->trigger('swoole.websocket.Event', $this->decode($payload));
-
-                        if (isset($id)) {
-                            $this->server->push($frame->fd, $this->pack(Packet::ACK . $id, end($result)));
+                            $this->push($responsePacket);
                         }
                         break;
                     case Packet::DISCONNECT:
                         $this->event->trigger('swoole.websocket.Disconnect');
+                        $this->close();
+                        break;
+                    default:
+                        $this->close();
                         break;
                 }
                 break;
-            case Packet::PING:
-                if ($this->server->isEstablished($frame->fd)) {
-                    $this->server->push($frame->fd, Packet::PONG . $packet->getPayload());
-                }
+            case EnginePacket::PING:
+                $this->push(EnginePacket::pong($enginePacket->data));
+                break;
+            case EnginePacket::PONG:
+                $this->schedulePing();
+                break;
+            default:
+                $this->close();
                 break;
         }
+    }
 
-        return true;
+    /**
+     * "onClose" listener.
+     *
+     * @param int $fd
+     * @param int $reactorId
+     */
+    public function onClose($fd, $reactorId)
+    {
+        Timer::clear($this->pingTimeoutTimer);
+        Timer::clear($this->pingIntervalTimer);
+        $this->event->trigger("swoole.websocket.Close", $reactorId);
+    }
+
+    protected function onConnect($data = null)
+    {
+        try {
+            $this->event->trigger('swoole.websocket.Connect', $data);
+            $packet = Packet::create(Packet::CONNECT);
+            if ($this->eio >= 4) {
+                $packet->data = ['sid' => base64_encode(uniqid())];
+            }
+        } catch (Exception $exception) {
+            $packet = Packet::create(Packet::CONNECT_ERROR, [
+                'data' => ['message' => $exception->getMessage()],
+            ]);
+        }
+
+        $this->push($packet);
+    }
+
+    protected function resetPingTimeout($timeout)
+    {
+        Timer::clear($this->pingTimeoutTimer);
+        $this->pingTimeoutTimer = Timer::after($timeout, function () {
+            $this->close();
+        });
+    }
+
+    protected function schedulePing()
+    {
+        Timer::clear($this->pingIntervalTimer);
+        $this->pingIntervalTimer = Timer::after($this->pingIntervalTimer, function () {
+            $this->push(EnginePacket::ping());
+            $this->resetPingTimeout($this->pingTimeout);
+        });
+    }
+
+    protected function encode($packet)
+    {
+        return Parser::encode($packet);
     }
 
     protected function decode($payload)
     {
-        $data = json_decode($payload, true);
-
-        return [
-            'type' => $data[0],
-            'data' => $data[1] ?? null,
-        ];
+        return Parser::decode($payload);
     }
 
-    protected function pack($type, ...$args)
+    public function push($data)
     {
-        $packet = Packet::MESSAGE . $type;
-
-        $data = implode(",", array_map(function ($arg) {
-            return json_encode($arg);
-        }, $args));
-
-        return "{$packet}[{$data}]";
+        if ($data instanceof Packet) {
+            $data = EnginePacket::message($this->encode($data));
+        }
+        if ($data instanceof EnginePacket) {
+            $data = $data->toString();
+        }
+        return parent::push($data);
     }
 
-    protected function encode(string $event, $data)
+    public function emit(string $event, $data = null): bool
     {
-        return $this->pack(Packet::EVENT, $event, $data);
+        $packet = Packet::create(Packet::EVENT, [
+            'data' => [$event, $data],
+        ]);
+        return $this->push($packet);
     }
 }
