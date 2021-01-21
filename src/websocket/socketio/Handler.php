@@ -61,7 +61,7 @@ class Handler extends Websocket
                 $payload .= json_encode(['sid' => base64_encode(uniqid())]);
             }
         } catch (Exception $exception) {
-            $payload = sprintf(Packet::MESSAGE . Packet::CONNECT_ERROR . '"%s"', $exception->getMessage());
+            $payload = Packet::MESSAGE . Packet::CONNECT_ERROR . json_encode(['message' => $exception->getMessage()]);
         }
         if ($this->server->isEstablished($fd)) {
             $this->server->push($fd, $payload);
@@ -100,6 +100,9 @@ class Handler extends Websocket
                             $this->server->push($frame->fd, $this->pack(Packet::ACK . $id, end($result)));
                         }
                         break;
+                    case Packet::DISCONNECT:
+                        $this->event->trigger('swoole.websocket.Disconnect');
+                        break;
                 }
                 break;
             case Packet::PING:
@@ -110,18 +113,6 @@ class Handler extends Websocket
         }
 
         return true;
-    }
-
-    /**
-     * "onClose" listener.
-     *
-     * @param int $fd
-     * @param int $reactorId
-     * @return bool
-     */
-    public function onClose($fd, $reactorId)
-    {
-
     }
 
     protected function decode($payload)
