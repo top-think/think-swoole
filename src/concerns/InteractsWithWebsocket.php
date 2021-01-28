@@ -8,8 +8,8 @@ use Swoole\Websocket\Server;
 use think\App;
 use think\Container;
 use think\helper\Str;
-use think\Pipeline;
 use think\swoole\contract\websocket\RoomInterface;
+use think\swoole\Middleware;
 use think\swoole\Websocket;
 use think\swoole\websocket\Room;
 
@@ -104,21 +104,9 @@ trait InteractsWithWebsocket
      */
     protected function setRequestThroughMiddleware(App $app, \think\Request $request)
     {
-        $middleware = $this->getConfig('websocket.middleware', []);
-
-        return (new Pipeline())
+        return Middleware::make($app, $this->getConfig('websocket.middleware', []))
+            ->pipeline()
             ->send($request)
-            ->through(array_map(function ($middleware) use ($app) {
-                return function ($request, $next) use ($app, $middleware) {
-                    if (is_array($middleware)) {
-                        [$middleware, $param] = $middleware;
-                    }
-                    if (is_string($middleware)) {
-                        $middleware = [$app->make($middleware), 'handle'];
-                    }
-                    return $middleware($request, $next, $param ?? null);
-                };
-            }, $middleware))
             ->then(function ($request) {
                 return $request;
             });
@@ -182,9 +170,7 @@ trait InteractsWithWebsocket
     }
 
     /**
-     * Prepare websocket handler for onOpen and onClose callback.
-     *
-     * @throws \Exception
+     * Prepare websocket handler for onOpen and onClose callback
      */
     protected function bindWebsocketHandler()
     {

@@ -13,6 +13,7 @@ use think\swoole\rpc\client\Gateway;
 use think\swoole\rpc\client\Proxy;
 use think\swoole\rpc\JsonParser;
 use think\swoole\rpc\Packer;
+use Throwable;
 
 /**
  * Trait InteractsWithRpcClient
@@ -65,14 +66,15 @@ trait InteractsWithRpcClient
                     $parserClass = $this->getConfig("rpc.client.{$name}.parser", JsonParser::class);
                     $parser      = $this->app->make($parserClass);
                     $gateway     = new Gateway($this->createRpcConnector($name), $parser);
+                    $middleware  = $this->getConfig("rpc.client.{$name}.middleware", []);
 
                     foreach ($abstracts as $abstract) {
-                        $this->app->bind($abstract, function () use ($gateway, $name, $abstract) {
-                            return $this->app->invokeClass(Proxy::getClassName($name, $abstract), [$gateway]);
+                        $this->app->bind($abstract, function (App $app) use ($middleware, $gateway, $name, $abstract) {
+                            return $app->invokeClass(Proxy::getClassName($name, $abstract), [$gateway, $middleware]);
                         });
                     }
                 }
-            } catch (\Exception | \Throwable $e) {
+            } catch (Throwable $e) {
             }
         }
     }

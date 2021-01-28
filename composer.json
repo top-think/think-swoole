@@ -10,13 +10,13 @@
     ],
     "require": {
         "php": ">7.1",
-        "ext-swoole": ">=4.4.8",
         "ext-json": "*",
-        "topthink/framework": "^6.0",
-        "symfony/finder": "^4.3.2|^5.1",
-        "swoole/ide-helper": "^4.3",
+        "ext-swoole": ">=4.4.8",
         "nette/php-generator": "^3.2",
-        "open-smf/connection-pool": "~1.0"
+        "open-smf/connection-pool": "~1.0",
+        "swoole/ide-helper": "^4.3",
+        "symfony/finder": "^4.3.2|^5.1",
+        "topthink/framework": "^6.0"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.3|^5.1"

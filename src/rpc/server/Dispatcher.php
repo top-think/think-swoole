@@ -2,14 +2,16 @@
 
 namespace think\swoole\rpc\server;
 
-use Exception;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
 use RuntimeException;
 use Swoole\Server;
 use think\App;
+use think\Pipeline;
 use think\swoole\contract\rpc\ParserInterface;
+use think\swoole\Middleware;
 use think\swoole\rpc\Error;
 use think\swoole\rpc\File;
 use think\swoole\rpc\Packer;
@@ -53,18 +55,21 @@ class Dispatcher
 
     protected $files = [];
 
-    public function __construct(App $app, ParserInterface $parser, Server $server, $services)
+    protected $middleware = [];
+
+    public function __construct(App $app, ParserInterface $parser, Server $server, $services, $middleware = [])
     {
         $this->app    = $app;
         $this->parser = $parser;
         $this->server = $server;
         $this->prepareServices($services);
+        $this->middleware = $middleware;
     }
 
     /**
      * 获取服务接口
      * @param $services
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function prepareServices($services)
     {
@@ -155,29 +160,9 @@ class Dispatcher
                     break;
                 default:
                     $protocol = $this->parser->decode($data);
-
-                    $interface = $protocol->getInterface();
-                    $method    = $protocol->getMethod();
-                    $params    = $protocol->getParams();
-
-                    //文件参数
-                    foreach ($params as $index => $param) {
-                        if ($param === Protocol::FILE) {
-                            $params[$index] = array_shift($this->files[$fd]);
-                        }
-                    }
-
-                    $service = $this->services[$interface] ?? null;
-                    if (empty($service)) {
-                        throw new RuntimeException(
-                            sprintf('Service %s is not founded!', $interface),
-                            self::INVALID_REQUEST
-                        );
-                    }
-
-                    $result = $this->app->invoke([$this->app->make($service['class']), $method], $params);
+                    $result   = $this->dispatchWithMiddleware($protocol, $fd);
             }
-        } catch (Throwable | Exception $e) {
+        } catch (Throwable $e) {
             $result = Error::make($e->getCode(), $e->getMessage());
         }
 
@@ -188,4 +173,33 @@ class Dispatcher
         unset($this->files[$fd]);
     }
 
+    protected function dispatchWithMiddleware(Protocol $protocol, $fd)
+    {
+        return Middleware::make($this->app, $this->middleware)
+            ->pipeline()
+            ->send($protocol)
+            ->then(function (Protocol $protocol) use ($fd) {
+
+                $interface = $protocol->getInterface();
+                $method    = $protocol->getMethod();
+                $params    = $protocol->getParams();
+
+                //文件参数
+                foreach ($params as $index => $param) {
+                    if ($param === Protocol::FILE) {
+                        $params[$index] = array_shift($this->files[$fd]);
+                    }
+                }
+
+                $service = $this->services[$interface] ?? null;
+                if (empty($service)) {
+                    throw new RuntimeException(
+                        sprintf('Service %s is not founded!', $interface),
+                        self::METHOD_NOT_FOUND
+                    );
+                }
+
+                return $this->app->invoke([$this->app->make($service['class']), $method], $params);
+            });
+    }
 }
