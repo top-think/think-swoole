@@ -9,7 +9,6 @@ use ReflectionNamedType;
 use RuntimeException;
 use Swoole\Server;
 use think\App;
-use think\Pipeline;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\Middleware;
 use think\swoole\rpc\Error;

@@ -2,7 +2,6 @@
 
 namespace think\swoole;
 
-use Exception;
 use Swoole\Coroutine;
 use Swoole\Server;
 use Swoole\Server\Port;
