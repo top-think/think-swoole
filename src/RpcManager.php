@@ -172,8 +172,8 @@ class RpcManager
         $this->waitCoordinator('workerStart');
 
         $this->recv($server, $fd, $data, function ($data) use ($fd) {
-            $this->runInSandbox(function (Dispatcher $dispatcher) use ($fd, $data) {
-                $dispatcher->dispatch($fd, $data);
+            $this->runInSandbox(function (App $app, Dispatcher $dispatcher) use ($fd, $data) {
+                $dispatcher->dispatch($app, $fd, $data);
             }, $fd, true);
         });
     }

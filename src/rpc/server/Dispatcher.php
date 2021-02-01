@@ -44,8 +44,6 @@ class Dispatcher
      */
     const INTERNAL_ERROR = -32603;
 
-    protected $app;
-
     protected $parser;
 
     protected $services = [];
@@ -56,9 +54,8 @@ class Dispatcher
 
     protected $middleware = [];
 
-    public function __construct(App $app, ParserInterface $parser, Server $server, $services, $middleware = [])
+    public function __construct(ParserInterface $parser, Server $server, $services, $middleware = [])
     {
-        $this->app    = $app;
         $this->parser = $parser;
         $this->server = $server;
         $this->prepareServices($services);
@@ -141,10 +138,11 @@ class Dispatcher
 
     /**
      * 调度
+     * @param App $app
      * @param int $fd
      * @param string|File|Error $data
      */
-    public function dispatch(int $fd, $data)
+    public function dispatch(App $app, int $fd, $data)
     {
         try {
             switch (true) {
@@ -159,7 +157,7 @@ class Dispatcher
                     break;
                 default:
                     $protocol = $this->parser->decode($data);
-                    $result   = $this->dispatchWithMiddleware($protocol, $fd);
+                    $result   = $this->dispatchWithMiddleware($app, $protocol, $fd);
             }
         } catch (Throwable $e) {
             $result = Error::make($e->getCode(), $e->getMessage());
@@ -172,12 +170,12 @@ class Dispatcher
         unset($this->files[$fd]);
     }
 
-    protected function dispatchWithMiddleware(Protocol $protocol, $fd)
+    protected function dispatchWithMiddleware(App $app, Protocol $protocol, $fd)
     {
-        return Middleware::make($this->app, $this->middleware)
+        return Middleware::make($app, $this->middleware)
             ->pipeline()
             ->send($protocol)
-            ->then(function (Protocol $protocol) use ($fd) {
+            ->then(function (Protocol $protocol) use ($app, $fd) {
 
                 $interface = $protocol->getInterface();
                 $method    = $protocol->getMethod();
@@ -198,7 +196,7 @@ class Dispatcher
                     );
                 }
 
-                return $this->app->invoke([$this->app->make($service['class']), $method], $params);
+                return $app->invoke([$app->make($service['class']), $method], $params);
             });
     }
 }
