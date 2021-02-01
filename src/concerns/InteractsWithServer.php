@@ -207,8 +207,8 @@ trait InteractsWithServer
      */
     protected function setProcessName($process)
     {
-        // Mac OSX不支持进程重命名
-        if (stristr(PHP_OS, 'DAR')) {
+        // Mac OSX不支持进程重命名 cygwin 也不支持进程重命名
+        if (stristr(PHP_OS, 'DAR') || stristr(PHP_OS,'CYGWIN')) {
             return;
         }
 
