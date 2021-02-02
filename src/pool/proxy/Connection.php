@@ -171,7 +171,7 @@ class Connection extends Proxy implements ConnectionInterface
      * @param string $key 索引
      * @return array
      */
-    public function column(BaseQuery $query, string $column, string $key = ''): array
+    public function column(BaseQuery $query, $column, string $key = ''): array
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
