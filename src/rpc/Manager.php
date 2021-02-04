@@ -1,6 +1,6 @@
 <?php
 
-namespace think\swoole;
+namespace think\swoole\rpc;
 
 use Swoole\Coroutine;
 use Swoole\Server;
@@ -8,31 +8,27 @@ use Swoole\Server\Port;
 use think\App;
 use think\Event;
 use think\helper\Str;
+use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithRpcClient;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
 use think\swoole\concerns\WithApplication;
+use think\swoole\concerns\WithContainer;
 use think\swoole\contract\rpc\ParserInterface;
-use think\swoole\rpc\Error;
-use think\swoole\rpc\JsonParser;
-use think\swoole\rpc\Packer;
 use think\swoole\rpc\server\Channel;
 use think\swoole\rpc\server\Dispatcher;
 use Throwable;
 
-class RpcManager
+class Manager
 {
-    use InteractsWithServer,
+    use InteractsWithCoordinator,
+        InteractsWithServer,
         InteractsWithSwooleTable,
         InteractsWithPools,
         InteractsWithRpcClient,
+        WithContainer,
         WithApplication;
-
-    /**
-     * @var App
-     */
-    protected $container;
 
     /**
      * Server events.
@@ -62,15 +58,6 @@ class RpcManager
 
     /** @var Channel[] */
     protected $channels = [];
-
-    /**
-     * Manager constructor.
-     * @param App $container
-     */
-    public function __construct(App $container)
-    {
-        $this->container = $container;
-    }
 
     /**
      * Initialize.

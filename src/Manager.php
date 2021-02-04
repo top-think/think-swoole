@@ -12,6 +12,7 @@
 namespace think\swoole;
 
 use think\App;
+use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithRpcServer;
@@ -20,25 +21,23 @@ use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
 use think\swoole\concerns\InteractsWithWebsocket;
 use think\swoole\concerns\WithApplication;
+use think\swoole\concerns\WithContainer;
 
 /**
  * Class Manager
  */
 class Manager
 {
-    use InteractsWithServer,
+    use InteractsWithCoordinator,
+        InteractsWithServer,
         InteractsWithSwooleTable,
         InteractsWithHttp,
         InteractsWithWebsocket,
         InteractsWithPools,
         InteractsWithRpcClient,
         InteractsWithRpcServer,
+        WithContainer,
         WithApplication;
-
-    /**
-     * @var App
-     */
-    protected $container;
 
     /**
      * Server events.
@@ -60,15 +59,6 @@ class Manager
         'managerStop',
         'request',
     ];
-
-    /**
-     * Manager constructor.
-     * @param App $container
-     */
-    public function __construct(App $container)
-    {
-        $this->container = $container;
-    }
 
     /**
      * Initialize.

@@ -7,7 +7,7 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\Output;
 use think\swoole\PidManager;
-use think\swoole\RpcManager;
+use think\swoole\rpc\Manager;
 
 class Rpc extends Command
 {
@@ -63,11 +63,11 @@ class Rpc extends Command
     /**
      * 启动server
      * @access protected
-     * @param RpcManager $manager
+     * @param Manager $manager
      * @param PidManager $pidManager
      * @return void
      */
-    protected function start(RpcManager $manager, PidManager $pidManager)
+    protected function start(Manager $manager, PidManager $pidManager)
     {
         if ($pidManager->isRunning()) {
             $this->output->writeln('<error>swoole rpc server process is already running.</error>');
@@ -137,11 +137,11 @@ class Rpc extends Command
     /**
      * 重启server
      * @access protected
-     * @param RpcManager $manager
+     * @param Manager $manager
      * @param PidManager $pidManager
      * @return void
      */
-    protected function restart(RpcManager $manager, PidManager $pidManager)
+    protected function restart(Manager $manager, PidManager $pidManager)
     {
         if ($pidManager->isRunning()) {
             $this->stop($pidManager);
