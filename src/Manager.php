@@ -11,7 +11,6 @@
 
 namespace think\swoole;
 
-use think\App;
 use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithPools;
