@@ -39,6 +39,26 @@ trait InteractsWithRpcClient
         });
     }
 
+    protected function bindRpcInterface()
+    {
+        //绑定rpc接口
+        try {
+            foreach ($this->rpcServices as $name => $abstracts) {
+                $parserClass = $this->getConfig("rpc.client.{$name}.parser", JsonParser::class);
+                $parser      = $this->app->make($parserClass);
+                $gateway     = new Gateway($this->createRpcConnector($name), $parser);
+                $middleware  = $this->getConfig("rpc.client.{$name}.middleware", []);
+
+                foreach ($abstracts as $abstract) {
+                    $this->app->bind($abstract, function (App $app) use ($middleware, $gateway, $name, $abstract) {
+                        return $app->invokeClass(Proxy::getClassName($name, $abstract), [$gateway, $middleware]);
+                    });
+                }
+            }
+        } catch (Throwable $e) {
+        }
+    }
+
     protected function bindRpcClientPool()
     {
         if (!empty($clients = $this->getConfig('rpc.client'))) {
@@ -60,22 +80,6 @@ trait InteractsWithRpcClient
                 $this->getPools()->add("rpc.client.{$name}", $pool);
             }
 
-            //绑定rpc接口
-            try {
-                foreach ($this->rpcServices as $name => $abstracts) {
-                    $parserClass = $this->getConfig("rpc.client.{$name}.parser", JsonParser::class);
-                    $parser      = $this->app->make($parserClass);
-                    $gateway     = new Gateway($this->createRpcConnector($name), $parser);
-                    $middleware  = $this->getConfig("rpc.client.{$name}.middleware", []);
-
-                    foreach ($abstracts as $abstract) {
-                        $this->app->bind($abstract, function (App $app) use ($middleware, $gateway, $name, $abstract) {
-                            return $app->invokeClass(Proxy::getClassName($name, $abstract), [$gateway, $middleware]);
-                        });
-                    }
-                }
-            } catch (Throwable $e) {
-            }
         }
     }
 

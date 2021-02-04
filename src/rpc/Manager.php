@@ -10,6 +10,7 @@ use think\Event;
 use think\helper\Str;
 use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\InteractsWithPools;
+use think\swoole\concerns\InteractsWithQueue;
 use think\swoole\concerns\InteractsWithRpcClient;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
@@ -27,6 +28,7 @@ class Manager
         InteractsWithSwooleTable,
         InteractsWithPools,
         InteractsWithRpcClient,
+        InteractsWithQueue,
         WithContainer,
         WithApplication;
 
@@ -69,6 +71,7 @@ class Manager
         $this->preparePools();
         $this->setSwooleServerListeners();
         $this->prepareRpcServer();
+        $this->prepareQueue();
         $this->prepareRpcClient();
     }
 

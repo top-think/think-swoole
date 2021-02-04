@@ -210,7 +210,7 @@ trait InteractsWithServer
      */
     protected function setProcessName($process)
     {
-        $serverName = 'swoole_http_server';
+        $serverName = 'swoole server';
         $appName    = $this->container->config->get('app.name', 'ThinkPHP');
 
         $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
