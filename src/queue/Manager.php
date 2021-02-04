@@ -3,6 +3,7 @@
 namespace think\swoole\queue;
 
 use Swoole\Process;
+use Swoole\Server;
 use Swoole\Timer;
 use think\helper\Arr;
 use think\queue\event\JobFailed;
@@ -18,11 +19,18 @@ class Manager
      */
     protected $pm;
 
+    public function attachToServer(Server $server)
+    {
+        $server->addProcess(new Process([$this, 'run']));
+    }
+
     public function run(): void
     {
+        @cli_set_process_title("swoole queue: manager process");
+
         $this->pm = new Process\Manager();
 
-        $worker = $this->getConfig('queue.worker', ['default' => []]);
+        $worker = $this->getConfig('queue.workers', []);
 
         $this->listenForEvents();
         $this->createWorkers($worker);
@@ -65,6 +73,8 @@ class Manager
             }
 
             $this->pm->add(function (Process\Pool $pool, $workerId) use ($options, $connection, $queue) {
+
+                @cli_set_process_title("swoole queue: worker process");
 
                 /** @var Worker $worker */
                 $worker  = $this->container->make(Worker::class);
