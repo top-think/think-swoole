@@ -47,8 +47,10 @@ class Manager
     protected function logFailedJob(JobFailed $event)
     {
         $this->container['queue.failer']->log(
-            $event->connection, $event->job->getQueue(),
-            $event->job->getRawBody(), $event->exception
+            $event->connection,
+            $event->job->getQueue(),
+            $event->job->getRawBody(),
+            $event->exception
         );
     }
 
