@@ -3,53 +3,58 @@
 namespace think\swoole\queue;
 
 use Swoole\Process;
+use Swoole\Timer;
 use think\helper\Arr;
-use think\swoole\concerns\WithApplication;
+use think\queue\event\JobFailed;
+use think\queue\Worker;
 use think\swoole\concerns\WithContainer;
 
 class Manager
 {
-    use WithContainer,
-        WithApplication;
+    use WithContainer;
 
-    protected $consumers = [];
+    /**
+     * @var Process\Manager
+     */
+    protected $pm;
 
     public function run(): void
     {
-        $consumers = [
-            'default'       => [
-                'tries' => 3,
-            ],
-            'default@mysql' => [
-                'tries' => 3,
-            ],
-        ];
+        $this->pm = new Process\Manager();
 
-        $this->prepareApplication();
+        $worker = $this->getConfig('queue.worker', ['default' => []]);
 
-        $this->createMonitor();
+        $this->listenForEvents();
+        $this->createWorkers($worker);
 
-        $this->createConsumers($consumers);
+        $this->pm->start();
+    }
 
-        //子进程回收
-        Process::signal(SIGCHLD, function ($sig) {
-            //必须为false，非阻塞模式
-            while ($ret = Process::wait(false)) {
-                echo "PID={$ret['pid']}\n";
-            }
+    /**
+     * 注册事件
+     */
+    protected function listenForEvents()
+    {
+        $this->container->event->listen(JobFailed::class, function (JobFailed $event) {
+            $this->logFailedJob($event);
         });
     }
 
-    protected function createMonitor()
+    /**
+     * 记录失败任务
+     * @param JobFailed $event
+     */
+    protected function logFailedJob(JobFailed $event)
     {
-
+        $this->container['queue.failer']->log(
+            $event->connection, $event->job->getQueue(),
+            $event->job->getRawBody(), $event->exception
+        );
     }
 
-    protected function createConsumers($consumers)
+    protected function createWorkers($consumers)
     {
         foreach ($consumers as $queue => $options) {
-            /** @var Worker $worker */
-            $worker = $this->app->make(Worker::class);
 
             if (strpos($queue, '@') !== false) {
                 [$queue, $connection] = explode('@', $queue);
@@ -57,19 +62,26 @@ class Manager
                 $connection = null;
             }
 
-            $process = new Process(function () use ($options, $queue, $connection, $worker) {
+            $this->pm->add(function (Process\Pool $pool, $workerId) use ($options, $connection, $queue) {
+
+                /** @var Worker $worker */
+                $worker  = $this->container->make(Worker::class);
                 $delay   = Arr::get($options, "delay", 0);
                 $sleep   = Arr::get($options, "sleep", 3);
                 $tries   = Arr::get($options, "tries", 0);
-                $memory  = Arr::get($options, "memory", 128);
                 $timeout = Arr::get($options, "timeout", 60);
 
-                $worker->daemon($connection, $queue, $delay, $sleep, $tries, $memory, $timeout);
-            }, false, 0, true);
+                $timer = Timer::after($timeout * 1000, function () use ($pool, $workerId) {
+                    $process = $pool->getProcess($workerId);
+                    if ($process instanceof Process) {
+                        $process->exit();
+                    }
+                });
 
-            $pid = $process->start();
+                $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
 
-            $this->consumers[$pid] = $worker;
+                Timer::clear($timer);
+            }, true);
         }
     }
 }

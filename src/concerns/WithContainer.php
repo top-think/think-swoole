@@ -3,6 +3,9 @@
 namespace think\swoole\concerns;
 
 use think\App;
+use think\console\Output;
+use think\exception\Handle;
+use Throwable;
 
 trait WithContainer
 {
@@ -51,5 +54,20 @@ trait WithContainer
     public function onEvent(string $event, $listener, bool $first = false): void
     {
         $this->container->event->listen("swoole.{$event}", $listener, $first);
+    }
+
+    /**
+     * Log server error.
+     *
+     * @param Throwable $e
+     */
+    public function logServerError(Throwable $e)
+    {
+        /** @var Handle $handle */
+        $handle = $this->container->make(Handle::class);
+
+        $handle->renderForConsole(new Output(), $e);
+
+        $handle->report($e);
     }
 }

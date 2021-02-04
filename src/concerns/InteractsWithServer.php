@@ -8,13 +8,10 @@ use Swoole\Runtime;
 use Swoole\Server;
 use Swoole\Server\Task;
 use think\App;
-use think\console\Output;
 use think\Event;
-use think\exception\Handle;
 use think\helper\Str;
 use think\swoole\FileWatcher;
 use think\swoole\Job;
-use Throwable;
 
 /**
  * Trait InteractsWithServer
@@ -219,20 +216,5 @@ trait InteractsWithServer
         $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
 
         @cli_set_process_title($name);
-    }
-
-    /**
-     * Log server error.
-     *
-     * @param Throwable|Exception $e
-     */
-    public function logServerError(Throwable $e)
-    {
-        /** @var Handle $handle */
-        $handle = $this->container->make(Handle::class);
-
-        $handle->renderForConsole(new Output(), $e);
-
-        $handle->report($e);
     }
 }
