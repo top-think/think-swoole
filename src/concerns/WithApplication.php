@@ -3,7 +3,6 @@
 namespace think\swoole\concerns;
 
 use Closure;
-use Swoole\Server;
 use think\App;
 use think\swoole\App as SwooleApp;
 use think\swoole\pool\Cache;
