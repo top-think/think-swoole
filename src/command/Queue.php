@@ -15,7 +15,7 @@ class Queue extends Command
             ->setDescription('Listen to a given queue');
     }
 
-    public function handler(Manager $manager)
+    public function handle(Manager $manager)
     {
         $manager->run();
     }

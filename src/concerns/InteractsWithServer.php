@@ -97,7 +97,7 @@ trait InteractsWithServer
             $this->setProcessName($server->taskworker ? 'task process' : 'worker process');
 
             $this->prepareApplication();
-
+            $this->bindServer();
             $this->triggerEvent("workerStart", $this->app);
         });
     }
@@ -131,6 +131,12 @@ trait InteractsWithServer
     public function onShutdown()
     {
         $this->triggerEvent('shutdown');
+    }
+
+    protected function bindServer()
+    {
+        $this->app->bind(Server::class, $this->getServer());
+        $this->app->bind("swoole.server", Server::class);
     }
 
     /**
