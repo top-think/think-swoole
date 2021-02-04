@@ -11,6 +11,7 @@
 
 namespace think\swoole;
 
+use think\swoole\command\Queue;
 use think\swoole\command\Rpc;
 use think\swoole\command\RpcInterface;
 use think\swoole\command\Server as ServerCommand;
@@ -20,7 +21,12 @@ class Service extends \think\Service
 
     public function boot()
     {
-        $this->commands(ServerCommand::class, RpcInterface::class, Rpc::class);
+        $this->commands(
+            ServerCommand::class,
+            RpcInterface::class,
+            Rpc::class,
+            Queue::class
+        );
     }
 
 }

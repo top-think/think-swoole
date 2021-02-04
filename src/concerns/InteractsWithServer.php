@@ -207,17 +207,12 @@ trait InteractsWithServer
      */
     protected function setProcessName($process)
     {
-        // Mac OSX不支持进程重命名
-        if (stristr(PHP_OS, 'DAR')) {
-            return;
-        }
-
         $serverName = 'swoole_http_server';
         $appName    = $this->container->config->get('app.name', 'ThinkPHP');
 
         $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
 
-        swoole_set_process_name($name);
+        @cli_set_process_title($name);
     }
 
     /**

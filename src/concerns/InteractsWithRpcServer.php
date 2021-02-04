@@ -5,7 +5,7 @@ namespace think\swoole\concerns;
 use Swoole\Server;
 use think\App;
 use think\swoole\Pool;
-use think\swoole\RpcManager;
+use think\swoole\rpc\Manager;
 
 /**
  * Trait InteractsWithRpc
@@ -26,8 +26,8 @@ trait InteractsWithRpcServer
 
             $rpcServer = $this->getServer()->addlistener($host, $port, SWOOLE_SOCK_TCP);
 
-            /** @var RpcManager $rpcManager */
-            $rpcManager = $this->container->make(RpcManager::class);
+            /** @var Manager $rpcManager */
+            $rpcManager = $this->container->make(Manager::class);
 
             $rpcManager->attachToServer($rpcServer);
         }
