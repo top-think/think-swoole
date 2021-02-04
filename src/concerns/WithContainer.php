@@ -24,6 +24,11 @@ trait WithContainer
         $this->container = $container;
     }
 
+    protected function getContainer()
+    {
+        return $this->container;
+    }
+
     /**
      * 获取配置
      * @param string $name

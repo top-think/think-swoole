@@ -8,7 +8,7 @@ trait InteractsWithQueue
 {
     public function prepareQueue()
     {
-        if ($this->getConfig('rpc.queue.enable', false)) {
+        if ($this->getConfig('queue.enable', false)) {
             /** @var Manager $queueManager */
             $queueManager = $this->container->make(Manager::class);
 

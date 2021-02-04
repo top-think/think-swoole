@@ -58,6 +58,11 @@ trait WithApplication
         }
     }
 
+    protected function getApplication()
+    {
+        return $this->app;
+    }
+
     /**
      * 获取沙箱
      * @return Sandbox
