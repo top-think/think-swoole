@@ -167,7 +167,7 @@ class Connection extends Proxy implements ConnectionInterface
      * 得到某个列的数组
      * @access public
      * @param BaseQuery $query 查询对象
-     * @param string $column 字段名 多个字段用逗号分隔
+     * @param string|array $column 字段名 多个字段用逗号分隔
      * @param string $key 索引
      * @return array
      */
