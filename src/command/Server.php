@@ -68,8 +68,8 @@ class Server extends Command
             exit(1);
         }
 
-        if (!version_compare(swoole_version(), '4.3.1', 'ge')) {
-            $this->output->error('Your Swoole version must be higher than `4.3.1`.');
+        if (!version_compare(swoole_version(), '4.4.8', 'ge')) {
+            $this->output->error('Your Swoole version must be higher than `4.4.8`.');
 
             exit(1);
         }
