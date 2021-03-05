@@ -28,8 +28,8 @@ trait InteractsWithRpcClient
     protected function prepareRpcClient()
     {
         $this->onEvent('workerStart', function () {
-            $this->bindRpcInterface();
             $this->bindRpcClientPool();
+            $this->bindRpcInterface();
         });
     }
 
