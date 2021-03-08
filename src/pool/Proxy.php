@@ -44,7 +44,7 @@ abstract class Proxy
                 {
                     //强制回收内存，完成连接释放
                     Event::defer(function () {
-                        go("gc_collect_cycles");
+                        Coroutine::create("gc_collect_cycles");
                     });
                 }
 
