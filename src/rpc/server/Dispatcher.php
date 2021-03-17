@@ -107,6 +107,9 @@ class Dispatcher
 
         $reflection = new ReflectionClass($interface);
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->isConstructor() || $method->isDestructor()) {
+                continue;
+            }
             $returnType = $method->getReturnType();
             if ($returnType instanceof ReflectionNamedType) {
                 $returnType = $returnType->getName();
