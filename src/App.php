@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace think\swoole;
 
 use think\swoole\coroutine\Context;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace think\swoole\pool;
 
 use think\swoole\pool\proxy\Store;

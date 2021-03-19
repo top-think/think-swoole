@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 if (!function_exists('swoole_cpu_num')) {
     function swoole_cpu_num(): int
     {
