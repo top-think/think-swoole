@@ -140,6 +140,10 @@ class Dispatcher
                 $param['default'] = $parameter->getDefaultValue();
             }
 
+            if ($parameter->allowsNull()) {
+                $param['nullable'] = true;
+            }
+
             $parameters[] = $param;
         }
         return $parameters;
