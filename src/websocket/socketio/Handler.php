@@ -8,6 +8,7 @@ use Swoole\Timer;
 use Swoole\Websocket\Frame;
 use think\Config;
 use think\Event;
+use think\helper\Str;
 use think\Request;
 use think\swoole\Websocket;
 use think\swoole\websocket\Room;
@@ -86,7 +87,8 @@ class Handler extends Websocket
                         break;
                     case Packet::EVENT:
                         [$type, $data] = $packet->data;
-                        $result = $this->event->trigger('swoole.websocket.Event', ['type' => $type, 'data' => $data]);
+                        $result = $this->event->trigger('swoole.websocket.'.Str::studly($type), $data);
+                        //$result = $this->event->trigger('swoole.websocket.Event', ['type' => $type, 'data' => $data]);
 
                         if ($packet->id !== null) {
                             $responsePacket = Packet::create(Packet::ACK, [
