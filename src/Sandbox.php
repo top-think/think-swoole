@@ -11,7 +11,6 @@ use think\Config;
 use think\Container;
 use think\Event;
 use think\Http;
-use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
@@ -24,7 +23,7 @@ use think\swoole\App as SwooleApp;
 
 class Sandbox
 {
-    use ModifyProperty, InteractsWithCoordinator;
+    use ModifyProperty;
 
     /**
      * The app containers in different coroutine environment.
