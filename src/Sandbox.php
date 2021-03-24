@@ -97,22 +97,16 @@ class Sandbox
         if (!is_null($fd)) {
             Context::setData('_fd', $fd);
         }
-        $this->setInstance($app = $this->createApplication());
+        $app = $this->getApplication(true);
+        $this->setInstance($app);
         $this->resetApp($app);
-    }
-
-    protected function createApplication()
-    {
-        $snapshot = clone $this->getBaseApp();
-        $this->setSnapshot($snapshot);
-
-        return $snapshot;
     }
 
     public function clear($snapshot = true)
     {
         if ($snapshot && $app = $this->getSnapshot()) {
-            $app->clearInstances();
+            //TODO websocket、rpc bugs
+            //$app->clearInstances();
             unset($this->snapshots[$this->getSnapshotId()]);
         }
 
@@ -120,10 +114,17 @@ class Sandbox
         $this->setInstance($this->getBaseApp());
     }
 
-    public function getApplication()
+    public function getApplication($init = false)
     {
         $snapshot = $this->getSnapshot();
         if ($snapshot instanceof Container) {
+            return $snapshot;
+        }
+
+        if ($init) {
+            $snapshot = clone $this->getBaseApp();
+            $this->setSnapshot($snapshot);
+
             return $snapshot;
         }
         throw new InvalidArgumentException('The app object has not been initialized');

@@ -89,7 +89,7 @@ class Manager
         foreach ($this->rpcEvents as $event) {
             $listener = Str::camel("on_$event");
             $callback = method_exists($this, $listener) ? [$this, $listener] : function () use ($event) {
-                $this->triggerEvent("rpc." . $event, func_get_args());
+                $this->triggerEvent('rpc.' . $event, func_get_args());
             };
 
             $port->on($event, $callback);
@@ -121,7 +121,7 @@ class Manager
     {
         $args = func_get_args();
         $this->runInSandbox(function (Event $event) use ($args) {
-            $event->trigger("swoole.rpc.Connect", $args);
+            $event->trigger('swoole.rpc.Connect', $args);
         }, $fd, true);
     }
 
@@ -173,7 +173,7 @@ class Manager
         unset($this->channels[$fd]);
         $args = func_get_args();
         $this->runInSandbox(function (Event $event) use ($args) {
-            $event->trigger("swoole.rpc.Close", $args);
+            $event->trigger('swoole.rpc.Close', $args);
         }, $fd);
     }
 }
