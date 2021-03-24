@@ -3,6 +3,7 @@
 namespace think\swoole;
 
 use Closure;
+use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
 use think\App;
@@ -96,8 +97,16 @@ class Sandbox
         if (!is_null($fd)) {
             Context::setData('_fd', $fd);
         }
-        $this->setInstance($app = $this->getApplication());
+        $this->setInstance($app = $this->createApplication());
         $this->resetApp($app);
+    }
+
+    protected function createApplication()
+    {
+        $snapshot = clone $this->getBaseApp();
+        $this->setSnapshot($snapshot);
+
+        return $snapshot;
     }
 
     public function clear($snapshot = true)
@@ -117,17 +126,13 @@ class Sandbox
         if ($snapshot instanceof Container) {
             return $snapshot;
         }
-
-        $snapshot = clone $this->getBaseApp();
-        $this->setSnapshot($snapshot);
-
-        return $snapshot;
+        throw new InvalidArgumentException('The app object has not been initialized');
     }
 
     protected function getSnapshotId()
     {
         if ($fd = Context::getData('_fd')) {
-            return "fd_" . $fd;
+            return 'fd_' . $fd;
         }
 
         return Context::getCoroutineId();
