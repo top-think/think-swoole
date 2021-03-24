@@ -2,6 +2,7 @@
 
 namespace think\swoole\concerns;
 
+use Generator;
 use Smf\ConnectionPool\ConnectionPool;
 use Swoole\Server;
 use think\App;
@@ -37,6 +38,7 @@ trait InteractsWithRpcClient
     {
         //引入rpc接口文件
         if (file_exists($rpc = $this->container->getBasePath() . 'rpc.php')) {
+            /** @noinspection PhpIncludeInspection */
             $rpcServices = (array) include $rpc;
 
             //绑定rpc接口
@@ -95,7 +97,7 @@ trait InteractsWithRpcClient
 
             public function sendAndRecv($data)
             {
-                if (!$data instanceof \Generator) {
+                if (!$data instanceof Generator) {
                     $data = [$data];
                 }
 

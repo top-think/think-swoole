@@ -11,6 +11,7 @@ use think\Config;
 use think\Container;
 use think\Event;
 use think\Http;
+use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
@@ -23,7 +24,7 @@ use think\swoole\App as SwooleApp;
 
 class Sandbox
 {
-    use ModifyProperty;
+    use ModifyProperty, InteractsWithCoordinator;
 
     /**
      * The app containers in different coroutine environment.
@@ -105,9 +106,14 @@ class Sandbox
     public function clear($snapshot = true)
     {
         if ($snapshot && $app = $this->getSnapshot()) {
-            //TODO websocket、rpc bugs
-            //$app->clearInstances();
             unset($this->snapshots[$this->getSnapshotId()]);
+
+            // 垃圾回收
+            $divisor     = $this->config->get('swoole.gc.divisor', 100);
+            $probability = $this->config->get('swoole.gc.probability', 1);
+            if (random_int(1, $divisor) <= $probability) {
+                gc_collect_cycles();
+            }
         }
 
         Context::clear();
