@@ -2,20 +2,24 @@
 
 namespace think\swoole\rpc\client;
 
-use RuntimeException;
-use Swoole\Client;
-use Swoole\Coroutine;
+use Closure;
+use Swoole\Coroutine\Client;
 use think\File;
 use think\helper\Arr;
+use think\swoole\concerns\InteractsWithRpcConnector;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\exception\RpcClientException;
 use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Error;
 use think\swoole\rpc\Packer;
 use think\swoole\rpc\Protocol;
+use think\swoole\rpc\Sendfile;
 
 class Gateway
 {
+    use Sendfile;
+
+    /** @var Connector */
     protected $connector;
 
     /** @var ParserInterface */
@@ -42,12 +46,7 @@ class Gateway
         //有文件,先传输
         foreach ($params as $index => $param) {
             if ($param instanceof File) {
-                $handle = fopen($param->getPathname(), "rb");
-                yield pack(Packer::HEADER_PACK, $param->getSize(), Packer::TYPE_FILE);
-                while (!feof($handle)) {
-                    yield fread($handle, 8192);
-                }
-                fclose($handle);
+                yield from $this->fread($param);
                 $params[$index] = Protocol::FILE;
             }
         }
@@ -61,7 +60,6 @@ class Gateway
 
     protected function decodeResponse($response)
     {
-        [, $response] = Packer::unpack($response);
         $result = $this->parser->decodeResponse($response);
 
         if ($result instanceof Error) {
@@ -71,75 +69,55 @@ class Gateway
         return $result;
     }
 
-    public function sendAndRecv(Protocol $protocol)
+    protected function sendAndRecv($data)
     {
-        $response = $this->connector->sendAndRecv($this->encodeData($protocol));
+        return $this->connector->sendAndRecv($data, Closure::fromCallable([$this, 'decodeResponse']));
+    }
 
-        return $this->decodeResponse($response);
+    public function call(Protocol $protocol)
+    {
+        return $this->sendAndRecv($this->encodeData($protocol));
     }
 
     public function getServices()
     {
-        $response = $this->connector->sendAndRecv(Packer::pack(Protocol::ACTION_INTERFACE));
-
-        return $this->decodeResponse($response);
+        return $this->sendAndRecv(Packer::pack(Protocol::ACTION_INTERFACE));
     }
 
     protected function createDefaultConnector($config)
     {
-        $class = Coroutine::getCid() > -1 ? Coroutine\Client::class : Client::class;
-
-        /** @var Client|Coroutine\Client $client */
-        $client = new $class(SWOOLE_SOCK_TCP);
+        $client = new Client(SWOOLE_SOCK_TCP);
 
         $host    = Arr::pull($config, 'host');
         $port    = Arr::pull($config, 'port');
         $timeout = Arr::pull($config, 'timeout', 5);
 
-        $client->set(array_merge($config, [
-            'open_length_check'     => true,
-            'package_length_type'   => Packer::HEADER_PACK,
-            'package_length_offset' => 0,
-            'package_body_offset'   => 8,
-        ]));
+        $client->set($config);
 
         if (!$client->connect($host, $port, $timeout)) {
-            throw new RuntimeException(
+            throw new RpcClientException(
                 sprintf('Connect failed host=%s port=%d', $host, $port)
             );
         }
 
         return new class($client) implements Connector {
+
+            use InteractsWithRpcConnector;
+
             protected $client;
 
             /**
              *  constructor.
-             * @param Client|Coroutine\Client $client
+             * @param Client $client
              */
             public function __construct($client)
             {
                 $this->client = $client;
             }
 
-            public function sendAndRecv($data)
+            protected function runWithClient($callback)
             {
-                if (!$data instanceof \Generator) {
-                    $data = [$data];
-                }
-
-                foreach ($data as $string) {
-                    if (!$this->client->send($string)) {
-                        throw new RpcClientException(swoole_strerror($this->client->errCode), $this->client->errCode);
-                    }
-                }
-
-                $response = $this->client->recv();
-
-                if ($response === false || empty($response)) {
-                    throw new RpcClientException(swoole_strerror($this->client->errCode), $this->client->errCode);
-                }
-
-                return $response;
+                return $callback($this->client);
             }
         };
     }

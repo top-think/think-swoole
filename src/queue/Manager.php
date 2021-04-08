@@ -35,7 +35,7 @@ class Manager
 
     public function run(): void
     {
-        @cli_set_process_title("swoole queue: manager process");
+        @cli_set_process_title('swoole queue: manager process');
 
         $this->listenForEvents();
         $this->createWorkers();
@@ -69,17 +69,17 @@ class Manager
 
             $this->workers[] = function (Process $process) use ($options, $connection, $queue) {
 
-                @cli_set_process_title("swoole queue: worker process");
+                @cli_set_process_title('swoole queue: worker process');
 
                 $this->bindRpcInterface();
 
                 /** @var Worker $worker */
                 $worker = $this->container->make(Worker::class);
 
-                $delay   = Arr::get($options, "delay", 0);
-                $sleep   = Arr::get($options, "sleep", 3);
-                $tries   = Arr::get($options, "tries", 0);
-                $timeout = Arr::get($options, "timeout", 60);
+                $delay   = Arr::get($options, 'delay', 0);
+                $sleep   = Arr::get($options, 'sleep', 3);
+                $tries   = Arr::get($options, 'tries', 0);
+                $timeout = Arr::get($options, 'timeout', 60);
 
                 $timer = Timer::after($timeout * 1000, function () use ($process) {
                     $process->exit();

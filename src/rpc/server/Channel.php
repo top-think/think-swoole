@@ -2,11 +2,9 @@
 
 namespace think\swoole\rpc\server;
 
-use RuntimeException;
 use Swoole\Coroutine;
-use think\swoole\rpc\Packer;
-use think\swoole\rpc\server\channel\Buffer;
-use think\swoole\rpc\server\channel\File;
+use think\swoole\rpc\packer\Buffer;
+use think\swoole\rpc\packer\File;
 
 class Channel
 {
@@ -14,25 +12,11 @@ class Channel
 
     protected $queue;
 
-    public function __construct($header)
+    public function __construct($handler)
     {
-        switch ($header['type']) {
-            case Packer::TYPE_BUFFER:
-                $type = Buffer::class;
-                break;
-            case Packer::TYPE_FILE:
-                $type = File::class;
-                break;
-            default:
-                throw new RuntimeException("unsupported data type: [{$header['type']}");
-        }
-
-        $this->header = $header;
-        $this->queue  = new Coroutine\Channel(1);
-
-        Coroutine::create(function () use ($type, $header) {
-            $handle = new $type($header['length']);
-            $this->queue->push($handle);
+        $this->queue = new Coroutine\Channel(1);
+        Coroutine::create(function () use ($handler) {
+            $this->queue->push($handler);
         });
     }
 

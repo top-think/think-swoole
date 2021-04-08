@@ -15,10 +15,13 @@ use think\swoole\rpc\Error;
 use think\swoole\rpc\File;
 use think\swoole\rpc\Packer;
 use think\swoole\rpc\Protocol;
+use think\swoole\rpc\Sendfile;
 use Throwable;
 
 class Dispatcher
 {
+    use Sendfile;
+
     /**
      * Parser error
      */
@@ -176,6 +179,14 @@ class Dispatcher
             $result = Error::make($e->getCode(), $e->getMessage());
         }
 
+        //传输文件
+        if ($result instanceof \think\File) {
+            foreach ($this->fread($result) as $string) {
+                $this->server->send($fd, $string);
+            }
+            $result = Protocol::FILE;
+        }
+
         $data = $this->parser->encodeResponse($result);
 
         $this->server->send($fd, Packer::pack($data));
@@ -185,7 +196,8 @@ class Dispatcher
 
     protected function dispatchWithMiddleware(App $app, Protocol $protocol, $fd)
     {
-        return Middleware::make($app, $this->middleware)
+        return Middleware
+            ::make($app, $this->middleware)
             ->pipeline()
             ->send($protocol)
             ->then(function (Protocol $protocol) use ($app, $fd) {

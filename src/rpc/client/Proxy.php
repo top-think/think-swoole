@@ -37,7 +37,7 @@ abstract class Proxy
             ->pipeline()
             ->send($protocol)
             ->then(function (Protocol $protocol) {
-                return $this->gateway->sendAndRecv($protocol);
+                return $this->gateway->call($protocol);
             });
     }
 

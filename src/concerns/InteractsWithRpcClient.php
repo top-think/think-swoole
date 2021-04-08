@@ -2,18 +2,15 @@
 
 namespace think\swoole\concerns;
 
-use Generator;
 use Smf\ConnectionPool\ConnectionPool;
 use Swoole\Server;
 use think\App;
-use think\swoole\exception\RpcClientException;
 use think\swoole\Pool;
 use think\swoole\pool\Client;
 use think\swoole\rpc\client\Connector;
 use think\swoole\rpc\client\Gateway;
 use think\swoole\rpc\client\Proxy;
 use think\swoole\rpc\JsonParser;
-use think\swoole\rpc\Packer;
 use Throwable;
 
 /**
@@ -50,9 +47,10 @@ trait InteractsWithRpcClient
                     $middleware  = $this->getConfig("rpc.client.{$name}.middleware", []);
 
                     foreach ($abstracts as $abstract) {
-                        $this->getApplication()->bind($abstract, function (App $app) use ($middleware, $gateway, $name, $abstract) {
-                            return $app->invokeClass(Proxy::getClassName($name, $abstract), [$gateway, $middleware]);
-                        });
+                        $this->getApplication()
+                             ->bind($abstract, function (App $app) use ($middleware, $gateway, $name, $abstract) {
+                                 return $app->invokeClass(Proxy::getClassName($name, $abstract), [$gateway, $middleware]);
+                             });
                     }
                 }
             } catch (Throwable $e) {
@@ -68,15 +66,7 @@ trait InteractsWithRpcClient
                 $pool = new ConnectionPool(
                     Pool::pullPoolConfig($config),
                     new Client(),
-                    array_merge(
-                        $config,
-                        [
-                            'open_length_check'     => true,
-                            'package_length_type'   => Packer::HEADER_PACK,
-                            'package_length_offset' => 0,
-                            'package_body_offset'   => 8,
-                        ]
-                    )
+                    $config
                 );
                 $this->getPools()->add("rpc.client.{$name}", $pool);
             }
@@ -88,6 +78,9 @@ trait InteractsWithRpcClient
         $pool = $this->getPools()->get("rpc.client.{$name}");
 
         return new class($pool) implements Connector {
+
+            use InteractsWithRpcConnector;
+
             protected $pool;
 
             public function __construct(ConnectionPool $pool)
@@ -95,38 +88,15 @@ trait InteractsWithRpcClient
                 $this->pool = $pool;
             }
 
-            public function sendAndRecv($data)
+            protected function runWithClient($callback)
             {
-                if (!$data instanceof Generator) {
-                    $data = [$data];
-                }
-
                 /** @var \Swoole\Coroutine\Client $client */
                 $client = $this->pool->borrow();
-
                 try {
-                    foreach ($data as $string) {
-                        if (!$client->send($string)) {
-                            $this->onError($client);
-                        }
-                    }
-
-                    $response = $client->recv();
-
-                    if ($response === false || empty($response)) {
-                        $this->onError($client);
-                    }
-
-                    return $response;
+                    return $callback($client);
                 } finally {
                     $this->pool->return($client);
                 }
-            }
-
-            protected function onError(\Swoole\Coroutine\Client $client)
-            {
-                $client->close();
-                throw new RpcClientException(swoole_strerror($client->errCode), $client->errCode);
             }
         };
     }
