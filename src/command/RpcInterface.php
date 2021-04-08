@@ -11,6 +11,7 @@ use think\helper\Arr;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\rpc\client\Gateway;
 use think\swoole\rpc\JsonParser;
+use function Swoole\Coroutine\run;
 
 class RpcInterface extends Command
 {
@@ -22,61 +23,64 @@ class RpcInterface extends Command
 
     public function handle()
     {
-        $clients = $this->app->config->get('swoole.rpc.client', []);
+        run(function () {
+            $file = new PhpFile;
+            $file->addComment('This file is auto-generated.');
+            $file->setStrictTypes();
+            $services = [];
 
-        $file = new PhpFile;
-        $file->addComment('This file is auto-generated.');
-        $file->setStrictTypes();
-        $services = [];
-        foreach ($clients as $name => $config) {
+            $clients = $this->app->config->get('swoole.rpc.client', []);
 
-            $parserClass = Arr::get($config, 'parser', JsonParser::class);
-            /** @var ParserInterface $parser */
-            $parser = new $parserClass;
+            foreach ($clients as $name => $config) {
 
-            $gateway = new Gateway($config, $parser);
+                $parserClass = Arr::get($config, 'parser', JsonParser::class);
+                /** @var ParserInterface $parser */
+                $parser = new $parserClass;
 
-            $result = $gateway->getServices();
+                $gateway = new Gateway($config, $parser);
 
-            $namespace = $file->addNamespace("rpc\\contract\\${name}");
+                $result = $gateway->getServices();
 
-            foreach ($result as $interface => $methods) {
+                $namespace = $file->addNamespace("rpc\\contract\\${name}");
 
-                $services[$name][] = $namespace->getName() . "\\{$interface}";
+                foreach ($result as $interface => $methods) {
 
-                $class = $namespace->addInterface($interface);
+                    $services[$name][] = $namespace->getName() . "\\{$interface}";
 
-                foreach ($methods as $methodName => ['parameters' => $parameters, 'returnType' => $returnType, 'comment' => $comment]) {
-                    $method = $class->addMethod($methodName)
-                                    ->setVisibility(ClassType::VISIBILITY_PUBLIC)
-                                    ->setComment(Helpers::unformatDocComment($comment))
-                                    ->setReturnType($returnType);
+                    $class = $namespace->addInterface($interface);
 
-                    foreach ($parameters as $parameter) {
-                        if ($parameter['type'] && (class_exists($parameter['type']) || interface_exists($parameter['type']))) {
-                            $namespace->addUse($parameter['type']);
-                        }
-                        $param = $method->addParameter($parameter['name'])
-                                        ->setType($parameter['type']);
+                    foreach ($methods as $methodName => ['parameters' => $parameters, 'returnType' => $returnType, 'comment' => $comment]) {
+                        $method = $class->addMethod($methodName)
+                                        ->setVisibility(ClassType::VISIBILITY_PUBLIC)
+                                        ->setComment(Helpers::unformatDocComment($comment))
+                                        ->setReturnType($returnType);
 
-                        if (array_key_exists('default', $parameter)) {
-                            $param->setDefaultValue($parameter['default']);
-                        }
+                        foreach ($parameters as $parameter) {
+                            if ($parameter['type'] && (class_exists($parameter['type']) || interface_exists($parameter['type']))) {
+                                $namespace->addUse($parameter['type']);
+                            }
+                            $param = $method->addParameter($parameter['name'])
+                                            ->setType($parameter['type']);
 
-                        if (array_key_exists('nullable', $parameter)) {
-                            $param->setNullable();
+                            if (array_key_exists('default', $parameter)) {
+                                $param->setDefaultValue($parameter['default']);
+                            }
+
+                            if (array_key_exists('nullable', $parameter)) {
+                                $param->setNullable();
+                            }
                         }
                     }
                 }
             }
-        }
 
-        $dumper = new Dumper();
+            $dumper = new Dumper();
 
-        $services = 'return ' . $dumper->dump($services) . ';';
+            $services = 'return ' . $dumper->dump($services) . ';';
 
-        file_put_contents($this->app->getBasePath() . 'rpc.php', $file . $services);
+            file_put_contents($this->app->getBasePath() . 'rpc.php', $file . $services);
 
-        $this->output->writeln('<info>Succeed!</info>');
+            $this->output->writeln('<info>Succeed!</info>');
+        });
     }
 }
