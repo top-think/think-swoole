@@ -65,11 +65,12 @@ trait InteractsWithRpcConnector
             return $this->runWithClient(function (Client $client) use ($decoder, $data) {
                 try {
                     foreach ($data as $string) {
-                        if ($client->send($string) === false) {
-                            throw new RpcClientException('Send data failed. ' . $client->errMsg, $client->errCode);
+                        if (!empty($string)) {
+                            if ($client->send($string) === false) {
+                                throw new RpcClientException('Send data failed. ' . $client->errMsg, $client->errCode);
+                            }
                         }
                     }
-
                     return $this->recv($client, $decoder);
                 } catch (RpcClientException $e) {
                     $client->close();
@@ -79,7 +80,7 @@ trait InteractsWithRpcConnector
                     throw $e;
                 }
             });
-        }, 1);
+        }, 2);
 
         if ($result instanceof Exception) {
             throw $result;

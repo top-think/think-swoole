@@ -182,7 +182,9 @@ class Dispatcher
         //传输文件
         if ($result instanceof \think\File) {
             foreach ($this->fread($result) as $string) {
-                $this->server->send($fd, $string);
+                if (!empty($string)) {
+                    $this->server->send($fd, $string);
+                }
             }
             $result = Protocol::FILE;
         }
