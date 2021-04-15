@@ -157,7 +157,7 @@ class Redis implements RoomInterface
     }
 
     /**
-     * Remove value from reddis.
+     * Remove value from redis.
      *
      * @param        $key
      * @param array $values
