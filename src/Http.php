@@ -54,10 +54,10 @@ class Http extends Server
         $this->server_type = Config::get('swoole.server_type');
         switch ($this->server_type) {
             case 'websocket':
-                $this->swoole = new WebSocketServer($host, $port, $mode, SWOOLE_SOCK_TCP);
+                $this->swoole = new WebSocketServer($host, $port, $mode, $sockType);
                 break;
             default:
-                $this->swoole = new HttpServer($host, $port, $mode, SWOOLE_SOCK_TCP);
+                $this->swoole = new HttpServer($host, $port, $mode, $sockType);
         }
         if ("process" == Config::get('swoole.queue_type')) {
             $process = new QueueProcess();
