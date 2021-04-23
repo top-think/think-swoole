@@ -127,12 +127,12 @@ class Manager
 
     protected function recv(Server $server, $fd, $data, $callback)
     {
-        if (!isset($this->channels[$fd]) || empty($handle = $this->channels[$fd]->pop())) {
+        if (!isset($this->channels[$fd]) || empty($handler = $this->channels[$fd]->pop())) {
             //解析包头
             try {
-                [$header, $data] = Packer::unpack($data);
+                [$handler, $data] = Packer::unpack($data);
 
-                $this->channels[$fd] = new Channel($header);
+                $this->channels[$fd] = new Channel($handler);
             } catch (Throwable $e) {
                 //错误的包头
                 Coroutine::create($callback, Error::make(Dispatcher::INVALID_REQUEST, $e->getMessage()));
@@ -140,16 +140,16 @@ class Manager
                 return $server->close($fd);
             }
 
-            $handle = $this->channels[$fd]->pop();
+            $handler = $this->channels[$fd]->pop();
         }
 
-        $result = $handle->write($data);
+        $result = $handler->write($data);
 
         if (!empty($result)) {
             Coroutine::create($callback, $result);
             $this->channels[$fd]->close();
         } else {
-            $this->channels[$fd]->push($handle);
+            $this->channels[$fd]->push($handler);
         }
 
         if (!empty($data)) {

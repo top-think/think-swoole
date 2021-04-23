@@ -8,7 +8,8 @@ interface Connector
 {
     /**
      * @param Generator|string $data
+     * @param callable $decoder
      * @return string
      */
-    public function sendAndRecv($data);
+    public function sendAndRecv($data, callable $decoder);
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace think\swoole\rpc\server\channel;
+namespace think\swoole\rpc\packer;
 
 class Buffer
 {
