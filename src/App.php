@@ -6,7 +6,7 @@ use think\swoole\coroutine\Context;
 
 class App extends \think\App
 {
-    public function runningInConsole()
+    public function runningInConsole(): bool
     {
         return Context::hasData('_fd');
     }

@@ -2,6 +2,7 @@
 
 namespace think\swoole\middleware;
 
+use think\swoole\exception\RpcResponseException;
 use think\swoole\rpc\Protocol;
 use think\tracing\Tracer;
 use Throwable;
@@ -37,7 +38,9 @@ class TraceRpcClient
         try {
             return $next($protocol);
         } catch (Throwable $e) {
-            $span->setTag(ERROR, $e);
+            if (!$e instanceof RpcResponseException) {
+                $span->setTag(ERROR, $e);
+            }
             throw $e;
         } finally {
             $scope->close();

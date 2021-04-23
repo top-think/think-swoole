@@ -2,7 +2,6 @@
 
 namespace think\swoole\concerns;
 
-use Exception;
 use Generator;
 use Swoole\Coroutine\Client;
 use think\swoole\exception\RpcClientException;
@@ -60,33 +59,21 @@ trait InteractsWithRpcConnector
             $data = [$data];
         }
 
-        $result = backoff(function () use ($decoder, $data) {
-
-            return $this->runWithClient(function (Client $client) use ($decoder, $data) {
-                try {
-                    foreach ($data as $string) {
-                        if (!empty($string)) {
-                            if ($client->send($string) === false) {
-                                throw new RpcClientException('Send data failed. ' . $client->errMsg, $client->errCode);
-                            }
+        return $this->runWithClient(function (Client $client) use ($decoder, $data) {
+            try {
+                foreach ($data as $string) {
+                    if (!empty($string)) {
+                        if ($client->send($string) === false) {
+                            throw new RpcClientException('Send data failed. ' . $client->errMsg, $client->errCode);
                         }
                     }
-                    return $this->recv($client, $decoder);
-                } catch (RpcClientException $e) {
-                    $client->close();
-                    if ($e->getCode() === SOCKET_ETIMEDOUT) {
-                        return $e;
-                    }
-                    throw $e;
                 }
-            });
-        }, 2);
-
-        if ($result instanceof Exception) {
-            throw $result;
-        }
-
-        return $result;
+                return $this->recv($client, $decoder);
+            } catch (RpcClientException $e) {
+                $client->close();
+                throw $e;
+            }
+        });
     }
 
 }

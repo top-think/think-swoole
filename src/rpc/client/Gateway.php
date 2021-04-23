@@ -76,7 +76,18 @@ class Gateway
 
     public function call(Protocol $protocol)
     {
-        return $this->sendAndRecv($this->encodeData($protocol));
+        $result = backoff(function () use ($protocol) {
+            try {
+                return $this->sendAndRecv($this->encodeData($protocol));
+            } catch (RpcResponseException $e) {
+                return $e;
+            }
+        }, 2);
+
+        if ($result instanceof RpcResponseException) {
+            throw $result;
+        }
+        return $result;
     }
 
     public function getServices()
