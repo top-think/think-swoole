@@ -54,7 +54,7 @@ class Handler extends Websocket
 
         $this->push(EnginePacket::open($payload));
 
-        $this->event->trigger("swoole.websocket.Open", $request);
+        $this->event->trigger('swoole.websocket.Open', $request);
 
         if ($this->eio < 4) {
             $this->resetPingTimeout($this->pingInterval + $this->pingTimeout);
@@ -73,7 +73,7 @@ class Handler extends Websocket
     {
         $enginePacket = EnginePacket::fromString($frame->data);
 
-        $this->event->trigger("swoole.websocket.Message", $enginePacket);
+        $this->event->trigger('swoole.websocket.Message', $enginePacket);
 
         $this->resetPingTimeout($this->pingInterval + $this->pingTimeout);
 
@@ -85,7 +85,8 @@ class Handler extends Websocket
                         $this->onConnect($packet->data);
                         break;
                     case Packet::EVENT:
-                        [$type, $data] = $packet->data;
+                        $type   = array_shift($packet->data);
+                        $data   = $packet->data;
                         $result = $this->event->trigger('swoole.websocket.Event', ['type' => $type, 'data' => $data]);
 
                         if ($packet->id !== null) {
@@ -129,7 +130,7 @@ class Handler extends Websocket
     {
         Timer::clear($this->pingTimeoutTimer);
         Timer::clear($this->pingIntervalTimer);
-        $this->event->trigger("swoole.websocket.Close", $reactorId);
+        $this->event->trigger('swoole.websocket.Close', $reactorId);
     }
 
     protected function onConnect($data = null)
