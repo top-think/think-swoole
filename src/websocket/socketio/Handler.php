@@ -188,10 +188,10 @@ class Handler extends Websocket
         return parent::push($data);
     }
 
-    public function emit(string $event, $data = null): bool
+    public function emit(string $event, ...$data): bool
     {
         $packet = Packet::create(Packet::EVENT, [
-            'data' => [$event, $data],
+            'data' => array_merge([$event], $data),
         ]);
         return $this->push($packet);
     }

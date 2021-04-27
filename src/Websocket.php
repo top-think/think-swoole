@@ -70,7 +70,7 @@ class Websocket
      */
     public function onOpen($fd, Request $request)
     {
-        $this->event->trigger("swoole.websocket.Open", $request);
+        $this->event->trigger('swoole.websocket.Open', $request);
     }
 
     /**
@@ -80,8 +80,8 @@ class Websocket
      */
     public function onMessage(Frame $frame)
     {
-        $this->event->trigger("swoole.websocket.Message", $frame);
-        $this->event->trigger("swoole.websocket.Event", $this->decode($frame->data));
+        $this->event->trigger('swoole.websocket.Message', $frame);
+        $this->event->trigger('swoole.websocket.Event', $this->decode($frame->data));
     }
 
     /**
@@ -92,7 +92,7 @@ class Websocket
      */
     public function onClose($fd, $reactorId)
     {
-        $this->event->trigger("swoole.websocket.Close", $reactorId);
+        $this->event->trigger('swoole.websocket.Close', $reactorId);
     }
 
     /**
@@ -199,7 +199,7 @@ class Websocket
         }
     }
 
-    public function emit(string $event, $data = null): bool
+    public function emit(string $event, ...$data): bool
     {
         return $this->push($this->encode([
             'type' => $event,
