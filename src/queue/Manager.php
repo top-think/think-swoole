@@ -9,6 +9,7 @@ use Swoole\Process\Pool;
 use Swoole\Server;
 use think\helper\Arr;
 use think\queue\event\JobFailed;
+use think\queue\Worker;
 use think\swoole\concerns\InteractsWithRpcClient;
 use think\swoole\concerns\WithContainer;
 use function Swoole\Coroutine\run;
@@ -79,7 +80,13 @@ class Manager
                 $tries   = Arr::get($options, 'tries', 0);
                 $timeout = Arr::get($options, 'timeout', 60);
 
-                $worker->waitRunJob($process, $connection, $queue, $delay, $sleep, $tries, $timeout);
+                $timer = Timer::after($timeout * 1000, function () use ($process) {
+                    $process->exit();
+                });
+
+                $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
+
+                Timer::clear($timer);
             };
         }
     }

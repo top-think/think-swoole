@@ -97,38 +97,53 @@ class Gateway
 
     protected function createDefaultConnector($config)
     {
-        $client = new Client(SWOOLE_SOCK_TCP);
-
-        $host    = Arr::pull($config, 'host');
-        $port    = Arr::pull($config, 'port');
-        $timeout = Arr::pull($config, 'timeout', 5);
-
-        $client->set($config);
-
-        if (!$client->connect($host, $port, $timeout)) {
-            throw new RpcClientException(
-                sprintf('Connect failed host=%s port=%d', $host, $port)
-            );
-        }
-
-        return new class($client) implements Connector {
+        return new class($config) implements Connector {
 
             use InteractsWithRpcConnector;
 
+            /** @var Client */
             protected $client;
+            protected $config;
 
             /**
              *  constructor.
-             * @param Client $client
+             * @param [] $config
              */
-            public function __construct($client)
+            public function __construct($config)
             {
-                $this->client = $client;
+                $this->config = $config;
+            }
+
+            protected function isConnected(): bool
+            {
+                return $this->client && $this->client->isConnected() && $this->client->peek() !== '';
+            }
+
+            protected function getClient()
+            {
+                if (!$this->isConnected()) {
+                    $client = new Client(SWOOLE_SOCK_TCP);
+
+                    $host    = Arr::pull($this->config, 'host');
+                    $port    = Arr::pull($this->config, 'port');
+                    $timeout = Arr::pull($this->config, 'timeout', 5);
+
+                    $client->set($this->config);
+
+                    if (!$client->connect($host, $port, $timeout)) {
+                        throw new RpcClientException(
+                            sprintf('Connect failed host=%s port=%d', $host, $port)
+                        );
+                    }
+
+                    $this->client = $client;
+                }
+                return $this->client;
             }
 
             protected function runWithClient($callback)
             {
-                return $callback($this->client);
+                return $callback($this->getClient());
             }
         };
     }
