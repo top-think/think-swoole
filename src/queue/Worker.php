@@ -11,7 +11,8 @@ class Worker extends \think\queue\Worker
     {
         while (true) {
             $job = $this->getNextJob(
-                $this->queue->connection($connection), $queue
+                $this->queue->connection($connection),
+                $queue
             );
 
             if ($job) {

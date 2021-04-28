@@ -7,7 +7,6 @@ use Swoole\Constant;
 use Swoole\Process;
 use Swoole\Process\Pool;
 use Swoole\Server;
-use Swoole\Timer;
 use think\helper\Arr;
 use think\queue\event\JobFailed;
 use think\swoole\concerns\InteractsWithRpcClient;
