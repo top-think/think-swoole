@@ -8,7 +8,7 @@ class Job
 
     public $params;
 
-    public function __construct($name, $params)
+    public function __construct($name, $params = [])
     {
         $this->name   = $name;
         $this->params = $params;
