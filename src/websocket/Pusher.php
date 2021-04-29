@@ -173,7 +173,7 @@ class Pusher
             return false;
         }
 
-        return $this->broadcast ? $this->sender !== (int) $fd : true;
+        return !$this->broadcast || $this->sender !== (int) $fd;
     }
 
     /**

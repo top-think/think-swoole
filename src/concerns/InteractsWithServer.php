@@ -109,13 +109,7 @@ trait InteractsWithServer
     {
         $this->runInSandbox(function (Event $event, App $app) use ($task) {
             if ($task->data instanceof Job) {
-                if (is_array($task->data->name)) {
-                    [$class, $method] = $task->data->name;
-                    $object = $app->invokeClass($class, $task->data->params);
-                    $object->{$method}();
-                } else {
-                    $app->invoke($task->data->name, $task->data->params);
-                }
+                $task->data->run($app);
             } else {
                 $event->trigger('swoole.task', $task);
             }

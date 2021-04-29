@@ -15,6 +15,11 @@ use think\swoole\websocket\Room;
 class Websocket
 {
     /**
+     * @var \think\App
+     */
+    protected $app;
+
+    /**
      * @var Server
      */
     protected $server;
@@ -51,12 +56,14 @@ class Websocket
     /**
      * Websocket constructor.
      *
+     * @param \think\App $app
      * @param Server $server
      * @param Room $room
      * @param Event $event
      */
-    public function __construct(Server $server, Room $room, Event $event)
+    public function __construct(\think\App $app, Server $server, Room $room, Event $event)
     {
+        $this->app    = $app;
         $this->server = $server;
         $this->room   = $room;
         $this->event  = $event;
@@ -191,7 +198,11 @@ class Websocket
                 'payload'     => $data,
             ]);
 
-            $result = $this->server->task($job);
+            if ($this->server->taskworker) {
+                $result = $job->run($this->app);
+            } else {
+                $result = $this->server->task($job);
+            }
 
             return $result !== false;
         } finally {

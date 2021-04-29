@@ -6,6 +6,7 @@ use Exception;
 use Swoole\Server;
 use Swoole\Timer;
 use Swoole\Websocket\Frame;
+use think\App;
 use think\Config;
 use think\Event;
 use think\Request;
@@ -25,12 +26,12 @@ class Handler extends Websocket
     protected $pingInterval;
     protected $pingTimeout;
 
-    public function __construct(Server $server, Room $room, Event $event, Config $config)
+    public function __construct(App $app, Server $server, Room $room, Event $event, Config $config)
     {
         $this->config       = $config;
         $this->pingInterval = $this->config->get('swoole.websocket.ping_interval', 25000);
         $this->pingTimeout  = $this->config->get('swoole.websocket.ping_timeout', 60000);
-        parent::__construct($server, $room, $event);
+        parent::__construct($app, $server, $room, $event);
     }
 
     /**
