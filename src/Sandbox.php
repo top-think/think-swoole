@@ -104,7 +104,7 @@ class Sandbox
 
     public function clear($snapshot = true)
     {
-        if ($snapshot && $app = $this->getSnapshot()) {
+        if ($snapshot && $this->getSnapshot()) {
             unset($this->snapshots[$this->getSnapshotId()]);
 
             // 垃圾回收

@@ -94,8 +94,4 @@ return [
     'instances'  => [],
     //每次请求前需要重新执行的服务
     'services'   => [],
-    'gc'         => [
-        'probability' => 1,
-        'divisor'     => 100,
-    ],
 ];

@@ -117,14 +117,6 @@ class Manager
         $this->app->make(ParserInterface::class);
     }
 
-    public function onConnect(Server $server, int $fd, int $reactorId)
-    {
-        $args = func_get_args();
-        $this->runInSandbox(function (Event $event) use ($args) {
-            $event->trigger('swoole.rpc.Connect', $args);
-        }, $fd, true);
-    }
-
     protected function recv(Server $server, $fd, $data, $callback)
     {
         if (!isset($this->channels[$fd]) || empty($handler = $this->channels[$fd]->pop())) {
@@ -157,10 +149,18 @@ class Manager
         }
     }
 
-    public function onReceive(Server $server, $fd, $reactorId, $data)
+    public function onConnect(Server $server, int $fd, int $reactorId)
     {
         $this->waitCoordinator('workerStart');
+        //TODO 保证onConnect onReceive onClose 执行顺序
+        $args = func_get_args();
+        $this->runInSandbox(function (Event $event) use ($args) {
+            $event->trigger('swoole.rpc.Connect', $args);
+        }, $fd, true);
+    }
 
+    public function onReceive(Server $server, $fd, $reactorId, $data)
+    {
         $this->recv($server, $fd, $data, function ($data) use ($fd) {
             $this->runInSandbox(function (App $app, Dispatcher $dispatcher) use ($fd, $data) {
                 $dispatcher->dispatch($app, $fd, $data);
