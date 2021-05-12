@@ -30,8 +30,15 @@ class PidManager
     public function isRunning()
     {
         $pid = $this->getPid();
+        if ($pid) {
+            if (Process::kill($pid, 0)) {
+                return true;
+            }
+            //清理pid文件
+            @unlink($this->file);
+        }
 
-        return $pid > 0 && Process::kill($pid, 0);
+        return false;
     }
 
     /**
