@@ -12,7 +12,6 @@ use think\swoole\rpc\Manager;
  * @package think\swoole\concerns
  * @property App $app
  * @property App $container
- * @method Server getServer()
  * @method Pool getPools()
  */
 trait InteractsWithRpcServer

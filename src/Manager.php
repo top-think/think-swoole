@@ -11,7 +11,6 @@
 
 namespace think\swoole;
 
-use think\swoole\concerns\InteractsWithCoordinator;
 use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithQueue;
@@ -28,8 +27,7 @@ use think\swoole\concerns\WithContainer;
  */
 class Manager
 {
-    use InteractsWithCoordinator,
-        InteractsWithServer,
+    use InteractsWithServer,
         InteractsWithSwooleTable,
         InteractsWithHttp,
         InteractsWithWebsocket,
@@ -41,38 +39,17 @@ class Manager
         WithApplication;
 
     /**
-     * Server events.
-     *
-     * @var array
-     */
-    protected $events = [
-        'start',
-        'shutDown',
-        'workerStart',
-        'workerStop',
-        'workerError',
-        'workerExit',
-        'packet',
-        'task',
-        'finish',
-        'pipeMessage',
-        'managerStart',
-        'managerStop',
-        'request',
-    ];
-
-    /**
      * Initialize.
      */
     protected function initialize(): void
     {
         $this->prepareTables();
         $this->preparePools();
-        $this->prepareWebsocket();
-        $this->setSwooleServerListeners();
-        $this->prepareRpcServer();
-        $this->prepareQueue();
-        $this->prepareRpcClient();
+        $this->prepareHttp();
+        //$this->prepareWebsocket();
+        //$this->prepareRpcServer();
+        //$this->prepareQueue();
+        //$this->prepareRpcClient();
     }
 
 }

@@ -19,7 +19,6 @@ use think\swoole\websocket\Room;
  *
  * @property App $app
  * @property Container $container
- * @method \Swoole\Server getServer()
  */
 trait InteractsWithWebsocket
 {

@@ -22,7 +22,8 @@
     "require-dev": {
         "symfony/var-dumper": "^4.3|^5.1",
         "topthink/think-tracing": "^1.0",
-        "topthink/think-queue": "^3.0"
+        "topthink/think-queue": "^3.0",
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {
@@ -31,6 +32,11 @@
         "files": [
             "src/helpers.php"
         ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "think\\tests\\swoole\\": "tests/"
+        }
     },
     "extra": {
         "think": {

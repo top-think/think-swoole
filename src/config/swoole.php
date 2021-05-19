@@ -4,24 +4,8 @@ use think\swoole\websocket\socketio\Handler;
 
 return [
     'server'     => [
-        'host'      => env('SWOOLE_HOST', '127.0.0.1'), // 监听地址
-        'port'      => env('SWOOLE_PORT', 80), // 监听端口
-        'mode'      => SWOOLE_PROCESS, // 运行模式 默认为SWOOLE_PROCESS
-        'sock_type' => SWOOLE_SOCK_TCP, // sock type 默认为SWOOLE_SOCK_TCP
-        'options'   => [
-            'pid_file'              => runtime_path() . 'swoole.pid',
-            'log_file'              => runtime_path() . 'swoole.log',
-            'daemonize'             => false,
-            // Normally this value should be 1~4 times larger according to your cpu cores.
-            'reactor_num'           => swoole_cpu_num(),
-            'worker_num'            => swoole_cpu_num(),
-            'task_worker_num'       => swoole_cpu_num(),
-            'enable_static_handler' => true,
-            'document_root'         => root_path('public'),
-            'package_max_length'    => 20 * 1024 * 1024,
-            'buffer_output_size'    => 10 * 1024 * 1024,
-            'socket_buffer_size'    => 128 * 1024 * 1024,
-        ],
+        'host' => env('SWOOLE_HOST', '127.0.0.1'), // 监听地址
+        'port' => env('SWOOLE_PORT', 80), // 监听端口
     ],
     'websocket'  => [
         'enable'        => false,
@@ -80,10 +64,6 @@ return [
     'queue'      => [
         'enable'  => false,
         'workers' => [],
-    ],
-    'coroutine'  => [
-        'enable' => true,
-        'flags'  => SWOOLE_HOOK_ALL,
     ],
     'tables'     => [],
     //每个worker里需要预加载以共用的实例

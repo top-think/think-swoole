@@ -15,7 +15,6 @@ use Throwable;
  * Trait InteractsWithRpc
  * @package think\swoole\concerns
  * @property App $app
- * @method Server getServer()
  */
 trait InteractsWithPools
 {

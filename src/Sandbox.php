@@ -104,15 +104,9 @@ class Sandbox
 
     public function clear($snapshot = true)
     {
-        if ($snapshot && $this->getSnapshot()) {
+        if ($snapshot && $app = $this->getSnapshot()) {
+            $app->clearInstances();
             unset($this->snapshots[$this->getSnapshotId()]);
-
-            // 垃圾回收
-            $divisor     = $this->config->get('swoole.gc.divisor', 100);
-            $probability = $this->config->get('swoole.gc.probability', 1);
-            if (random_int(1, $divisor) <= $probability) {
-                gc_collect_cycles();
-            }
         }
 
         Context::clear();
