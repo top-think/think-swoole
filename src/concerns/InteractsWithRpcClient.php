@@ -3,7 +3,6 @@
 namespace think\swoole\concerns;
 
 use Smf\ConnectionPool\ConnectionPool;
-use Swoole\Server;
 use think\App;
 use think\swoole\Pool;
 use think\swoole\pool\Client;
