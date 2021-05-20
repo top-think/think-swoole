@@ -2,7 +2,6 @@
 
 namespace think\swoole\concerns;
 
-use Swoole\Server;
 use think\App;
 use think\swoole\Pool;
 use think\swoole\rpc\Manager;

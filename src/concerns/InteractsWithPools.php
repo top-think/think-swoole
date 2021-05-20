@@ -5,7 +5,6 @@ namespace think\swoole\concerns;
 use Exception;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
-use Swoole\Server;
 use think\App;
 use think\helper\Arr;
 use think\swoole\Pool;
