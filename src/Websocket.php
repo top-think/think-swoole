@@ -51,9 +51,9 @@ class Websocket
         $this->manager = $manager;
     }
 
-    protected function makePusher()
+    protected function makePusher($sender = null)
     {
-        return new Pusher($this->manager, $this->room);
+        return new Pusher($this->manager, $this->room, $sender);
     }
 
     public function to(...$values)
@@ -61,9 +61,14 @@ class Websocket
         return $this->makePusher()->to(...$values);
     }
 
-    public function room(...$values)
+    public function push($data)
     {
-        return $this->makePusher()->room(...$values);
+        $this->makePusher($this->getSender())->push($data);
+    }
+
+    public function emit(string $event, ...$data)
+    {
+        $this->makePusher($this->getSender())->emit($event, ...$data);
     }
 
     /**
@@ -96,19 +101,6 @@ class Websocket
         $this->room->delete($this->getSender(), $rooms);
 
         return $this;
-    }
-
-    public function push($data)
-    {
-        $this->to($this->getSender())->push($data);
-    }
-
-    public function emit(string $event, ...$data): bool
-    {
-        return $this->push($this->encode([
-            'type' => $event,
-            'data' => $data,
-        ]));
     }
 
     /**

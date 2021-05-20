@@ -3,7 +3,6 @@
 namespace think\swoole\concerns;
 
 use Swoole\Coroutine\Http\Server;
-use Swoole\Event;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\CloseFrame;
@@ -33,7 +32,7 @@ trait InteractsWithWebsocket
      */
     protected $wsRoom;
 
-    protected $wsMessages = [];
+    protected $wsPusher = [];
 
     /**
      * "onHandShake" listener.
@@ -48,25 +47,13 @@ trait InteractsWithWebsocket
 
             $request = $this->prepareRequest($req);
             $request = $this->setRequestThroughMiddleware($app, $request);
-            $closed  = false;
-
-            Event::cycle(function () use ($handler, &$closed, $res, $req) {
-                //推送消息
-                if ($closed) {
-                    unset($this->wsMessages[$req->fd]);
-                    Event::cycle(null);
-                }
-                $messages = $this->wsMessages[$req->fd];
-                if (!empty($messages)) {
-                    unset($this->wsMessages[$req->fd]);
-                    foreach ($messages as $message) {
-                        $res->push($handler->encodeMessage($message));
-                    }
-                }
-            });
 
             try {
                 $fd = "{$this->workerId}.{$req->fd}";
+
+                $this->wsPusher[$req->fd] = function ($message) use ($handler, $res) {
+                    $res->push($handler->encodeMessage($message));
+                };
 
                 $websocket->setSender($fd);
                 $handler->onOpen($request);
@@ -86,12 +73,12 @@ trait InteractsWithWebsocket
 
                 //关闭连接
                 $res->close();
-                $closed = true;
 
                 $handler->onClose($req->fd);
             } finally {
                 // leave all rooms
                 $websocket->leave();
+                unset($this->wsPusher[$req->fd]);
             }
         });
     }
@@ -123,10 +110,9 @@ trait InteractsWithWebsocket
 
             $this->onEvent('message', function ($message) {
                 if ($message instanceof PushMessage) {
-                    if (!isset($this->messages[$message->fd])) {
-                        $this->wsMessages[$message->fd] = [];
+                    if ($this->wsPusher[$message->fd]) {
+                        $this->wsPusher[$message->fd]($message->data);
                     }
-                    $this->wsMessages[$message->fd][] = $message->data;
                 }
             });
 

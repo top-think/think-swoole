@@ -6,6 +6,7 @@ use Swoole\WebSocket\Frame;
 use think\Event;
 use think\Request;
 use think\swoole\contract\websocket\HandlerInterface;
+use think\swoole\websocket\Event as WsEvent;
 
 class Handler implements HandlerInterface
 {
@@ -52,19 +53,15 @@ class Handler implements HandlerInterface
     {
         $data = json_decode($payload, true);
 
-        return [
-            'type' => $data['type'] ?? null,
-            'data' => $data['data'] ?? null,
-        ];
+        return new WsEvent($data['type'] ?? null, $data['data'] ?? null);
     }
 
     public function encodeMessage($message)
     {
-        if (is_array($message)) {
-            $event = array_shift($message);
+        if ($message instanceof WsEvent) {
             return json_encode([
-                'type' => $event,
-                'data' => $message,
+                'type' => $message->type,
+                'data' => $message->data,
             ]);
         }
         return $message;

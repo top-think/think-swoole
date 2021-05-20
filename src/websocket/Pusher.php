@@ -17,13 +17,14 @@ class Pusher
     /** @var Manager */
     protected $manager;
 
-    protected $to    = [];
-    protected $rooms = [];
+    protected $to     = [];
+    protected $sender = null;
 
-    public function __construct(Manager $manager, Room $room)
+    public function __construct(Manager $manager, Room $room, $sender = null)
     {
         $this->manager = $manager;
         $this->room    = $room;
+        $this->sender  = $sender;
     }
 
     public function to(...$values)
@@ -39,19 +40,6 @@ class Pusher
         return $this;
     }
 
-    public function room(...$values)
-    {
-        foreach ($values as $value) {
-            if (is_array($value)) {
-                $this->room(...$value);
-            } elseif (!in_array($value, $this->to)) {
-                $this->rooms[] = $value;
-            }
-        }
-
-        return $this;
-    }
-
     /**
      * Push message to related descriptors
      * @param $data
@@ -59,9 +47,12 @@ class Pusher
      */
     public function push($data): void
     {
-        $fds = $this->to;
+        $fds = [];
+        if ($this->sender) {
+            $fds[] = $this->sender;
+        }
 
-        foreach ($this->rooms as $room) {
+        foreach ($this->to as $room) {
             $clients = $this->room->getClients($room);
             if (!empty($clients)) {
                 $fds = array_merge($fds, $clients);
@@ -70,12 +61,12 @@ class Pusher
 
         foreach (array_unique($fds) as $fd) {
             [$workerId, $fd] = explode('.', $fd);
-            $this->manager->sendMessage($workerId, new PushMessage($fd, $data));
+            $this->manager->sendMessage((int) $workerId, new PushMessage((int) $fd, $data));
         }
     }
 
     public function emit(string $event, ...$data): void
     {
-        $this->push([$event, ...$data]);
+        $this->push(new Event($event, $data));
     }
 }

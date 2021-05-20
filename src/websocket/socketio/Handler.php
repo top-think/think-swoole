@@ -10,6 +10,7 @@ use think\Event;
 use think\Request;
 use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\Websocket;
+use think\swoole\websocket\Event as WsEvent;
 
 class Handler implements HandlerInterface
 {
@@ -90,7 +91,7 @@ class Handler implements HandlerInterface
                     case Packet::EVENT:
                         $type   = array_shift($packet->data);
                         $data   = $packet->data;
-                        $result = $this->event->trigger('swoole.websocket.Event', ['type' => $type, 'data' => $data]);
+                        $result = $this->event->trigger('swoole.websocket.Event', new WsEvent($type, $data));
 
                         if ($packet->id !== null) {
                             $responsePacket = Packet::create(Packet::ACK, [
@@ -171,9 +172,9 @@ class Handler implements HandlerInterface
 
     public function encodeMessage($message)
     {
-        if (is_array($message)) {
+        if ($message instanceof WsEvent) {
             $message = Packet::create(Packet::EVENT, [
-                'data' => $message,
+                'data' => array_merge([$message->type], $message->data),
             ]);
         }
 
