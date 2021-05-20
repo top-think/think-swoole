@@ -2,15 +2,20 @@
 
 namespace think\swoole\concerns;
 
+use Swoole\Coroutine\Http\Server;
+use Swoole\Event;
 use Swoole\Http\Request;
-use Swoole\Websocket\Frame;
-use Swoole\Websocket\Server;
+use Swoole\Http\Response;
+use Swoole\WebSocket\CloseFrame;
 use think\App;
 use think\Container;
+use think\helper\Arr;
 use think\helper\Str;
+use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\contract\websocket\RoomInterface;
 use think\swoole\Middleware;
 use think\swoole\Websocket;
+use think\swoole\websocket\message\PushMessage;
 use think\swoole\websocket\Room;
 
 /**
@@ -22,78 +27,73 @@ use think\swoole\websocket\Room;
  */
 trait InteractsWithWebsocket
 {
-    /**
-     * @var boolean
-     */
-    protected $isWebsocketServer = false;
 
     /**
      * @var RoomInterface
      */
-    protected $websocketRoom;
+    protected $wsRoom;
+
+    protected $wsMessages = [];
 
     /**
-     * Websocket server events.
+     * "onHandShake" listener.
      *
-     * @var array
-     */
-    protected $wsEvents = ['open', 'message', 'close'];
-
-    /**
-     * "onOpen" listener.
-     *
-     * @param Server $server
      * @param Request $req
+     * @param Response $res
      */
-    public function onOpen($server, $req)
+    public function onHandShake($req, $res)
     {
-        $this->waitCoordinator('workerStart');
+        $this->runInSandbox(function (App $app, Websocket $websocket, HandlerInterface $handler) use ($req, $res) {
+            $res->upgrade();
 
-        $this->runInSandbox(function (App $app, Websocket $websocket) use ($req) {
             $request = $this->prepareRequest($req);
-            $app->instance('request', $request);
             $request = $this->setRequestThroughMiddleware($app, $request);
-            $websocket->setSender($req->fd);
-            $websocket->onOpen($req->fd, $request);
-        }, $req->fd, true);
-    }
+            $closed  = false;
 
-    /**
-     * "onMessage" listener.
-     *
-     * @param Server $server
-     * @param Frame $frame
-     */
-    public function onMessage($server, $frame)
-    {
-        $this->runInSandbox(function (Websocket $websocket) use ($frame) {
-            $websocket->setSender($frame->fd);
-            $websocket->onMessage($frame);
-        }, $frame->fd, true);
-    }
+            Event::cycle(function () use ($handler, &$closed, $res, $req) {
+                //推送消息
+                if ($closed) {
+                    unset($this->wsMessages[$req->fd]);
+                    Event::cycle(null);
+                }
+                $messages = $this->wsMessages[$req->fd];
+                if (!empty($messages)) {
+                    unset($this->wsMessages[$req->fd]);
+                    foreach ($messages as $message) {
+                        $res->push($handler->encodeMessage($message));
+                    }
+                }
+            });
 
-    /**
-     * "onClose" listener.
-     *
-     * @param Server $server
-     * @param int $fd
-     * @param int $reactorId
-     */
-    public function onClose($server, $fd, $reactorId)
-    {
-        if (!$server instanceof Server || !$this->isWebsocketServer($fd)) {
-            return;
-        }
-
-        $this->runInSandbox(function (Websocket $websocket) use ($fd, $reactorId) {
-            $websocket->setSender($fd);
             try {
-                $websocket->onClose($fd, $reactorId);
+                $fd = "{$this->workerId}.{$req->fd}";
+
+                $websocket->setSender($fd);
+                $handler->onOpen($request);
+
+                while (true) {
+                    $frame = $res->recv();
+                    if ($frame === '' || $frame === false) {
+                        break;
+                    }
+
+                    if ($frame->data == 'close' || get_class($frame) === CloseFrame::class) {
+                        break;
+                    }
+
+                    $handler->onMessage($frame);
+                }
+
+                //关闭连接
+                $res->close();
+                $closed = true;
+
+                $handler->onClose($req->fd);
             } finally {
                 // leave all rooms
                 $websocket->leave();
             }
-        }, $fd);
+        });
     }
 
     /**
@@ -103,7 +103,9 @@ trait InteractsWithWebsocket
      */
     protected function setRequestThroughMiddleware(App $app, \think\Request $request)
     {
-        return Middleware::make($app, $this->getConfig('websocket.middleware', []))
+        $app->instance('request', $request);
+        return Middleware
+            ::make($app, $this->getConfig('websocket.middleware', []))
             ->pipeline()
             ->send($request)
             ->then(function ($request) {
@@ -116,31 +118,36 @@ trait InteractsWithWebsocket
      */
     protected function prepareWebsocket()
     {
-        if (!$this->isWebsocketServer = $this->getConfig('websocket.enable', false)) {
-            return;
+        if ($this->getConfig('websocket.enable', false)) {
+            $this->prepareWebsocketRoom();
+
+            $this->onEvent('message', function ($message) {
+                if ($message instanceof PushMessage) {
+                    if (!isset($this->messages[$message->fd])) {
+                        $this->wsMessages[$message->fd] = [];
+                    }
+                    $this->wsMessages[$message->fd][] = $message->data;
+                }
+            });
+
+            $this->onEvent('workerStart', function (Server $server) {
+
+                $this->bindWebsocketRoom();
+                $this->bindWebsocketHandler();
+                $this->prepareWebsocketListener();
+
+                $server->handle('/', function (Request $req, Response $res) {
+                    $header = $req->header;
+                    if (Arr::get($header, 'connection') == 'upgrade' &&
+                        Arr::get($header, 'upgrade') == 'websocket'
+                    ) {
+                        $this->onHandShake($req, $res);
+                    } else {
+                        $this->onRequest($req, $res);
+                    }
+                });
+            });
         }
-
-        $this->events = array_merge($this->events ?? [], $this->wsEvents);
-
-        $this->prepareWebsocketRoom();
-
-        $this->onEvent('workerStart', function () {
-            $this->bindWebsocketRoom();
-            $this->bindWebsocketHandler();
-            $this->prepareWebsocketListener();
-        });
-    }
-
-    /**
-     * Check if it's a websocket fd.
-     *
-     * @param int $fd
-     *
-     * @return bool
-     */
-    protected function isWebsocketServer(int $fd): bool
-    {
-        return $this->getServer()->getClientInfo($fd)['websocket_status'] ?? false;
     }
 
     /**
@@ -148,9 +155,8 @@ trait InteractsWithWebsocket
      */
     protected function prepareWebsocketRoom()
     {
-        // create room instance and initialize
-        $this->websocketRoom = $this->container->make(Room::class);
-        $this->websocketRoom->prepare();
+        $this->wsRoom = $this->container->make(Room::class);
+        $this->wsRoom->prepare();
     }
 
     protected function prepareWebsocketListener()
@@ -174,9 +180,7 @@ trait InteractsWithWebsocket
     protected function bindWebsocketHandler()
     {
         $handlerClass = $this->getConfig('websocket.handler');
-        if ($handlerClass && is_subclass_of($handlerClass, Websocket::class)) {
-            $this->app->bind(Websocket::class, $handlerClass);
-        }
+        $this->app->bind(HandlerInterface::class, $handlerClass);
     }
 
     /**
@@ -184,7 +188,7 @@ trait InteractsWithWebsocket
      */
     protected function bindWebsocketRoom(): void
     {
-        $this->app->instance(Room::class, $this->websocketRoom);
+        $this->app->instance(Room::class, $this->wsRoom);
     }
 
 }

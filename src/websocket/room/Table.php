@@ -54,10 +54,10 @@ class Table implements RoomInterface
     /**
      * Add multiple socket fds to a room.
      *
-     * @param int fd
-     * @param array|string rooms
+     * @param string fd
+     * @param array|string $roomNames
      */
-    public function add(int $fd, $roomNames)
+    public function add($fd, $roomNames)
     {
         $rooms     = $this->getRooms($fd);
         $roomNames = is_array($roomNames) ? $roomNames : [$roomNames];
@@ -81,10 +81,10 @@ class Table implements RoomInterface
     /**
      * Delete multiple socket fds from a room.
      *
-     * @param int fd
-     * @param array|string rooms
+     * @param string fd
+     * @param array|string $roomNames
      */
-    public function delete(int $fd, $roomNames = [])
+    public function delete($fd, $roomNames = [])
     {
         $allRooms  = $this->getRooms($fd);
         $roomNames = is_array($roomNames) ? $roomNames : [$roomNames];
@@ -120,18 +120,18 @@ class Table implements RoomInterface
     /**
      * Get all rooms by a fd.
      *
-     * @param int fd
+     * @param string fd
      *
      * @return array
      */
-    public function getRooms(int $fd)
+    public function getRooms($fd)
     {
         return $this->getValue($fd, RoomInterface::DESCRIPTORS_KEY) ?? [];
     }
 
     /**
      * @param string $room
-     * @param array  $fds
+     * @param array $fds
      *
      * @return $this
      */
@@ -141,12 +141,12 @@ class Table implements RoomInterface
     }
 
     /**
-     * @param int   $fd
+     * @param string $fd
      * @param array $rooms
      *
      * @return $this
      */
-    protected function setRooms(int $fd, array $rooms)
+    protected function setRooms($fd, array $rooms)
     {
         return $this->setValue($fd, $rooms, RoomInterface::DESCRIPTORS_KEY);
     }
@@ -175,7 +175,7 @@ class Table implements RoomInterface
      * Set value to table
      *
      * @param        $key
-     * @param array  $value
+     * @param array $value
      * @param string $table
      *
      * @return $this

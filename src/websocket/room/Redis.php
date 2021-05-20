@@ -67,7 +67,7 @@ class Redis implements RoomInterface
                 new PhpRedisConnector(),
                 $config
             );
-            $this->manager->getPools()->add("websocket.room", $this->pool);
+            $this->manager->getPools()->add('websocket.room', $this->pool);
         });
     }
 
@@ -87,12 +87,12 @@ class Redis implements RoomInterface
     /**
      * Add multiple socket fds to a room.
      *
-     * @param int fd
-     * @param array|string rooms
+     * @param int $fd
+     * @param array|string $roomNames
      */
-    public function add(int $fd, $rooms)
+    public function add(int $fd, $roomNames)
     {
-        $rooms = is_array($rooms) ? $rooms : [$rooms];
+        $rooms = is_array($roomNames) ? $roomNames : [$roomNames];
 
         $this->addValue($fd, $rooms, RoomInterface::DESCRIPTORS_KEY);
 

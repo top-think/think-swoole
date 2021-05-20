@@ -9,7 +9,7 @@
         }
     ],
     "require": {
-        "php": ">7.1",
+        "php": ">7.4",
         "ext-json": "*",
         "ext-swoole": ">=4.4.8",
         "nette/php-generator": "^3.2",

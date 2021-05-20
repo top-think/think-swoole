@@ -2,201 +2,80 @@
 
 namespace think\swoole\websocket;
 
-use Swoole\Server;
+use think\swoole\Manager;
+use think\swoole\websocket\message\PushMessage;
 
 /**
  * Class Pusher
  */
 class Pusher
 {
-    /**
-     * @var Server|\Swoole\WebSocket\Server
-     */
-    protected $server;
 
-    /**
-     * @var int
-     */
-    protected $sender;
+    /** @var Room */
+    protected $room;
 
-    /**
-     * @var array
-     */
-    protected $descriptors;
+    /** @var Manager */
+    protected $manager;
 
-    /**
-     * @var bool
-     */
-    protected $broadcast;
+    protected $to    = [];
+    protected $rooms = [];
 
-    /**
-     * @var bool
-     */
-    protected $assigned;
-
-    /**
-     * @var string
-     */
-    protected $payload;
-
-    /**
-     * Push constructor.
-     *
-     * @param Server $server
-     * @param int $sender
-     * @param array $descriptors
-     * @param bool $broadcast
-     * @param bool $assigned
-     * @param string $payload
-     */
-    public function __construct(
-        Server $server,
-        string $payload,
-        int $sender = 0,
-        array $descriptors = [],
-        bool $broadcast = false,
-        bool $assigned = false
-    )
+    public function __construct(Manager $manager, Room $room)
     {
-        $this->sender      = $sender;
-        $this->descriptors = $descriptors;
-        $this->broadcast   = $broadcast;
-        $this->assigned    = $assigned;
-        $this->payload     = $payload;
-        $this->server      = $server;
+        $this->manager = $manager;
+        $this->room    = $room;
     }
 
-    /**
-     * @return int
-     */
-    public function getSender(): int
+    public function to(...$values)
     {
-        return $this->sender;
+        foreach ($values as $value) {
+            if (is_array($value)) {
+                $this->to(...$value);
+            } elseif (!in_array($value, $this->to)) {
+                $this->to[] = $value;
+            }
+        }
+
+        return $this;
     }
 
-    /**
-     * @return array
-     */
-    public function getDescriptors(): array
+    public function room(...$values)
     {
-        return $this->descriptors;
-    }
-
-    /**
-     * @param int $descriptor
-     *
-     * @return self
-     */
-    public function addDescriptor($descriptor): self
-    {
-        return $this->addDescriptors([$descriptor]);
-    }
-
-    /**
-     * @param array $descriptors
-     *
-     * @return self
-     */
-    public function addDescriptors(array $descriptors): self
-    {
-        $this->descriptors = array_values(
-            array_unique(
-                array_merge($this->descriptors, $descriptors)
-            )
-        );
+        foreach ($values as $value) {
+            if (is_array($value)) {
+                $this->room(...$value);
+            } elseif (!in_array($value, $this->to)) {
+                $this->rooms[] = $value;
+            }
+        }
 
         return $this;
     }
 
     /**
-     * @param int $descriptor
-     *
-     * @return bool
-     */
-    public function hasDescriptor(int $descriptor): bool
-    {
-        return in_array($descriptor, $this->descriptors);
-    }
-
-    /**
-     * @return bool
-     */
-    public function isBroadcast(): bool
-    {
-        return $this->broadcast;
-    }
-
-    /**
-     * @return bool
-     */
-    public function isAssigned(): bool
-    {
-        return $this->assigned;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPayload(): string
-    {
-        return $this->payload;
-    }
-
-    /**
-     * @return bool
-     */
-    public function shouldBroadcast(): bool
-    {
-        return $this->broadcast && empty($this->descriptors) && !$this->assigned;
-    }
-
-    /**
-     * Returns all descriptors that are websocket
-     *
-     * @return array
-     */
-    protected function getWebsocketConnections(): array
-    {
-        return array_filter(iterator_to_array($this->server->connections), function ($fd) {
-            return (bool) ($this->server->getClientInfo($fd)['websocket_status'] ?? false);
-        });
-    }
-
-    /**
-     * @param int $fd
-     *
-     * @return bool
-     */
-    protected function shouldPushToDescriptor(int $fd): bool
-    {
-        if (!$this->server->isEstablished($fd)) {
-            return false;
-        }
-
-        return !$this->broadcast || $this->sender !== (int) $fd;
-    }
-
-    /**
      * Push message to related descriptors
+     * @param $data
      * @return void
      */
-    public function push(): void
+    public function push($data): void
     {
-        // attach sender if not broadcast
-        if (!$this->broadcast && $this->sender && !$this->hasDescriptor($this->sender)) {
-            $this->addDescriptor($this->sender);
-        }
+        $fds = $this->to;
 
-        // check if to broadcast to other clients
-        if ($this->shouldBroadcast()) {
-            $this->addDescriptors($this->getWebsocketConnections());
-        }
-
-        // push message to designated fds
-        foreach ($this->descriptors as $descriptor) {
-            if ($this->shouldPushToDescriptor($descriptor)) {
-                $this->server->push($descriptor, $this->payload);
+        foreach ($this->rooms as $room) {
+            $clients = $this->room->getClients($room);
+            if (!empty($clients)) {
+                $fds = array_merge($fds, $clients);
             }
         }
+
+        foreach (array_unique($fds) as $fd) {
+            [$workerId, $fd] = explode('.', $fd);
+            $this->manager->sendMessage($workerId, new PushMessage($fd, $data));
+        }
+    }
+
+    public function emit(string $event, ...$data): void
+    {
+        $this->push([$event, ...$data]);
     }
 }

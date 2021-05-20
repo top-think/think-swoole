@@ -16,6 +16,7 @@ use think\Http;
 use think\Middleware;
 use think\swoole\middleware\ResetVarDumper;
 use Throwable;
+use function substr;
 
 /**
  * Trait InteractsWithHttp
@@ -41,12 +42,13 @@ trait InteractsWithHttp
     public function onRequest($req, $res)
     {
         $this->runInSandbox(function (Http $http, Event $event, App $app, Middleware $middleware) use ($req, $res) {
+            $request = $this->prepareRequest($req);
+
             //兼容var-dumper
             if (class_exists(VarDumper::class)) {
                 $middleware->add(ResetVarDumper::class);
             }
 
-            $request = $this->prepareRequest($req);
             try {
                 $response = $this->handleRequest($http, $request);
             } catch (Throwable $e) {
@@ -141,7 +143,7 @@ trait InteractsWithHttp
         if ($contentSize > $chunkSize) {
             $sendSize = 0;
             do {
-                if (!$res->write(\substr($content, $sendSize, $chunkSize))) {
+                if (!$res->write(substr($content, $sendSize, $chunkSize))) {
                     break;
                 }
             } while (($sendSize += $chunkSize) < $contentSize);

@@ -79,32 +79,29 @@ class Sandbox
         return $this;
     }
 
-    public function run(Closure $callable, $fd = null, $persistent = false)
+    public function run(Closure $callable)
     {
-        $this->init($fd);
+        $this->init();
 
         try {
             $this->getApplication()->invoke($callable, [$this]);
         } catch (Throwable $e) {
             throw $e;
         } finally {
-            $this->clear(!$persistent);
+            $this->clear();
         }
     }
 
-    public function init($fd = null)
+    public function init()
     {
-        if (!is_null($fd)) {
-            Context::setData('_fd', $fd);
-        }
         $app = $this->getApplication(true);
         $this->setInstance($app);
         $this->resetApp($app);
     }
 
-    public function clear($snapshot = true)
+    public function clear()
     {
-        if ($snapshot && $app = $this->getSnapshot()) {
+        if ($app = $this->getSnapshot()) {
             $app->clearInstances();
             unset($this->snapshots[$this->getSnapshotId()]);
         }
@@ -131,10 +128,6 @@ class Sandbox
 
     protected function getSnapshotId()
     {
-        if ($fd = Context::getData('_fd')) {
-            return 'fd_' . $fd;
-        }
-
         return Context::getCoroutineId();
     }
 

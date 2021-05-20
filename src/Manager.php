@@ -46,7 +46,7 @@ class Manager
         $this->prepareTables();
         $this->preparePools();
         $this->prepareHttp();
-        //$this->prepareWebsocket();
+        $this->prepareWebsocket();
         //$this->prepareRpcServer();
         //$this->prepareQueue();
         //$this->prepareRpcClient();

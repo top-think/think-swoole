@@ -29,17 +29,17 @@ interface RoomInterface
      * Add multiple socket fds to a room.
      *
      * @param int fd
-     * @param array|string rooms
+     * @param array|string $roomNames
      */
-    public function add(int $fd, $rooms);
+    public function add(int $fd, $roomNames);
 
     /**
      * Delete multiple socket fds from a room.
      *
      * @param int fd
-     * @param array|string rooms
+     * @param array|string $roomNames
      */
-    public function delete(int $fd, $rooms);
+    public function delete(int $fd, $roomNames);
 
     /**
      * Get all sockets by a room key.

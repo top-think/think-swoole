@@ -5,6 +5,7 @@ namespace think\swoole\concerns;
 use Closure;
 use think\App;
 use think\swoole\App as SwooleApp;
+use think\swoole\Manager;
 use think\swoole\pool\Cache;
 use think\swoole\pool\Db;
 use think\swoole\Sandbox;
@@ -27,6 +28,7 @@ trait WithApplication
         if (!$this->app instanceof SwooleApp) {
             $this->app = new SwooleApp($this->container->getRootPath());
             $this->app->bind(SwooleApp::class, App::class);
+            $this->app->bind(Manager::class, $this);
             //绑定连接池
             if ($this->getConfig('pool.db.enable', true)) {
                 $this->app->bind('db', Db::class);
@@ -75,13 +77,11 @@ trait WithApplication
     /**
      * 在沙箱中执行
      * @param Closure $callable
-     * @param null $fd
-     * @param bool $persistent
      */
-    protected function runInSandbox(Closure $callable, $fd = null, $persistent = false)
+    protected function runInSandbox(Closure $callable)
     {
         try {
-            $this->getSandbox()->run($callable, $fd, $persistent);
+            $this->getSandbox()->run($callable);
         } catch (Throwable $e) {
             $this->logServerError($e);
         }

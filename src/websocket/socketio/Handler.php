@@ -3,20 +3,22 @@
 namespace think\swoole\websocket\socketio;
 
 use Exception;
-use Swoole\Server;
 use Swoole\Timer;
 use Swoole\Websocket\Frame;
-use think\App;
 use think\Config;
 use think\Event;
 use think\Request;
+use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\Websocket;
-use think\swoole\websocket\Room;
 
-class Handler extends Websocket
+class Handler implements HandlerInterface
 {
     /** @var Config */
     protected $config;
+
+    protected $event;
+
+    protected $websocket;
 
     protected $eio;
 
@@ -26,21 +28,21 @@ class Handler extends Websocket
     protected $pingInterval;
     protected $pingTimeout;
 
-    public function __construct(App $app, Server $server, Room $room, Event $event, Config $config)
+    public function __construct(Event $event, Config $config, Websocket $websocket)
     {
+        $this->event        = $event;
         $this->config       = $config;
+        $this->websocket    = $websocket;
         $this->pingInterval = $this->config->get('swoole.websocket.ping_interval', 25000);
         $this->pingTimeout  = $this->config->get('swoole.websocket.ping_timeout', 60000);
-        parent::__construct($app, $server, $room, $event);
     }
 
     /**
      * "onOpen" listener.
      *
-     * @param int $fd
      * @param Request $request
      */
-    public function onOpen($fd, Request $request)
+    public function onOpen(Request $request)
     {
         $this->eio = $request->param('EIO');
 
@@ -80,7 +82,7 @@ class Handler extends Websocket
 
         switch ($enginePacket->type) {
             case EnginePacket::MESSAGE:
-                $packet = $this->decode($enginePacket->data);
+                $packet = Packet::fromString($enginePacket->data);
                 switch ($packet->type) {
                     case Packet::CONNECT:
                         $this->onConnect($packet->data);
@@ -102,10 +104,10 @@ class Handler extends Websocket
                         break;
                     case Packet::DISCONNECT:
                         $this->event->trigger('swoole.websocket.Disconnect');
-                        $this->close();
+                        $this->websocket->close();
                         break;
                     default:
-                        $this->close();
+                        $this->websocket->close();
                         break;
                 }
                 break;
@@ -116,7 +118,7 @@ class Handler extends Websocket
                 $this->schedulePing();
                 break;
             default:
-                $this->close();
+                $this->websocket->close();
                 break;
         }
     }
@@ -125,13 +127,12 @@ class Handler extends Websocket
      * "onClose" listener.
      *
      * @param int $fd
-     * @param int $reactorId
      */
-    public function onClose($fd, $reactorId)
+    public function onClose($fd)
     {
         Timer::clear($this->pingTimeoutTimer);
         Timer::clear($this->pingIntervalTimer);
-        $this->event->trigger('swoole.websocket.Close', $reactorId);
+        $this->event->trigger('swoole.websocket.Close');
     }
 
     protected function onConnect($data = null)
@@ -155,7 +156,7 @@ class Handler extends Websocket
     {
         Timer::clear($this->pingTimeoutTimer);
         $this->pingTimeoutTimer = Timer::after($timeout, function () {
-            $this->close();
+            $this->websocket->close();
         });
     }
 
@@ -168,32 +169,28 @@ class Handler extends Websocket
         });
     }
 
-    protected function encode($packet)
+    public function encodeMessage($message)
     {
-        return Parser::encode($packet);
-    }
-
-    protected function decode($payload)
-    {
-        return Parser::decode($payload);
-    }
-
-    public function push($data)
-    {
-        if ($data instanceof Packet) {
-            $data = EnginePacket::message($this->encode($data));
+        if (is_array($message)) {
+            $message = Packet::create(Packet::EVENT, [
+                'data' => $message,
+            ]);
         }
-        if ($data instanceof EnginePacket) {
-            $data = $data->toString();
+
+        if ($message instanceof Packet) {
+            $message = EnginePacket::message($message->toString());
         }
-        return parent::push($data);
+
+        if ($message instanceof EnginePacket) {
+            $message = $message->toString();
+        }
+
+        return $message;
     }
 
-    public function emit(string $event, ...$data): bool
+    protected function push($data)
     {
-        $packet = Packet::create(Packet::EVENT, [
-            'data' => array_merge([$event], $data),
-        ]);
-        return $this->push($packet);
+        $this->websocket->push($data);
     }
+
 }
