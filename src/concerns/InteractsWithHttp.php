@@ -63,7 +63,7 @@ trait InteractsWithHttp
     {
         if ($this->getConfig('http.enable', true)) {
 
-            $this->wsEnable = $this->getConfig('http.websocket.enable', false);
+            $this->wsEnable = $this->getConfig('websocket.enable', false);
 
             if ($this->wsEnable) {
                 $this->prepareWebsocket();

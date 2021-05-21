@@ -71,9 +71,9 @@ trait InteractsWithRpcServer
                             $files[] = $result;
                         } else {
                             $dispatcher->dispatch($app, $conn, $result, $files);
-                            $files   = [];
-                            $handler = null;
+                            $files = [];
                         }
+                        $handler = null;
                     }
 
                     if (!empty($data)) {

@@ -109,7 +109,7 @@ trait InteractsWithWebsocket
 
         $this->onEvent('message', function ($message) {
             if ($message instanceof PushMessage) {
-                if ($this->wsPusher[$message->fd]) {
+                if (isset($this->wsPusher[$message->fd])) {
                     $this->wsPusher[$message->fd]($message->data);
                 }
             }
