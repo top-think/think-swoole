@@ -61,6 +61,10 @@ trait InteractsWithServer
             $this->pool     = $pool;
             $this->workerId = $workerId;
 
+            Process::signal(SIGTERM, function () {
+                $this->pool->getProcess()->exit();
+            });
+
             /** @var Coroutine\Socket $socket */
             $socket = $this->pool->getProcess()->exportSocket();
 
@@ -100,8 +104,6 @@ trait InteractsWithServer
     protected function addHotUpdateProcess()
     {
         $this->addWorker(function (Process\Pool $pool) {
-            Process::signal(SIGTERM, function () {
-            });
             $this->setProcessName('hot update process');
 
             $watcher = new FileWatcher(

@@ -4,7 +4,6 @@ namespace think\swoole\concerns;
 
 use Swoole\Coroutine\Server;
 use Swoole\Coroutine\Server\Connection;
-use Swoole\Process;
 use think\App;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\Pool;
@@ -24,7 +23,7 @@ use Throwable;
  */
 trait InteractsWithRpcServer
 {
-    protected function createRpcServer(Process\Pool $pool)
+    protected function createRpcServer()
     {
         $this->setProcessName('rpc server process');
 
@@ -35,11 +34,6 @@ trait InteractsWithRpcServer
         $port = $this->getConfig('rpc.server.port', 9000);
 
         $server = new Server($host, $port, false, true);
-
-        Process::signal(SIGTERM, function () use ($pool, $server) {
-            $server->shutdown();
-            $pool->getProcess()->exit();
-        });
 
         $server->handle(function (Connection $conn) {
 
@@ -52,7 +46,7 @@ trait InteractsWithRpcServer
                     if ($data === '' || $data === false) {
                         break;
                     }
-                    write:
+                    begin:
                     if (!isset($handler)) {
                         try {
                             [$handler, $data] = Packer::unpack($data);
@@ -77,7 +71,7 @@ trait InteractsWithRpcServer
                     }
 
                     if (!empty($data)) {
-                        goto write;
+                        goto begin;
                     }
                 }
 
@@ -91,7 +85,10 @@ trait InteractsWithRpcServer
     protected function prepareRpcServer()
     {
         if ($this->getConfig('rpc.server.enable', false)) {
-            $this->addBatchWorker(swoole_cpu_num(), [$this, 'createRpcServer']);
+
+            $workerNum = $this->getConfig('rpc.server.worker_num', swoole_cpu_num());
+
+            $this->addBatchWorker($workerNum, [$this, 'createRpcServer']);
         }
     }
 

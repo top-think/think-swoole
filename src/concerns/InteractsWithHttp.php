@@ -6,7 +6,6 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
-use Swoole\Process;
 use Symfony\Component\VarDumper\VarDumper;
 use think\App;
 use think\Container;
@@ -30,7 +29,7 @@ trait InteractsWithHttp
 {
     use InteractsWithWebsocket;
 
-    public function createHttpServer(Process\Pool $pool)
+    public function createHttpServer()
     {
         $this->setProcessName('http server process');
 
@@ -38,11 +37,6 @@ trait InteractsWithHttp
         $port = $this->getConfig('http.port');
 
         $server = new Server($host, $port, false, true);
-
-        Process::signal(SIGTERM, function () use ($pool, $server) {
-            $server->shutdown();
-            $pool->getProcess()->exit();
-        });
 
         $server->handle('/', function (Request $req, Response $res) {
             $header = $req->header;
@@ -69,7 +63,9 @@ trait InteractsWithHttp
                 $this->prepareWebsocket();
             }
 
-            $this->addBatchWorker(swoole_cpu_num(), [$this, 'createHttpServer']);
+            $workerNum = $this->getConfig('http.worker_num', swoole_cpu_num());
+
+            $this->addBatchWorker($workerNum, [$this, 'createHttpServer']);
         }
     }
 
