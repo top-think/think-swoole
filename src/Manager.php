@@ -14,11 +14,10 @@ namespace think\swoole;
 use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithQueue;
-use think\swoole\concerns\InteractsWithRpcServer;
 use think\swoole\concerns\InteractsWithRpcClient;
+use think\swoole\concerns\InteractsWithRpcServer;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
-use think\swoole\concerns\InteractsWithWebsocket;
 use think\swoole\concerns\WithApplication;
 use think\swoole\concerns\WithContainer;
 
@@ -30,7 +29,6 @@ class Manager
     use InteractsWithServer,
         InteractsWithSwooleTable,
         InteractsWithHttp,
-        InteractsWithWebsocket,
         InteractsWithPools,
         InteractsWithRpcClient,
         InteractsWithRpcServer,
@@ -46,10 +44,9 @@ class Manager
         $this->prepareTables();
         $this->preparePools();
         $this->prepareHttp();
-        $this->prepareWebsocket();
-        //$this->prepareRpcServer();
-        //$this->prepareQueue();
-        //$this->prepareRpcClient();
+        $this->prepareRpcServer();
+        $this->prepareQueue();
+        $this->prepareRpcClient();
     }
 
 }

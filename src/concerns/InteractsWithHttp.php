@@ -6,12 +6,14 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
+use Swoole\Process;
 use Symfony\Component\VarDumper\VarDumper;
 use think\App;
 use think\Container;
 use think\Cookie;
 use think\Event;
 use think\exception\Handle;
+use think\helper\Arr;
 use think\Http;
 use think\Middleware;
 use think\swoole\middleware\ResetVarDumper;
@@ -26,11 +28,49 @@ use function substr;
  */
 trait InteractsWithHttp
 {
+    use InteractsWithWebsocket;
+
+    public function createHttpServer(Process\Pool $pool)
+    {
+        $this->setProcessName('http server process');
+
+        $host = $this->getConfig('server.host');
+        $port = $this->getConfig('server.port');
+
+        $server = new Server($host, $port, false, true);
+
+        Process::signal(SIGTERM, function () use ($pool, $server) {
+            $server->shutdown();
+            $pool->getProcess()->exit();
+        });
+
+        $server->handle('/', function (Request $req, Response $res) {
+            $header = $req->header;
+            if (Arr::get($header, 'connection') == 'upgrade' &&
+                Arr::get($header, 'upgrade') == 'websocket' &&
+                $this->wsEnable
+            ) {
+                $this->onHandShake($req, $res);
+            } else {
+                $this->onRequest($req, $res);
+            }
+        });
+
+        $server->start();
+    }
+
     protected function prepareHttp()
     {
-        $this->onEvent('workerStart', function (Server $server) {
-            $server->handle('/', [$this, 'onRequest']);
-        });
+        if ($this->getConfig('http.enable', false)) {
+
+            $this->wsEnable = $this->getConfig('http.websocket.enable', false);
+
+            if ($this->wsEnable) {
+                $this->prepareWebsocket();
+            }
+
+            $this->addBatchWorker(swoole_cpu_num(), [$this, 'createHttpServer']);
+        }
     }
 
     /**

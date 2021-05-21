@@ -4,7 +4,6 @@ namespace think\swoole\concerns;
 
 use Swoole\Constant;
 use Swoole\Coroutine;
-use Swoole\Coroutine\Http\Server;
 use Swoole\Process;
 use Swoole\Process\Pool;
 use Swoole\Server\Task;
@@ -50,8 +49,6 @@ trait InteractsWithServer
      */
     public function start(): void
     {
-        $this->addBatchWorker(swoole_cpu_num(), [$this, 'onWorkerStart']);
-
         $this->initialize();
         $this->triggerEvent('init');
 
@@ -76,6 +73,11 @@ trait InteractsWithServer
                 $this->triggerEvent('message', $message);
             });
 
+            $this->clearCache();
+            $this->prepareApplication();
+
+            $this->triggerEvent(Constant::EVENT_WORKER_START);
+
             $this->startFuncMap[$workerId]($pool, $workerId);
         });
 
@@ -92,27 +94,6 @@ trait InteractsWithServer
             $socket  = $process->exportSocket();
             $socket->send(serialize($message));
         }
-    }
-
-    public function onWorkerStart(Process\Pool $pool)
-    {
-        $this->clearCache();
-        $this->setProcessName('worker process');
-        $this->prepareApplication();
-
-        $host = $this->getConfig('server.host');
-        $port = $this->getConfig('server.port');
-
-        $server = new Server($host, $port, false, true);
-
-        Process::signal(SIGTERM, function () use ($pool, $server) {
-            $server->shutdown();
-            $pool->getProcess()->exit();
-        });
-
-        $this->triggerEvent('workerStart', $server);
-
-        $server->start();
     }
 
     /**

@@ -3,8 +3,8 @@
 namespace think\swoole\resetters;
 
 use think\Container;
-use think\swoole\Sandbox;
 use think\swoole\contract\ResetterInterface;
+use think\swoole\Sandbox;
 
 class ResetConfig implements ResetterInterface
 {

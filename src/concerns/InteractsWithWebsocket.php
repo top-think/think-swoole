@@ -2,13 +2,11 @@
 
 namespace think\swoole\concerns;
 
-use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\CloseFrame;
 use think\App;
 use think\Container;
-use think\helper\Arr;
 use think\helper\Str;
 use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\contract\websocket\RoomInterface;
@@ -33,6 +31,8 @@ trait InteractsWithWebsocket
     protected $wsRoom;
 
     protected $wsPusher = [];
+
+    protected $wsEnable = false;
 
     /**
      * "onHandShake" listener.
@@ -105,35 +105,21 @@ trait InteractsWithWebsocket
      */
     protected function prepareWebsocket()
     {
-        if ($this->getConfig('websocket.enable', false)) {
-            $this->prepareWebsocketRoom();
+        $this->prepareWebsocketRoom();
 
-            $this->onEvent('message', function ($message) {
-                if ($message instanceof PushMessage) {
-                    if ($this->wsPusher[$message->fd]) {
-                        $this->wsPusher[$message->fd]($message->data);
-                    }
+        $this->onEvent('message', function ($message) {
+            if ($message instanceof PushMessage) {
+                if ($this->wsPusher[$message->fd]) {
+                    $this->wsPusher[$message->fd]($message->data);
                 }
-            });
+            }
+        });
 
-            $this->onEvent('workerStart', function (Server $server) {
-
-                $this->bindWebsocketRoom();
-                $this->bindWebsocketHandler();
-                $this->prepareWebsocketListener();
-
-                $server->handle('/', function (Request $req, Response $res) {
-                    $header = $req->header;
-                    if (Arr::get($header, 'connection') == 'upgrade' &&
-                        Arr::get($header, 'upgrade') == 'websocket'
-                    ) {
-                        $this->onHandShake($req, $res);
-                    } else {
-                        $this->onRequest($req, $res);
-                    }
-                });
-            });
-        }
+        $this->onEvent('workerStart', function () {
+            $this->bindWebsocketRoom();
+            $this->bindWebsocketHandler();
+            $this->prepareWebsocketListener();
+        });
     }
 
     /**

@@ -11,6 +11,7 @@ use think\Config;
 use think\Container;
 use think\Event;
 use think\Http;
+use think\swoole\App as SwooleApp;
 use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
@@ -19,7 +20,6 @@ use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetEvent;
 use think\swoole\resetters\ResetService;
 use Throwable;
-use think\swoole\App as SwooleApp;
 
 class Sandbox
 {

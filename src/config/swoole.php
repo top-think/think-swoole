@@ -3,36 +3,38 @@
 use think\swoole\websocket\socketio\Handler;
 
 return [
-    'server'     => [
-        'host' => env('SWOOLE_HOST', '127.0.0.1'), // 监听地址
-        'port' => env('SWOOLE_PORT', 80), // 监听端口
-    ],
-    'websocket'  => [
-        'enable'        => false,
-        'handler'       => Handler::class,
-        'ping_interval' => 25000,
-        'ping_timeout'  => 60000,
-        'room'          => [
-            'type'  => 'table',
-            'table' => [
-                'room_rows'   => 4096,
-                'room_size'   => 2048,
-                'client_rows' => 8192,
-                'client_size' => 2048,
+    'http'       => [
+        'enable'    => true,
+        'host'      => '0.0.0.0', // 监听地址
+        'port'      => 80, // 监听端口
+        'websocket' => [
+            'enable'        => false,
+            'handler'       => Handler::class,
+            'ping_interval' => 25000,
+            'ping_timeout'  => 60000,
+            'room'          => [
+                'type'  => 'table',
+                'table' => [
+                    'room_rows'   => 4096,
+                    'room_size'   => 2048,
+                    'client_rows' => 8192,
+                    'client_size' => 2048,
+                ],
+                'redis' => [
+                    'host'          => '127.0.0.1',
+                    'port'          => 6379,
+                    'max_active'    => 3,
+                    'max_wait_time' => 5,
+                ],
             ],
-            'redis' => [
-                'host'          => '127.0.0.1',
-                'port'          => 6379,
-                'max_active'    => 3,
-                'max_wait_time' => 5,
-            ],
+            'listen'        => [],
+            'subscribe'     => [],
         ],
-        'listen'        => [],
-        'subscribe'     => [],
     ],
     'rpc'        => [
         'server' => [
             'enable'   => false,
+            'host'     => '0.0.0.0',
             'port'     => 9000,
             'services' => [
             ],

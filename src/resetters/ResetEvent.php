@@ -4,8 +4,8 @@ namespace think\swoole\resetters;
 
 use think\Container;
 use think\swoole\concerns\ModifyProperty;
-use think\swoole\Sandbox;
 use think\swoole\contract\ResetterInterface;
+use think\swoole\Sandbox;
 
 /**
  * Class ResetEvent

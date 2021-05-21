@@ -7,12 +7,11 @@ use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
 use RuntimeException;
-use Swoole\Server;
+use Swoole\Coroutine\Server\Connection;
 use think\App;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\Middleware;
 use think\swoole\rpc\Error;
-use think\swoole\rpc\File;
 use think\swoole\rpc\Packer;
 use think\swoole\rpc\Protocol;
 use think\swoole\rpc\Sendfile;
@@ -51,16 +50,11 @@ class Dispatcher
 
     protected $services = [];
 
-    protected $server;
-
-    protected $files = [];
-
     protected $middleware = [];
 
-    public function __construct(ParserInterface $parser, Server $server, $services, $middleware = [])
+    public function __construct(ParserInterface $parser, $services, $middleware = [])
     {
         $this->parser = $parser;
-        $this->server = $server;
         $this->prepareServices($services);
         $this->middleware = $middleware;
     }
@@ -155,16 +149,14 @@ class Dispatcher
     /**
      * 调度
      * @param App $app
-     * @param int $fd
-     * @param string|File|Error $data
+     * @param Connection $conn
+     * @param string|Error $data
+     * @param array $files
      */
-    public function dispatch(App $app, int $fd, $data)
+    public function dispatch(App $app, Connection $conn, $data, $files = [])
     {
         try {
             switch (true) {
-                case $data instanceof File:
-                    $this->files[$fd][] = $data;
-                    return;
                 case $data instanceof Error:
                     $result = $data;
                     break;
@@ -173,7 +165,7 @@ class Dispatcher
                     break;
                 default:
                     $protocol = $this->parser->decode($data);
-                    $result   = $this->dispatchWithMiddleware($app, $protocol, $fd);
+                    $result   = $this->dispatchWithMiddleware($app, $protocol, $files);
             }
         } catch (Throwable $e) {
             $result = Error::make($e->getCode(), $e->getMessage());
@@ -183,7 +175,7 @@ class Dispatcher
         if ($result instanceof \think\File) {
             foreach ($this->fread($result) as $string) {
                 if (!empty($string)) {
-                    $this->server->send($fd, $string);
+                    $conn->send($string);
                 }
             }
             $result = Protocol::FILE;
@@ -191,18 +183,16 @@ class Dispatcher
 
         $data = $this->parser->encodeResponse($result);
 
-        $this->server->send($fd, Packer::pack($data));
-        //清空文件缓存
-        unset($this->files[$fd]);
+        $conn->send(Packer::pack($data));
     }
 
-    protected function dispatchWithMiddleware(App $app, Protocol $protocol, $fd)
+    protected function dispatchWithMiddleware(App $app, Protocol $protocol, $files)
     {
         return Middleware
             ::make($app, $this->middleware)
             ->pipeline()
             ->send($protocol)
-            ->then(function (Protocol $protocol) use ($app, $fd) {
+            ->then(function (Protocol $protocol) use ($app, $files) {
 
                 $interface = $protocol->getInterface();
                 $method    = $protocol->getMethod();
@@ -211,7 +201,7 @@ class Dispatcher
                 //文件参数
                 foreach ($params as $index => $param) {
                     if ($param === Protocol::FILE) {
-                        $params[$index] = array_shift($this->files[$fd]);
+                        $params[$index] = array_shift($files);
                     }
                 }
 
