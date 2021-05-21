@@ -67,13 +67,13 @@ trait InteractsWithRpcServer
                     $result = $handler->write($data);
 
                     if (!empty($result)) {
+                        $handler = null;
                         if ($result instanceof File) {
                             $files[] = $result;
                         } else {
                             $dispatcher->dispatch($app, $conn, $result, $files);
                             $files = [];
                         }
-                        $handler = null;
                     }
 
                     if (!empty($data)) {

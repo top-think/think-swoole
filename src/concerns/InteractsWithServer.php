@@ -4,13 +4,11 @@ namespace think\swoole\concerns;
 
 use Swoole\Constant;
 use Swoole\Coroutine;
+use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
-use Swoole\Server\Task;
 use think\App;
-use think\Event;
 use think\swoole\FileWatcher;
-use think\swoole\Job;
 
 /**
  * Trait InteractsWithServer
@@ -67,7 +65,7 @@ trait InteractsWithServer
             $socket = $this->pool->getProcess()->exportSocket();
 
             //启动消息监听
-            \Swoole\Event::add($socket, function (Coroutine\Socket $socket) {
+            Event::add($socket, function (Coroutine\Socket $socket) {
                 $recv    = $socket->recv();
                 $message = unserialize($recv);
                 $this->triggerEvent('message', $message);
@@ -115,23 +113,6 @@ trait InteractsWithServer
             $watcher->watch(function () use ($pool) {
                 Process::kill($pool->master_pid, SIGUSR1);
             });
-        });
-    }
-
-    /**
-     * Set onTask listener.
-     *
-     * @param mixed $server
-     * @param Task $task
-     */
-    public function onTask($server, Task $task)
-    {
-        $this->runInSandbox(function (Event $event, App $app) use ($task) {
-            if ($task->data instanceof Job) {
-                $task->data->run($app);
-            } else {
-                $event->trigger('swoole.task', $task);
-            }
         });
     }
 

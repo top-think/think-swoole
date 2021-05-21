@@ -2,13 +2,11 @@
 
 namespace think\swoole\concerns;
 
-use Exception;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use think\App;
 use think\helper\Arr;
 use think\swoole\Pool;
-use Throwable;
 
 /**
  * Trait InteractsWithRpc
@@ -43,14 +41,6 @@ trait InteractsWithPools
                     //注入到app
                     $this->app->instance("swoole.pool.{$name}", $pool);
                 }
-            }
-        };
-
-        $closePools = function () {
-            try {
-                $this->getPools()->closeAll();
-            } catch (Exception | Throwable $e) {
-
             }
         };
 
