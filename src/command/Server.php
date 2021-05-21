@@ -19,19 +19,15 @@ class Server extends Command
     public function configure()
     {
         $this->setName('swoole')
-             ->setDescription('Swoole HTTP Server for ThinkPHP');
+             ->setDescription('Swoole Server for ThinkPHP');
     }
 
     public function handle(Manager $manager)
     {
         $this->checkEnvironment();
 
-        $this->output->writeln('Starting swoole http server...');
+        $this->output->writeln('Starting swoole server...');
 
-        $host = $manager->getConfig('server.host');
-        $port = $manager->getConfig('server.port');
-
-        $this->output->writeln("Swoole http server started: <http://{$host}:{$port}>");
         $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
         $manager->start();

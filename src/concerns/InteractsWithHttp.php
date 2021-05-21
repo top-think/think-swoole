@@ -34,8 +34,8 @@ trait InteractsWithHttp
     {
         $this->setProcessName('http server process');
 
-        $host = $this->getConfig('server.host');
-        $port = $this->getConfig('server.port');
+        $host = $this->getConfig('http.host');
+        $port = $this->getConfig('http.port');
 
         $server = new Server($host, $port, false, true);
 
@@ -61,7 +61,7 @@ trait InteractsWithHttp
 
     protected function prepareHttp()
     {
-        if ($this->getConfig('http.enable', false)) {
+        if ($this->getConfig('http.enable', true)) {
 
             $this->wsEnable = $this->getConfig('http.websocket.enable', false);
 
