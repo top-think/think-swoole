@@ -22,8 +22,10 @@ trait InteractsWithQueue
                 $connection = null;
             }
 
-            $this->addWorker(function (Process\Pool $pool) use ($options, $connection, $queue) {
-                $this->setProcessName("queue {$queue} process");
+            $workerNum = Arr::get($options, 'worker_num', 1);
+
+            $this->addBatchWorker($workerNum, function (Process\Pool $pool) use ($options, $connection, $queue) {
+                $this->setProcessName("queue [$queue] process");
 
                 /** @var Worker $worker */
                 $worker = $this->container->make(Worker::class);

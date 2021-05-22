@@ -49,6 +49,7 @@ trait InteractsWithServer
     {
         $this->initialize();
         $this->triggerEvent('init');
+        $this->setProcessName('manager process');
 
         //热更新
         if ($this->getConfig('hot_update.enable', false)) {
