@@ -27,9 +27,6 @@ trait InteractsWithQueue
             $this->addBatchWorker($workerNum, function (Process\Pool $pool) use ($options, $connection, $queue) {
                 $this->setProcessName("queue [$queue] process");
 
-                /** @var Worker $worker */
-                $worker = $this->container->make(Worker::class);
-
                 $delay   = Arr::get($options, 'delay', 0);
                 $sleep   = Arr::get($options, 'sleep', 3);
                 $tries   = Arr::get($options, 'tries', 0);
@@ -39,7 +36,9 @@ trait InteractsWithQueue
                     $pool->getProcess()->exit();
                 });
 
-                $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
+                $this->runInSandbox(function (Worker $worker) use ($connection, $queue, $delay, $sleep, $tries) {
+                    $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
+                });
 
                 Timer::clear($timer);
             });
