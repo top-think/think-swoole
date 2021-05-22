@@ -58,8 +58,8 @@ trait InteractsWithWebsocket
                 $fd = $this->wsIdAtomic->add();
                 $id = "{$this->workerId}.{$fd}";
 
-                $this->wsPusher[$fd] = function ($message) use ($handler, $res) {
-                    $res->push($handler->encodeMessage($message));
+                $this->wsPusher[$fd] = function ($message) use ($res) {
+                    $res->push($message);
                 };
 
                 $websocket->setSender($id);

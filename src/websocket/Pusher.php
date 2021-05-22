@@ -2,6 +2,7 @@
 
 namespace think\swoole\websocket;
 
+use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\Manager;
 use think\swoole\websocket\message\PushMessage;
 
@@ -17,12 +18,16 @@ class Pusher
     /** @var Manager */
     protected $manager;
 
+    /** @var HandlerInterface */
+    protected $handler;
+
     protected $to = [];
 
-    public function __construct(Manager $manager, Room $room)
+    public function __construct(Manager $manager, Room $room, HandlerInterface $handler)
     {
         $this->manager = $manager;
         $this->room    = $room;
+        $this->handler = $handler;
     }
 
     public function to(...$values)
@@ -56,6 +61,7 @@ class Pusher
 
         foreach (array_unique($fds) as $fd) {
             [$workerId, $fd] = explode('.', $fd);
+            $data = $this->handler->encodeMessage($data);
             $this->manager->sendMessage((int) $workerId, new PushMessage((int) $fd, $data));
         }
     }

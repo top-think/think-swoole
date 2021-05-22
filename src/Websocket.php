@@ -18,11 +18,6 @@ class Websocket
     protected $app;
 
     /**
-     * @var Manager
-     */
-    protected $manager;
-
-    /**
      * @var Room
      */
     protected $room;
@@ -44,21 +39,19 @@ class Websocket
      * Websocket constructor.
      *
      * @param \think\App $app
-     * @param Manager $manager
      * @param Room $room
      * @param Event $event
      */
-    public function __construct(\think\App $app, Manager $manager, Room $room, Event $event)
+    public function __construct(\think\App $app, Room $room, Event $event)
     {
-        $this->app     = $app;
-        $this->room    = $room;
-        $this->event   = $event;
-        $this->manager = $manager;
+        $this->app   = $app;
+        $this->room  = $room;
+        $this->event = $event;
     }
 
     protected function makePusher()
     {
-        return new Pusher($this->manager, $this->room);
+        return $this->app->invokeClass(Pusher::class);
     }
 
     public function to(...$values)
