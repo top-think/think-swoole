@@ -23,10 +23,8 @@ interface HandlerInterface
 
     /**
      * "onClose" listener.
-     *
-     * @param int $fd
      */
-    public function onClose($fd);
+    public function onClose();
 
     public function encodeMessage($message);
 

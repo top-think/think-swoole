@@ -126,10 +126,8 @@ class Handler implements HandlerInterface
 
     /**
      * "onClose" listener.
-     *
-     * @param int $fd
      */
-    public function onClose($fd)
+    public function onClose()
     {
         Timer::clear($this->pingTimeoutTimer);
         Timer::clear($this->pingIntervalTimer);

@@ -41,10 +41,8 @@ class Handler implements HandlerInterface
 
     /**
      * "onClose" listener.
-     *
-     * @param int $fd
      */
-    public function onClose($fd)
+    public function onClose()
     {
         $this->event->trigger('swoole.websocket.Close');
     }
