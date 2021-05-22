@@ -2,13 +2,18 @@
 
 namespace think\swoole;
 
-use think\swoole\coroutine\Context;
-
 class App extends \think\App
 {
+    protected $inConsole = true;
+
+    public function setInConsole($inConsole = true)
+    {
+        $this->inConsole = $inConsole;
+    }
+
     public function runningInConsole(): bool
     {
-        return Context::hasData('_fd');
+        return $this->inConsole;
     }
 
     public function clearInstances()

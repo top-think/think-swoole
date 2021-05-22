@@ -6,16 +6,13 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
-use Symfony\Component\VarDumper\VarDumper;
-use think\App;
 use think\Container;
 use think\Cookie;
 use think\Event;
 use think\exception\Handle;
 use think\helper\Arr;
 use think\Http;
-use think\Middleware;
-use think\swoole\middleware\ResetVarDumper;
+use think\swoole\App;
 use Throwable;
 use function substr;
 
@@ -77,20 +74,20 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->runInSandbox(function (Http $http, Event $event, App $app, Middleware $middleware) use ($req, $res) {
+        $this->runInSandbox(function (Http $http, Event $event, App $app) use ($req, $res) {
+            $app->setInConsole(false);
+
             $request = $this->prepareRequest($req);
 
-            //兼容var-dumper
-            if (class_exists(VarDumper::class)) {
-                $middleware->add(ResetVarDumper::class);
-            }
-
+            $_SERVER['VAR_DUMPER_FORMAT'] = 'html';
             try {
                 $response = $this->handleRequest($http, $request);
             } catch (Throwable $e) {
                 $response = $this->app
                     ->make(Handle::class)
                     ->render($request, $e);
+            } finally {
+                unset($_SERVER['VAR_DUMPER_FORMAT']);
             }
 
             $this->sendResponse($res, $response, $app->cookie);

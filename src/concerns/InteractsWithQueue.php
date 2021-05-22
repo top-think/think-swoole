@@ -32,15 +32,17 @@ trait InteractsWithQueue
                 $tries   = Arr::get($options, 'tries', 0);
                 $timeout = Arr::get($options, 'timeout', 60);
 
-                $timer = Timer::after($timeout * 1000, function () use ($pool) {
-                    $pool->getProcess()->exit();
-                });
+                while (true) {
+                    $timer = Timer::after($timeout * 1000, function () use ($pool) {
+                        $pool->getProcess()->exit();
+                    });
 
-                $this->runInSandbox(function (Worker $worker) use ($connection, $queue, $delay, $sleep, $tries) {
-                    $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
-                });
+                    $this->runInSandbox(function (Worker $worker) use ($connection, $queue, $delay, $sleep, $tries) {
+                        $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
+                    });
 
-                Timer::clear($timer);
+                    Timer::clear($timer);
+                }
             });
         }
     }

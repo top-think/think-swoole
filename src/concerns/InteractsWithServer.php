@@ -7,6 +7,7 @@ use Swoole\Coroutine;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
+use Swoole\Runtime;
 use think\App;
 use think\swoole\FileWatcher;
 
@@ -47,6 +48,8 @@ trait InteractsWithServer
      */
     public function start(): void
     {
+        Runtime::enableCoroutine();
+
         $this->initialize();
         $this->triggerEvent('init');
         $this->setProcessName('manager process');
