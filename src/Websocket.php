@@ -2,6 +2,7 @@
 
 namespace think\swoole;
 
+use Swoole\Http\Response;
 use think\Event;
 use think\swoole\websocket\Pusher;
 use think\swoole\websocket\Room;
@@ -36,10 +37,14 @@ class Websocket
     /** @var Event */
     protected $event;
 
+    /** @var Response */
+    protected $client;
+
     /**
      * Websocket constructor.
      *
      * @param \think\App $app
+     * @param Manager $manager
      * @param Room $room
      * @param Event $event
      */
@@ -51,9 +56,9 @@ class Websocket
         $this->manager = $manager;
     }
 
-    protected function makePusher($sender = null)
+    protected function makePusher()
     {
-        return new Pusher($this->manager, $this->room, $sender);
+        return new Pusher($this->manager, $this->room);
     }
 
     public function to(...$values)
@@ -63,12 +68,12 @@ class Websocket
 
     public function push($data)
     {
-        $this->makePusher($this->getSender())->push($data);
+        $this->makePusher()->to($this->getSender())->push($data);
     }
 
     public function emit(string $event, ...$data)
     {
-        $this->makePusher($this->getSender())->emit($event, ...$data);
+        $this->makePusher()->to($this->getSender())->emit($event, ...$data);
     }
 
     /**
@@ -103,15 +108,27 @@ class Websocket
         return $this;
     }
 
+    public function isEstablished()
+    {
+        return !!$this->client;
+    }
+
     /**
      * Close current connection.
-     *
-     * @param string|null $fd
-     * @return boolean
      */
-    public function close($fd = null)
+    public function close()
     {
-        //todo
+        if ($this->client) {
+            $this->client->close();
+        }
+    }
+
+    /**
+     * @param Response $response
+     */
+    public function setClient($response)
+    {
+        $this->client = $response;
     }
 
     /**

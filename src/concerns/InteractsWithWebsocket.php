@@ -2,6 +2,7 @@
 
 namespace think\swoole\concerns;
 
+use Swoole\Atomic;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\CloseFrame;
@@ -34,6 +35,9 @@ trait InteractsWithWebsocket
 
     protected $wsEnable = false;
 
+    /** @var Atomic */
+    protected $wsIdAtomic;
+
     /**
      * "onHandShake" listener.
      *
@@ -45,17 +49,22 @@ trait InteractsWithWebsocket
         $this->runInSandbox(function (App $app, Websocket $websocket, HandlerInterface $handler) use ($req, $res) {
             $res->upgrade();
 
+            $websocket->setClient($res);
+
             $request = $this->prepareRequest($req);
             $request = $this->setRequestThroughMiddleware($app, $request);
 
             try {
-                $fd = "{$this->workerId}.{$req->fd}";
+                $fd = $this->wsIdAtomic->add();
+                $id = "{$this->workerId}.{$fd}";
 
-                $this->wsPusher[$req->fd] = function ($message) use ($handler, $res) {
+                $this->wsPusher[$fd] = function ($message) use ($handler, $res) {
                     $res->push($handler->encodeMessage($message));
                 };
 
-                $websocket->setSender($fd);
+                $websocket->setSender($id);
+                $websocket->join($id);
+
                 $handler->onOpen($request);
 
                 while (true) {
@@ -73,12 +82,12 @@ trait InteractsWithWebsocket
 
                 //关闭连接
                 $res->close();
-
-                $handler->onClose($req->fd);
+                $handler->onClose();
             } finally {
                 // leave all rooms
                 $websocket->leave();
-                unset($this->wsPusher[$req->fd]);
+                unset($this->wsPusher[$fd]);
+                $websocket->setClient(null);
             }
         });
     }
@@ -105,6 +114,7 @@ trait InteractsWithWebsocket
      */
     protected function prepareWebsocket()
     {
+        $this->prepareWebsocketIdAtomic();
         $this->prepareWebsocketRoom();
 
         $this->onEvent('message', function ($message) {
@@ -120,6 +130,11 @@ trait InteractsWithWebsocket
             $this->bindWebsocketHandler();
             $this->prepareWebsocketListener();
         });
+    }
+
+    protected function prepareWebsocketIdAtomic()
+    {
+        $this->wsIdAtomic = new Atomic();
     }
 
     /**

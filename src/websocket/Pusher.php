@@ -17,14 +17,12 @@ class Pusher
     /** @var Manager */
     protected $manager;
 
-    protected $to     = [];
-    protected $sender = null;
+    protected $to = [];
 
-    public function __construct(Manager $manager, Room $room, $sender = null)
+    public function __construct(Manager $manager, Room $room)
     {
         $this->manager = $manager;
         $this->room    = $room;
-        $this->sender  = $sender;
     }
 
     public function to(...$values)
@@ -48,9 +46,6 @@ class Pusher
     public function push($data): void
     {
         $fds = [];
-        if ($this->sender) {
-            $fds[] = $this->sender;
-        }
 
         foreach ($this->to as $room) {
             $clients = $this->room->getClients($room);
