@@ -90,6 +90,11 @@ trait InteractsWithServer
         $pool->start();
     }
 
+    public function getWorkerId()
+    {
+        return $this->workerId;
+    }
+
     public function sendMessage($workerId, $message)
     {
         if ($workerId === $this->workerId) {
