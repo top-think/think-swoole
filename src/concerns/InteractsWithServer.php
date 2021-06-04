@@ -29,7 +29,7 @@ trait InteractsWithServer
     /** @var Pool */
     protected $pool;
 
-    protected function addBatchWorker(int $workerNum, callable $func)
+    public function addBatchWorker(int $workerNum, callable $func)
     {
         for ($i = 0; $i < $workerNum; $i++) {
             $this->startFuncMap[] = $func;
@@ -37,7 +37,7 @@ trait InteractsWithServer
         return $this;
     }
 
-    protected function addWorker(callable $func): self
+    public function addWorker(callable $func): self
     {
         $this->addBatchWorker(1, $func);
         return $this;
@@ -50,9 +50,10 @@ trait InteractsWithServer
     {
         Runtime::enableCoroutine();
 
+        $this->setProcessName('manager process');
+
         $this->initialize();
         $this->triggerEvent('init');
-        $this->setProcessName('manager process');
 
         //热更新
         if ($this->getConfig('hot_update.enable', false)) {

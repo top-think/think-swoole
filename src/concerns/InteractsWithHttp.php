@@ -37,8 +37,8 @@ trait InteractsWithHttp
 
         $server->handle('/', function (Request $req, Response $res) {
             $header = $req->header;
-            if (Arr::get($header, 'connection') == 'upgrade' &&
-                Arr::get($header, 'upgrade') == 'websocket' &&
+            if (strcasecmp(Arr::get($header, 'connection'), 'upgrade') === 0 &&
+                strcasecmp(Arr::get($header, 'upgrade'), 'websocket') === 0 &&
                 $this->wsEnable
             ) {
                 $this->onHandShake($req, $res);
