@@ -25,7 +25,7 @@ class Websocket
     /**
      * Scoket sender's fd.
      *
-     * @var integer
+     * @var string
      */
     protected $sender;
 
@@ -131,7 +131,7 @@ class Websocket
      *
      * @return $this
      */
-    public function setSender($fd)
+    public function setSender(string $fd)
     {
         $this->sender = $fd;
         return $this;
@@ -144,5 +144,4 @@ class Websocket
     {
         return $this->sender;
     }
-
 }
