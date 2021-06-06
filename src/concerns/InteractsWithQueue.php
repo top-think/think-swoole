@@ -35,8 +35,10 @@ trait InteractsWithQueue
                         $pool->getProcess()->exit();
                     });
 
-                    $this->runInSandbox(function (Worker $worker) use ($connection, $queue, $delay, $sleep, $tries) {
-                        $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
+                    $this->runWithBarrier(function () use ($connection, $queue, $delay, $sleep, $tries) {
+                        $this->runInSandbox(function (Worker $worker) use ($connection, $queue, $delay, $sleep, $tries) {
+                            $worker->runNextJob($connection, $queue, $delay, $sleep, $tries);
+                        });
                     });
 
                     Timer::clear($timer);

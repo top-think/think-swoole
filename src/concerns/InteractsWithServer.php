@@ -2,8 +2,10 @@
 
 namespace think\swoole\concerns;
 
+use Closure;
 use Swoole\Constant;
 use Swoole\Coroutine;
+use Swoole\Coroutine\Barrier;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
@@ -115,6 +117,15 @@ trait InteractsWithServer
             $socket  = $process->exportSocket();
             $socket->send(serialize($message));
         }
+    }
+
+    public function runWithBarrier(Closure $callable)
+    {
+        $barrier = Barrier::make();
+        Coroutine::create(function () use ($callable, $barrier) {
+            $callable();
+        });
+        Barrier::wait($barrier);
     }
 
     /**

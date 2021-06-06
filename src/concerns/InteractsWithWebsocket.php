@@ -66,7 +66,9 @@ trait InteractsWithWebsocket
                 $websocket->setSender($id);
                 $websocket->join($id);
 
-                $handler->onOpen($request);
+                $this->runWithBarrier(function () use ($request, $handler) {
+                    $handler->onOpen($request);
+                });
 
                 $frame = null;
                 while (true) {
@@ -88,14 +90,19 @@ trait InteractsWithWebsocket
                     $frame->finish = $recv->finish;
 
                     if ($frame->finish) {
-                        $handler->onMessage($frame);
+                        $this->runWithBarrier(function () use ($frame, $handler) {
+                            $handler->onMessage($frame);
+                        });
+
                         $frame = null;
                     }
                 }
 
                 //关闭连接
                 $res->close();
-                $handler->onClose();
+                $this->runWithBarrier(function () use ($handler) {
+                    $handler->onClose();
+                });
             } finally {
                 // leave all rooms
                 $websocket->leave();

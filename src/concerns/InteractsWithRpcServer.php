@@ -51,7 +51,9 @@ trait InteractsWithRpcServer
                         } catch (Throwable $e) {
                             //错误的包头
                             $result = Error::make(Dispatcher::INVALID_REQUEST, $e->getMessage());
-                            $dispatcher->dispatch($app, $conn, $result);
+                            $this->runWithBarrier(function () use ($dispatcher, $app, $conn, $result) {
+                                $dispatcher->dispatch($app, $conn, $result);
+                            });
                             break;
                         }
                     }
@@ -63,7 +65,9 @@ trait InteractsWithRpcServer
                         if ($result instanceof File) {
                             $files[] = $result;
                         } else {
-                            $dispatcher->dispatch($app, $conn, $result, $files);
+                            $this->runWithBarrier(function () use ($dispatcher, $app, $conn, $result, $files) {
+                                $dispatcher->dispatch($app, $conn, $result, $files);
+                            });
                             $files = [];
                         }
                     }
