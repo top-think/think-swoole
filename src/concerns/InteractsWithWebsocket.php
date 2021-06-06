@@ -6,6 +6,7 @@ use Swoole\Atomic;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\CloseFrame;
+use Swoole\WebSocket\Frame;
 use think\App;
 use think\Container;
 use think\helper\Str;
@@ -67,17 +68,29 @@ trait InteractsWithWebsocket
 
                 $handler->onOpen($request);
 
+                $frame = null;
                 while (true) {
-                    $frame = $res->recv();
-                    if ($frame === '' || $frame === false) {
+                    /** @var Frame|false|string $recv */
+                    $recv = $res->recv();
+                    if ($recv === '' || $recv === false || $recv instanceof CloseFrame) {
                         break;
                     }
 
-                    if ($frame->data == 'close' || get_class($frame) === CloseFrame::class) {
-                        break;
+                    if (empty($frame)) {
+                        $frame         = new Frame();
+                        $frame->opcode = $recv->opcode;
+                        $frame->flags  = $recv->flags;
+                        $frame->fd     = $recv->fd;
+                        $frame->finish = false;
                     }
 
-                    $handler->onMessage($frame);
+                    $frame->data   .= $recv->data;
+                    $frame->finish = $recv->finish;
+
+                    if ($frame->finish) {
+                        $handler->onMessage($frame);
+                        $frame = null;
+                    }
                 }
 
                 //关闭连接
