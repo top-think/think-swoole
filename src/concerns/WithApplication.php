@@ -60,7 +60,7 @@ trait WithApplication
         }
     }
 
-    protected function getApplication()
+    public function getApplication()
     {
         return $this->app;
     }
@@ -78,7 +78,7 @@ trait WithApplication
      * 在沙箱中执行
      * @param Closure $callable
      */
-    protected function runInSandbox(Closure $callable)
+    public function runInSandbox(Closure $callable)
     {
         try {
             $this->getSandbox()->run($callable);
