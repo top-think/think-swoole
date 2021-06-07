@@ -2,7 +2,6 @@
 
 namespace think\swoole\concerns;
 
-use Closure;
 use Swoole\Constant;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Barrier;
@@ -119,12 +118,12 @@ trait InteractsWithServer
         }
     }
 
-    public function runWithBarrier(Closure $callable)
+    public function runWithBarrier(callable $func, ...$params)
     {
         $barrier = Barrier::make();
-        Coroutine::create(function () use ($callable, $barrier) {
-            $callable();
-        });
+        Coroutine::create(function (...$params) use ($func, $barrier) {
+            $func(...$params);
+        }, ...$params);
         Barrier::wait($barrier);
     }
 
