@@ -3,13 +3,13 @@
 namespace think\swoole\concerns;
 
 use Closure;
+use Throwable;
 use think\App;
 use think\swoole\App as SwooleApp;
 use think\swoole\Manager;
+use think\swoole\Sandbox;
 use think\swoole\pool\Cache;
 use think\swoole\pool\Db;
-use think\swoole\Sandbox;
-use Throwable;
 
 /**
  * Trait WithApplication
@@ -23,10 +23,11 @@ trait WithApplication
      */
     protected $app;
 
-    protected function prepareApplication()
+    protected function prepareApplication(string $envName)
     {
         if (!$this->app instanceof SwooleApp) {
             $this->app = new SwooleApp($this->container->getRootPath());
+            $this->app->setEnvName($envName);
             $this->app->bind(SwooleApp::class, App::class);
             $this->app->bind(Manager::class, $this);
             //绑定连接池
@@ -86,5 +87,4 @@ trait WithApplication
             $this->logServerError($e);
         }
     }
-
 }
