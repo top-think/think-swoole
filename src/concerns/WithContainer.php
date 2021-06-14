@@ -45,7 +45,7 @@ trait WithContainer
      * @param string $event
      * @param null $params
      */
-    protected function triggerEvent(string $event, $params = null): void
+    public function triggerEvent(string $event, $params = null): void
     {
         $this->container->event->trigger("swoole.{$event}", $params);
     }

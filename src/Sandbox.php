@@ -6,6 +6,7 @@ use Closure;
 use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
+use Swoole\Coroutine;
 use think\App;
 use think\Config;
 use think\Container;
@@ -112,7 +113,7 @@ class Sandbox
 
     public function getApplication($init = false)
     {
-        $snapshot = $this->getSnapshot();
+        $snapshot = $this->getSnapshot($init);
         if ($snapshot instanceof Container) {
             return $snapshot;
         }
@@ -126,18 +127,31 @@ class Sandbox
         throw new InvalidArgumentException('The app object has not been initialized');
     }
 
-    protected function getSnapshotId()
+    protected function getSnapshotId($init = false)
     {
-        return Context::getCoroutineId();
+        if ($init) {
+            Coroutine::getContext()->offsetSet('#root', true);
+            return Coroutine::getCid();
+        } else {
+            $cid = Coroutine::getCid();
+            while (!Coroutine::getContext($cid)->offsetExists('#root')) {
+                $cid = Coroutine::getPcid($cid);
+                if ($cid < 1) {
+                    break;
+                }
+            }
+
+            return $cid;
+        }
     }
 
     /**
      * Get current snapshot.
      * @return App|null
      */
-    public function getSnapshot()
+    public function getSnapshot($init = false)
     {
-        return $this->snapshots[$this->getSnapshotId()] ?? null;
+        return $this->snapshots[$this->getSnapshotId($init)] ?? null;
     }
 
     public function setSnapshot(Container $snapshot)

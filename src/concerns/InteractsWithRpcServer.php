@@ -25,8 +25,6 @@ trait InteractsWithRpcServer
 {
     protected function createRpcServer()
     {
-        $this->setProcessName('rpc server process');
-
         $this->bindRpcParser();
         $this->bindRpcDispatcher();
 
@@ -53,7 +51,9 @@ trait InteractsWithRpcServer
                         } catch (Throwable $e) {
                             //错误的包头
                             $result = Error::make(Dispatcher::INVALID_REQUEST, $e->getMessage());
-                            $dispatcher->dispatch($app, $conn, $result);
+                            $this->runWithBarrier(function () use ($dispatcher, $app, $conn, $result) {
+                                $dispatcher->dispatch($app, $conn, $result);
+                            });
                             break;
                         }
                     }
@@ -65,7 +65,9 @@ trait InteractsWithRpcServer
                         if ($result instanceof File) {
                             $files[] = $result;
                         } else {
-                            $dispatcher->dispatch($app, $conn, $result, $files);
+                            $this->runWithBarrier(function () use ($dispatcher, $app, $conn, $result, $files) {
+                                $dispatcher->dispatch($app, $conn, $result, $files);
+                            });
                             $files = [];
                         }
                     }
@@ -88,7 +90,7 @@ trait InteractsWithRpcServer
 
             $workerNum = $this->getConfig('rpc.server.worker_num', swoole_cpu_num());
 
-            $this->addBatchWorker($workerNum, [$this, 'createRpcServer']);
+            $this->addBatchWorker($workerNum, [$this, 'createRpcServer'], 'rpc server');
         }
     }
 
