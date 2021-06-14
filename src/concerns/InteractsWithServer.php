@@ -4,6 +4,7 @@ namespace think\swoole\concerns;
 
 use Swoole\Constant;
 use Swoole\Coroutine;
+use Swoole\Coroutine\Barrier;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
@@ -29,17 +30,20 @@ trait InteractsWithServer
     /** @var Pool */
     protected $pool;
 
-    public function addBatchWorker(int $workerNum, callable $func)
+    public function addBatchWorker(int $workerNum, callable $func, $name = null)
     {
         for ($i = 0; $i < $workerNum; $i++) {
-            $this->startFuncMap[] = $func;
+            if ($name) {
+                $name = "{$name} #{$i}";
+            }
+            $this->addWorker($func, $name);
         }
         return $this;
     }
 
-    public function addWorker(callable $func): self
+    public function addWorker(callable $func, $name = null): self
     {
-        $this->addBatchWorker(1, $func);
+        $this->startFuncMap[] = [$func, $name];
         return $this;
     }
 
@@ -66,6 +70,12 @@ trait InteractsWithServer
             $this->pool     = $pool;
             $this->workerId = $workerId;
 
+            [$func, $name] = $this->startFuncMap[$workerId];
+
+            if ($name) {
+                $this->setProcessName($name);
+            }
+
             Process::signal(SIGTERM, function () {
                 $this->pool->getProcess()->exit();
             });
@@ -85,7 +95,7 @@ trait InteractsWithServer
 
             $this->triggerEvent(Constant::EVENT_WORKER_START);
 
-            $this->startFuncMap[$workerId]($pool, $workerId);
+            $func($pool, $workerId);
         });
 
         $pool->start();
@@ -108,14 +118,21 @@ trait InteractsWithServer
         }
     }
 
+    public function runWithBarrier(callable $func, ...$params)
+    {
+        $barrier = Barrier::make();
+        Coroutine::create(function (...$params) use ($func, $barrier) {
+            $func(...$params);
+        }, ...$params);
+        Barrier::wait($barrier);
+    }
+
     /**
      * 热更新
      */
     protected function addHotUpdateProcess()
     {
         $this->addWorker(function (Process\Pool $pool) {
-            $this->setProcessName('hot update process');
-
             $watcher = new FileWatcher(
                 $this->getConfig('hot_update.include', []),
                 $this->getConfig('hot_update.exclude', []),
@@ -125,7 +142,7 @@ trait InteractsWithServer
             $watcher->watch(function () use ($pool) {
                 Process::kill($pool->master_pid, SIGUSR1);
             });
-        });
+        }, 'hot update');
     }
 
     /**
@@ -149,10 +166,9 @@ trait InteractsWithServer
      */
     protected function setProcessName($process)
     {
-        $serverName = 'swoole';
-        $appName    = $this->container->config->get('app.name', 'ThinkPHP');
+        $appName = $this->container->config->get('app.name', 'ThinkPHP');
 
-        $name = sprintf('%s: %s for %s', $serverName, $process, $appName);
+        $name = sprintf('swoole: %s process for %s', $process, $appName);
 
         @cli_set_process_title($name);
     }

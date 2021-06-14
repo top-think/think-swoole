@@ -22,10 +22,10 @@ class Context
     public static function getDataObject()
     {
         $context = self::get();
-        if (!isset($context['data'])) {
-            $context['data'] = new ArrayObject();
+        if (!isset($context['#data'])) {
+            $context['#data'] = new ArrayObject();
         }
-        return $context['data'];
+        return $context['#data'];
     }
 
     /**

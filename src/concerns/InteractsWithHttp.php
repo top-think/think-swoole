@@ -28,8 +28,6 @@ trait InteractsWithHttp
 
     public function createHttpServer()
     {
-        $this->setProcessName('http server process');
-
         $host = $this->getConfig('http.host');
         $port = $this->getConfig('http.port');
 
@@ -62,7 +60,7 @@ trait InteractsWithHttp
 
             $workerNum = $this->getConfig('http.worker_num', swoole_cpu_num());
 
-            $this->addBatchWorker($workerNum, [$this, 'createHttpServer']);
+            $this->addBatchWorker($workerNum, [$this, 'createHttpServer'], 'http server');
         }
     }
 
