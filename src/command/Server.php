@@ -12,6 +12,7 @@
 namespace think\swoole\command;
 
 use think\console\Command;
+use think\console\input\Option;
 use think\swoole\Manager;
 
 class Server extends Command
@@ -19,7 +20,14 @@ class Server extends Command
     public function configure()
     {
         $this->setName('swoole')
-             ->setDescription('Swoole Server for ThinkPHP');
+            ->addOption(
+                'env',
+                'E',
+                Option::VALUE_OPTIONAL,
+                'Environment name',
+                ''
+            )
+            ->setDescription('Swoole Server for ThinkPHP');
     }
 
     public function handle(Manager $manager)
@@ -30,7 +38,8 @@ class Server extends Command
 
         $this->output->writeln('You can exit with <info>`CTRL-C`</info>');
 
-        $manager->start();
+        $envName = $this->input->getOption('env');
+        $manager->start($envName);
     }
 
     /**
@@ -50,5 +59,4 @@ class Server extends Command
             exit(1);
         }
     }
-
 }

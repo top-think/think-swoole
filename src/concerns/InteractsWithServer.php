@@ -45,8 +45,9 @@ trait InteractsWithServer
 
     /**
      * 启动服务
+     * @param string $envName 环境变量标识
      */
-    public function start(): void
+    public function start(string $envName): void
     {
         Runtime::enableCoroutine();
 
@@ -62,7 +63,7 @@ trait InteractsWithServer
 
         $pool = new Pool(count($this->startFuncMap), SWOOLE_IPC_UNIXSOCK, null, true);
 
-        $pool->on(Constant::EVENT_WORKER_START, function ($pool, $workerId) {
+        $pool->on(Constant::EVENT_WORKER_START, function ($pool, $workerId) use ($envName) {
             $this->pool     = $pool;
             $this->workerId = $workerId;
 
@@ -81,7 +82,7 @@ trait InteractsWithServer
             });
 
             $this->clearCache();
-            $this->prepareApplication();
+            $this->prepareApplication($envName);
 
             $this->triggerEvent(Constant::EVENT_WORKER_START);
 
