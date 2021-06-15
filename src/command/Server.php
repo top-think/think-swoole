@@ -23,7 +23,7 @@ class Server extends Command
             ->addOption(
                 'env',
                 'E',
-                Option::VALUE_OPTIONAL,
+                Option::VALUE_REQUIRED,
                 'Environment name',
                 ''
             )
