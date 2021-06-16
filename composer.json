@@ -53,7 +53,7 @@
         "sort-packages": true,
         "platform-check": false,
         "platform": {
-            "ext-swoole": "4.4.8",
+            "ext-swoole": "4.6.1",
             "ext-fileinfo": "1.0.4"
         }
     }
