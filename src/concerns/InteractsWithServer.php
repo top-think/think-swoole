@@ -4,7 +4,6 @@ namespace think\swoole\concerns;
 
 use Swoole\Constant;
 use Swoole\Coroutine;
-use Swoole\Coroutine\Barrier;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
