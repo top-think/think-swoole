@@ -121,11 +121,15 @@ trait InteractsWithServer
 
     public function runWithBarrier(callable $func, ...$params)
     {
-        $barrier = Barrier::make();
-        Coroutine::create(function (...$params) use ($func, $barrier) {
+        $channel = new Coroutine\Channel(1);
+
+        Coroutine::create(function (...$params) use ($channel, $func) {
             $func(...$params);
+
+            $channel->close();
         }, ...$params);
-        Barrier::wait($barrier);
+
+        $channel->pop();
     }
 
     /**
