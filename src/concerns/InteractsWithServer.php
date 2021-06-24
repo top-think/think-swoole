@@ -32,10 +32,7 @@ trait InteractsWithServer
     public function addBatchWorker(int $workerNum, callable $func, $name = null)
     {
         for ($i = 0; $i < $workerNum; $i++) {
-            if ($name) {
-                $name = "{$name} #{$i}";
-            }
-            $this->addWorker($func, $name);
+            $this->addWorker($func, $name ? "{$name} #{$i}" : null);
         }
         return $this;
     }
@@ -123,7 +120,8 @@ trait InteractsWithServer
         $channel = new Coroutine\Channel(1);
 
         Coroutine::create(function (...$params) use ($channel, $func) {
-            $func(...$params);
+
+            call_user_func_array($func, $params);
 
             $channel->close();
         }, ...$params);
