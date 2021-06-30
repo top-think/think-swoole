@@ -8,6 +8,7 @@ return [
         'host'       => '0.0.0.0',
         'port'       => 80,
         'worker_num' => swoole_cpu_num(),
+        'options'    => []
     ],
     'websocket'  => [
         'enable'        => false,
@@ -38,11 +39,9 @@ return [
             'host'       => '0.0.0.0',
             'port'       => 9000,
             'worker_num' => swoole_cpu_num(),
-            'services'   => [
-            ],
+            'services'   => [],
         ],
-        'client' => [
-        ],
+        'client' => [],
     ],
     //队列
     'queue'      => [
