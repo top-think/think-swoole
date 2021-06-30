@@ -12,6 +12,7 @@ use think\Config;
 use think\Container;
 use think\Event;
 use think\Http;
+use think\Model;
 use think\swoole\App as SwooleApp;
 use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
@@ -255,6 +256,16 @@ class Sandbox
     {
         foreach ($this->resetters as $resetter) {
             $resetter->handle($app, $this);
+        }
+        $this->resetModel();
+    }
+
+    protected function resetModel()
+    {
+        if (class_exists(Model::class)) {
+            Model::setInvoker(function (...$args) {
+                return Container::getInstance()->invoke(...$args);
+            });
         }
     }
 

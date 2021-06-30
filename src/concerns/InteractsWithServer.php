@@ -4,7 +4,6 @@ namespace think\swoole\concerns;
 
 use Swoole\Constant;
 use Swoole\Coroutine;
-use Swoole\Coroutine\Barrier;
 use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
@@ -33,10 +32,7 @@ trait InteractsWithServer
     public function addBatchWorker(int $workerNum, callable $func, $name = null)
     {
         for ($i = 0; $i < $workerNum; $i++) {
-            if ($name) {
-                $name = "{$name} #{$i}";
-            }
-            $this->addWorker($func, $name);
+            $this->addWorker($func, $name ? "{$name} #{$i}" : null);
         }
         return $this;
     }
@@ -121,11 +117,16 @@ trait InteractsWithServer
 
     public function runWithBarrier(callable $func, ...$params)
     {
-        $barrier = Barrier::make();
-        Coroutine::create(function (...$params) use ($func, $barrier) {
-            $func(...$params);
+        $channel = new Coroutine\Channel(1);
+
+        Coroutine::create(function (...$params) use ($channel, $func) {
+
+            call_user_func_array($func, $params);
+
+            $channel->close();
         }, ...$params);
-        Barrier::wait($barrier);
+
+        $channel->pop();
     }
 
     /**
