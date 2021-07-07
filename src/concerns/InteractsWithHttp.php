@@ -6,15 +6,15 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
+use Throwable;
+use function substr;
 use think\Container;
 use think\Cookie;
 use think\Event;
+use think\Http;
 use think\exception\Handle;
 use think\helper\Arr;
-use think\Http;
 use think\swoole\App;
-use Throwable;
-use function substr;
 
 /**
  * Trait InteractsWithHttp
@@ -28,14 +28,17 @@ trait InteractsWithHttp
 
     public function createHttpServer()
     {
-        $host = $this->getConfig('http.host');
-        $port = $this->getConfig('http.port');
+        $host    = $this->getConfig('http.host');
+        $port    = $this->getConfig('http.port');
+        $options = $this->getConfig('http.options');
 
         $server = new Server($host, $port, false, true);
+        $server->set($options);
 
         $server->handle('/', function (Request $req, Response $res) {
             $header = $req->header;
-            if (strcasecmp(Arr::get($header, 'connection'), 'upgrade') === 0 &&
+            if (
+                strcasecmp(Arr::get($header, 'connection'), 'upgrade') === 0 &&
                 strcasecmp(Arr::get($header, 'upgrade'), 'websocket') === 0 &&
                 $this->wsEnable
             ) {
