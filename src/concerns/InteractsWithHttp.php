@@ -30,7 +30,7 @@ trait InteractsWithHttp
     {
         $host    = $this->getConfig('http.host');
         $port    = $this->getConfig('http.port');
-        $options = $this->getConfig('http.options');
+        $options = $this->getConfig('http.options', []);
 
         $server = new Server($host, $port, false, true);
         $server->set($options);
