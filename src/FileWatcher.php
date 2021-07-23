@@ -15,9 +15,12 @@ class FileWatcher
     public function __construct($directory, $exclude, $name)
     {
         $this->finder = new Finder();
-        $this->finder->files()
+        $this->finder
+            ->files()
             ->name($name)
-            ->in($directory)
+            ->in(array_filter((array) $directory, function ($dir) {
+                return is_dir($dir);
+            }))
             ->exclude($exclude);
     }
 
