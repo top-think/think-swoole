@@ -87,10 +87,10 @@ class Redis implements RoomInterface
     /**
      * Add multiple socket fds to a room.
      *
-     * @param int $fd
+     * @param string $fd
      * @param array|string $roomNames
      */
-    public function add(int $fd, $roomNames)
+    public function add($fd, $roomNames)
     {
         $rooms = is_array($roomNames) ? $roomNames : [$roomNames];
 
@@ -104,10 +104,10 @@ class Redis implements RoomInterface
     /**
      * Delete multiple socket fds from a room.
      *
-     * @param int fd
+     * @param string fd
      * @param array|string rooms
      */
-    public function delete(int $fd, $rooms)
+    public function delete($fd, $rooms)
     {
         $rooms = is_array($rooms) ? $rooms : [$rooms];
         $rooms = count($rooms) ? $rooms : $this->getRooms($fd);
@@ -196,11 +196,11 @@ class Redis implements RoomInterface
     /**
      * Get all rooms by a fd.
      *
-     * @param int fd
+     * @param string fd
      *
      * @return array
      */
-    public function getRooms(int $fd)
+    public function getRooms($fd)
     {
         return $this->getValue($fd, RoomInterface::DESCRIPTORS_KEY) ?? [];
     }

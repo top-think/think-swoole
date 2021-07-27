@@ -28,18 +28,18 @@ interface RoomInterface
     /**
      * Add multiple socket fds to a room.
      *
-     * @param int fd
+     * @param string fd
      * @param array|string $roomNames
      */
-    public function add(int $fd, $roomNames);
+    public function add($fd, $roomNames);
 
     /**
      * Delete multiple socket fds from a room.
      *
-     * @param int fd
+     * @param string fd
      * @param array|string $roomNames
      */
-    public function delete(int $fd, $roomNames);
+    public function delete($fd, $roomNames);
 
     /**
      * Get all sockets by a room key.
@@ -53,9 +53,9 @@ interface RoomInterface
     /**
      * Get all rooms by a fd.
      *
-     * @param int fd
+     * @param string fd
      *
      * @return array
      */
-    public function getRooms(int $fd);
+    public function getRooms($fd);
 }
