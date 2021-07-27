@@ -49,8 +49,6 @@ trait InteractsWithServer
      */
     public function start(string $envName): void
     {
-        Runtime::enableCoroutine();
-
         $this->setProcessName('manager process');
 
         $this->initialize();
@@ -64,6 +62,9 @@ trait InteractsWithServer
         $pool = new Pool(count($this->startFuncMap), SWOOLE_IPC_UNIXSOCK, null, true);
 
         $pool->on(Constant::EVENT_WORKER_START, function ($pool, $workerId) use ($envName) {
+
+            Runtime::enableCoroutine();
+
             $this->pool     = $pool;
             $this->workerId = $workerId;
 
