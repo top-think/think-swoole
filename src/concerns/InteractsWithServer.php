@@ -54,8 +54,10 @@ trait InteractsWithServer
         $this->initialize();
         $this->triggerEvent('init');
 
+        $this->container->loadEnv($envName);
+
         //热更新
-        if ($this->getConfig('hot_update.enable', false)) {
+        if ($this->container->env->get('app_debug', false) && $this->getConfig('hot_update.enable', false)) {
             $this->addHotUpdateProcess();
         }
 
