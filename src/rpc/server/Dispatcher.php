@@ -213,7 +213,7 @@ class Dispatcher
                     );
                 }
 
-                return $app->invoke([$app->make($service['class']), $method], $params);
+                return call_user_func_array([$app->make($service['class']), $method], $params);
             });
     }
 }
