@@ -8,7 +8,7 @@ return [
         'host'       => '0.0.0.0',
         'port'       => 80,
         'worker_num' => swoole_cpu_num(),
-        'options'    => []
+        'options'    => [],
     ],
     'websocket'  => [
         'enable'        => false,
@@ -18,9 +18,9 @@ return [
         'room'          => [
             'type'  => 'table',
             'table' => [
-                'room_rows'   => 4096,
+                'room_rows'   => 8192,
                 'room_size'   => 2048,
-                'client_rows' => 8192,
+                'client_rows' => 4096,
                 'client_size' => 2048,
             ],
             'redis' => [

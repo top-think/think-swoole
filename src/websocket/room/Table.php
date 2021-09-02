@@ -12,9 +12,9 @@ class Table implements RoomInterface
      * @var array
      */
     protected $config = [
-        'room_rows'   => 4096,
+        'room_rows'   => 8192,
         'room_size'   => 2048,
-        'client_rows' => 8192,
+        'client_rows' => 4096,
         'client_size' => 2048,
     ];
 
@@ -184,7 +184,11 @@ class Table implements RoomInterface
     {
         $this->checkTable($table);
 
-        $this->$table->set($key, ['value' => json_encode($value)]);
+        if (empty($value)) {
+            $this->$table->del($key);
+        } else {
+            $this->$table->set($key, ['value' => json_encode($value)]);
+        }
 
         return $this;
     }
