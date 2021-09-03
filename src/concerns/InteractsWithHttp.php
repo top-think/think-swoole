@@ -75,7 +75,7 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->runInSandbox(function (Http $http, Event $event, App $app) use ($req, $res) {
+        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, App $app) use ($req, $res) {
             $app->setInConsole(false);
 
             $request = $this->prepareRequest($req);
