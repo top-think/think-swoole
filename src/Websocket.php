@@ -49,6 +49,9 @@ class Websocket
         $this->event = $event;
     }
 
+    /**
+     * @return Pusher
+     */
     protected function makePusher()
     {
         return $this->app->invokeClass(Pusher::class);

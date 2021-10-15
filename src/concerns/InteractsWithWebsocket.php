@@ -3,6 +3,8 @@
 namespace think\swoole\concerns;
 
 use Swoole\Atomic;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\WebSocket\CloseFrame;
@@ -32,7 +34,10 @@ trait InteractsWithWebsocket
      */
     protected $wsRoom;
 
-    protected $wsPusher = [];
+    /**
+     * @var Channel[]
+     */
+    protected $wsMessageChannel = [];
 
     protected $wsEnable = false;
 
@@ -55,13 +60,19 @@ trait InteractsWithWebsocket
             $request = $this->prepareRequest($req);
             $request = $this->setRequestThroughMiddleware($app, $request);
 
-            try {
-                $fd = $this->wsIdAtomic->add();
-                $id = "{$this->workerId}.{$fd}";
+            $fd = $this->wsIdAtomic->add();
 
-                $this->wsPusher[$fd] = function ($message) use ($res) {
+            $this->wsMessageChannel[$fd] = new Channel(1);
+
+            Coroutine::create(function () use ($res, $fd) {
+                //推送消息
+                while ($message = $this->wsMessageChannel[$fd]->pop()) {
                     $res->push($message);
-                };
+                }
+            });
+
+            try {
+                $id = "{$this->workerId}.{$fd}";
 
                 $websocket->setSender($id);
                 $websocket->join($id);
@@ -70,33 +81,32 @@ trait InteractsWithWebsocket
                     $handler->onOpen($request);
                 });
 
-                $frame = null;
-                while (true) {
-                    /** @var Frame|false|string $recv */
-                    $recv = $res->recv();
-                    if ($recv === '' || $recv === false || $recv instanceof CloseFrame) {
-                        break;
+                $this->runWithBarrier(function () use ($handler, $res) {
+                    $frame = null;
+                    while (true) {
+                        /** @var Frame|false|string $recv */
+                        $recv = $res->recv();
+                        if ($recv === '' || $recv === false || $recv instanceof CloseFrame) {
+                            break;
+                        }
+
+                        if (empty($frame)) {
+                            $frame         = new Frame();
+                            $frame->opcode = $recv->opcode;
+                            $frame->flags  = $recv->flags;
+                            $frame->fd     = $recv->fd;
+                            $frame->finish = false;
+                        }
+
+                        $frame->data   .= $recv->data;
+                        $frame->finish = $recv->finish;
+
+                        if ($frame->finish) {
+                            Coroutine::create([$handler, 'onMessage'], $frame);
+                            $frame = null;
+                        }
                     }
-
-                    if (empty($frame)) {
-                        $frame         = new Frame();
-                        $frame->opcode = $recv->opcode;
-                        $frame->flags  = $recv->flags;
-                        $frame->fd     = $recv->fd;
-                        $frame->finish = false;
-                    }
-
-                    $frame->data .= $recv->data;
-                    $frame->finish = $recv->finish;
-
-                    if ($frame->finish) {
-                        $this->runWithBarrier(function () use ($frame, $handler) {
-                            $handler->onMessage($frame);
-                        });
-
-                        $frame = null;
-                    }
-                }
+                });
 
                 //关闭连接
                 $res->close();
@@ -106,7 +116,10 @@ trait InteractsWithWebsocket
             } finally {
                 // leave all rooms
                 $websocket->leave();
-                unset($this->wsPusher[$fd]);
+                if (isset($this->wsMessageChannel[$fd])) {
+                    $this->wsMessageChannel[$fd]->close();
+                    unset($this->wsMessageChannel[$fd]);
+                }
                 $websocket->setClient(null);
             }
         });
@@ -139,8 +152,8 @@ trait InteractsWithWebsocket
 
         $this->onEvent('message', function ($message) {
             if ($message instanceof PushMessage) {
-                if (isset($this->wsPusher[$message->fd])) {
-                    $this->wsPusher[$message->fd]($message->data);
+                if (isset($this->wsMessageChannel[$message->fd])) {
+                    $this->wsMessageChannel[$message->fd]->push($message->data);
                 }
             }
         });
