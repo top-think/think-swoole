@@ -98,7 +98,7 @@ trait InteractsWithWebsocket
                             $frame->finish = false;
                         }
 
-                        $frame->data   .= $recv->data;
+                        $frame->data .= $recv->data;
                         $frame->finish = $recv->finish;
 
                         if ($frame->finish) {
