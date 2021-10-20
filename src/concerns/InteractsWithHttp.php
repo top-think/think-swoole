@@ -181,9 +181,10 @@ trait InteractsWithHttp
                     break;
                 }
             } while (($sendSize += $chunkSize) < $contentSize);
-            $res->end();
         } else {
-            $res->end($content);
+            $res->write($content);
         }
+
+        $res->end();
     }
 }
