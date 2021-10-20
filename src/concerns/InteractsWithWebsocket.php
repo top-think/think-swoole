@@ -133,8 +133,7 @@ trait InteractsWithWebsocket
     protected function setRequestThroughMiddleware(App $app, \think\Request $request)
     {
         $app->instance('request', $request);
-        return Middleware
-            ::make($app, $this->getConfig('websocket.middleware', []))
+        return Middleware::make($app, $this->getConfig('websocket.middleware', []))
             ->pipeline()
             ->send($request)
             ->then(function ($request) {
