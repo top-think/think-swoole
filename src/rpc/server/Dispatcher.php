@@ -188,8 +188,7 @@ class Dispatcher
 
     protected function dispatchWithMiddleware(App $app, Protocol $protocol, $files)
     {
-        return Middleware
-            ::make($app, $this->middleware)
+        return Middleware::make($app, $this->middleware)
             ->pipeline()
             ->send($protocol)
             ->then(function (Protocol $protocol) use ($app, $files) {
