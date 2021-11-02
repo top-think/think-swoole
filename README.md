@@ -27,24 +27,11 @@ swoole的相关参数可以在`config/swoole.php`里面配置（具体参考配�
 
 ## 访问静态文件
 
-1. 修改 `config/swoole.php` 配置文件，关闭 `http_compression` 选项：
-```php
-return [
-  'http' => [
-    // ...
-    'options' => [
-      // ...
-      'http_compression' => false
-    ]
-  ]
-];
-```
-
-2. 添加静态文件路由：
+1. 添加静态文件路由：
 ```php
 Route::get('static/:path', function (string $path) {
     $filename = public_path() . $path;
     return download($filename)->force(false);
 })->pattern(['path' => '.*\.\w+$']);
 ```
-3. 访问路由 `http://localhost/static/文件路径`
+2. 访问路由 `http://localhost/static/文件路径`
