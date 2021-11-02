@@ -25,3 +25,26 @@ swoole的相关参数可以在`config/swoole.php`里面配置（具体参考配�
 
 如果需要使用守护进程方式运行，建议使用supervisor来管理进程
 
+## 访问静态文件
+
+1. 修改 `config/swoole.php` 配置文件，关闭 `http_compression` 选项：
+```php
+return [
+  'http' => [
+    // ...
+    'options' => [
+      // ...
+      'http_compression' => false
+    ]
+  ]
+];
+```
+
+2. 添加静态文件路由：
+```php
+Route::get('static/:path', function (string $path) {
+    $filename = public_path() . $path;
+    return download($filename)->force(false);
+})->pattern(['path' => '.*\.\w+$']);
+```
+3. 访问路由 `http://localhost/static/文件路径`
