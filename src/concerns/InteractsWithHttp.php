@@ -151,6 +151,11 @@ trait InteractsWithHttp
     {
         // 发送Header
         foreach ($response->getHeader() as $key => $val) {
+            // 由于开启了 Transfer-Encoding: chunked，根据 HTTP 规范，不再需要设置 Content-Length
+            if (strtolower($key) === 'content-length') {
+                continue;
+            }
+
             $res->header($key, $val);
         }
 
