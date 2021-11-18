@@ -65,7 +65,7 @@ class File extends Response
         return $this;
     }
 
-    protected function setAutoContentType()
+    public function setAutoContentType()
     {
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
 

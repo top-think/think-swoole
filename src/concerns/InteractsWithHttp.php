@@ -244,7 +244,7 @@ trait InteractsWithHttp
         $this->setHeader($res, $response->getHeader());
 
         $content = $response->getContent();
-        if ($content > 0) {
+        if ($content) {
             $contentSize = strlen($content);
             $chunkSize   = 8192;
 
