@@ -6,6 +6,8 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
+use think\helper\Str;
+use think\swoole\response\File as FileResponse;
 use Throwable;
 use function substr;
 use think\Container;
@@ -36,12 +38,7 @@ trait InteractsWithHttp
         $server->set($options);
 
         $server->handle('/', function (Request $req, Response $res) {
-            $header = $req->header;
-            if (
-                strcasecmp(Arr::get($header, 'connection'), 'upgrade') === 0 &&
-                strcasecmp(Arr::get($header, 'upgrade'), 'websocket') === 0 &&
-                $this->wsEnable
-            ) {
+            if ($this->wsEnable && $this->isWebsocketRequest($req)) {
                 $this->onHandShake($req, $res);
             } else {
                 $this->onRequest($req, $res);
@@ -49,6 +46,13 @@ trait InteractsWithHttp
         });
 
         $server->start();
+    }
+
+    protected function isWebsocketRequest(Request $req)
+    {
+        $header = $req->header;
+        return strcasecmp(Arr::get($header, 'connection'), 'upgrade') === 0 &&
+            strcasecmp(Arr::get($header, 'upgrade'), 'websocket') === 0;
     }
 
     protected function prepareHttp()
@@ -75,23 +79,21 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, App $app) use ($req, $res) {
+        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, App $app, Cookie $cookie) use ($req, $res) {
             $app->setInConsole(false);
 
             $request = $this->prepareRequest($req);
 
-            $_SERVER['VAR_DUMPER_FORMAT'] = 'html';
             try {
                 $response = $this->handleRequest($http, $request);
             } catch (Throwable $e) {
                 $response = $this->app
                     ->make(Handle::class)
                     ->render($request, $e);
-            } finally {
-                unset($_SERVER['VAR_DUMPER_FORMAT']);
             }
 
-            $this->sendResponse($res, $response, $app->cookie);
+            $this->setCookie($res, $cookie);
+            $this->sendResponse($res, $request, $response);
         });
     }
 
@@ -147,49 +149,116 @@ trait InteractsWithHttp
             ->setPathinfo(ltrim($req->server['path_info'], '/'));
     }
 
-    protected function sendResponse(Response $res, \think\Response $response, Cookie $cookie)
+    protected function setCookie(Response $res, Cookie $cookie)
     {
-        // 发送Header
-        foreach ($response->getHeader() as $key => $val) {
-            // 由于开启了 Transfer-Encoding: chunked，根据 HTTP 规范，不再需要设置 Content-Length
-            if (strtolower($key) === 'content-length') {
-                continue;
-            }
-
-            $res->header($key, $val);
-        }
-
-        // 发送状态码
-        $code = $response->getCode();
-        $res->status($code, Status::getReasonPhrase($code));
-
         foreach ($cookie->getCookie() as $name => $val) {
             [$value, $expire, $option] = $val;
 
             $res->cookie($name, $value, $expire, $option['path'], $option['domain'], (bool) $option['secure'], (bool) $option['httponly'], $option['samesite']);
         }
-
-        $content = $response->getContent();
-
-        $this->sendByChunk($res, $content);
     }
 
-    protected function sendByChunk(Response $res, $content)
+    protected function setHeader(Response $res, array $headers)
     {
-        $contentSize = strlen($content);
-        $chunkSize   = 8192;
+        foreach ($headers as $key => $val) {
+            $res->header($key, $val);
+        }
+    }
 
-        if ($contentSize > $chunkSize) {
-            $sendSize = 0;
-            do {
-                if (!$res->write(substr($content, $sendSize, $chunkSize))) {
-                    break;
+    protected function setStatus(Response $res, $code)
+    {
+        $res->status($code, Status::getReasonPhrase($code));
+    }
+
+    protected function sendResponse(Response $res, \think\Request $request, \think\Response $response)
+    {
+        switch (true) {
+            case $response instanceof FileResponse:
+                $this->sendFile($res, $request, $response);
+                break;
+            default:
+                $this->sendContent($res, $response);
+        }
+    }
+
+    protected function sendFile(Response $res, \think\Request $request, FileResponse $response)
+    {
+        $code     = $response->getCode();
+        $ifRange  = $request->header('If-Range');
+        $file     = $response->getFile();
+        $fileSize = $file->getSize();
+
+        $offset = 0;
+        $maxlen = -1;
+
+        if (!$ifRange || $ifRange === $response->getHeader('ETag') || $ifRange === $response->getHeader('Last-Modified')) {
+            $range = $request->header('Range', '');
+            if (Str::startsWith($range, 'bytes=')) {
+                [$start, $end] = explode('-', substr($range, 6), 2) + [0];
+
+                $end = ('' === $end) ? $fileSize - 1 : (int) $end;
+
+                if ('' === $start) {
+                    $start = $fileSize - $end;
+                    $end   = $fileSize - 1;
+                } else {
+                    $start = (int) $start;
                 }
-            } while (($sendSize += $chunkSize) < $contentSize);
-        } elseif ($contentSize > 0) {
-            $res->write($content);
+
+                if ($start <= $end) {
+                    $end = min($end, $fileSize - 1);
+                    if ($start < 0 || $start > $end) {
+                        $code = 416;
+                        $response->header([
+                            'Content-Range' => sprintf('bytes */%s', $fileSize),
+                        ]);
+                    } elseif ($end - $start < $fileSize - 1) {
+                        $maxlen = $end < $fileSize ? $end - $start + 1 : -1;
+                        $offset = $start;
+                        $code   = 206;
+                        $response->header([
+                            'Content-Range'  => sprintf('bytes %s-%s/%s', $start, $end, $fileSize),
+                            'Content-Length' => $end - $start + 1,
+                        ]);
+                    }
+                }
+            }
         }
 
+        $this->setStatus($res, $code);
+        $this->setHeader($res, $response->getHeader());
+
+        if ($code >= 200 && $code < 300 && $maxlen !== 0) {
+            $res->sendfile($file->getPathname(), $offset, $maxlen);
+        } else {
+            $res->end();
+        }
+    }
+
+    protected function sendContent(Response $res, \think\Response $response)
+    {
+        // 由于开启了 Transfer-Encoding: chunked，根据 HTTP 规范，不再需要设置 Content-Length
+        $response->header(['Content-Length' => null]);
+
+        $this->setStatus($res, $response->getCode());
+        $this->setHeader($res, $response->getHeader());
+
+        $content = $response->getContent();
+        if ($content > 0) {
+            $contentSize = strlen($content);
+            $chunkSize   = 8192;
+
+            if ($contentSize > $chunkSize) {
+                $sendSize = 0;
+                do {
+                    if (!$res->write(substr($content, $sendSize, $chunkSize))) {
+                        break;
+                    }
+                } while (($sendSize += $chunkSize) < $contentSize);
+            } else {
+                $res->write($content);
+            }
+        }
         $res->end();
     }
 }
