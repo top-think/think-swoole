@@ -6,17 +6,17 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
-use think\helper\Str;
-use think\swoole\response\File as FileResponse;
-use Throwable;
-use function substr;
 use think\Container;
 use think\Cookie;
 use think\Event;
-use think\Http;
 use think\exception\Handle;
 use think\helper\Arr;
+use think\helper\Str;
+use think\Http;
 use think\swoole\App;
+use think\swoole\response\File as FileResponse;
+use Throwable;
+use function substr;
 
 /**
  * Trait InteractsWithHttp
@@ -79,7 +79,7 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, App $app, Cookie $cookie) use ($req, $res) {
+        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, App $app) use ($req, $res) {
             $app->setInConsole(false);
 
             $request = $this->prepareRequest($req);
@@ -92,7 +92,7 @@ trait InteractsWithHttp
                     ->render($request, $e);
             }
 
-            $this->setCookie($res, $cookie);
+            $this->setCookie($res, $app->cookie);
             $this->sendResponse($res, $request, $response);
         });
     }

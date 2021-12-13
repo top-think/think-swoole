@@ -10,7 +10,7 @@ class ClearInstances implements ResetterInterface
 {
     public function handle(Container $app, Sandbox $sandbox)
     {
-        $instances = ['log'];
+        $instances = ['log', 'session', 'view', 'request', 'response', 'cookie'];
 
         $instances = array_merge($instances, $sandbox->getConfig()->get('swoole.instances', []));
 
