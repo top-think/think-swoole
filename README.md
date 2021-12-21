@@ -28,13 +28,13 @@ swoole的相关参数可以在`config/swoole.php`里面配置（具体参考配�
 如果需要使用守护进程方式运行，建议使用supervisor来管理进程
 
 ## 访问静态文件
-
+> 4.0开始协程风格服务端默认不支持静态文件访问，建议使用nginx来支持静态文件访问，也可使用路由输出文件内容，下面是示例，可参照修改
 1. 添加静态文件路由：
 
 ```php
 Route::get('static/:path', function (string $path) {
     $filename = public_path() . $path;
-    return download($filename)->force(false);
+    return new \think\swoole\response\File($filename);
 })->pattern(['path' => '.*\.\w+$']);
 ```
 
