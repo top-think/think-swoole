@@ -52,7 +52,7 @@ Route::get('static/:path', function (string $path) {
 return [
     // ...
     'queue'      => [
-        'enable'  => false,
+        'enable'  => true,
         //键名是队列名称
         'workers' => [
             //下面参数是不设置时的默认配置
