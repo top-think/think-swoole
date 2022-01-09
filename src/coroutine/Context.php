@@ -11,10 +11,10 @@ class Context
 
     /**
      * 获取协程上下文
-     * @param null $cid
+     * @param int $cid
      * @return Coroutine\Context
      */
-    public static function get($cid = null)
+    public static function get($cid = 0)
     {
         return Coroutine::getContext($cid);
     }
