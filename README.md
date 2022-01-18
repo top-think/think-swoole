@@ -73,3 +73,23 @@ return [
 ];
 
 ```
+
+## 支持`symfony/var-dumper`
+
+由于应用是通过php cli启动的，所以默认`symfony/var-dumper`会将调试信息打印在控制台, 通过配置中间件来支持将调试信息输出在网页上 如下是直接在配置在全局中间件上，也可以在路由定义的时候配置
+
+```php
+// app/middleware.php
+
+<?php
+// 全局中间件定义文件
+return [
+    // 全局请求缓存
+    // \think\middleware\CheckRequestCache::class,
+    // 多语言加载
+    // \think\middleware\LoadLangPack::class,
+    // Session初始化
+    //\think\middleware\SessionInit::class,
+    \think\swoole\middleware\InteractsWithVarDumper::class,
+];
+```
