@@ -10,7 +10,7 @@ use think\App;
 use think\swoole\Middleware;
 use think\swoole\rpc\Protocol;
 
-abstract class Proxy
+abstract class Proxy implements Service
 {
     protected $interface;
 
@@ -22,6 +22,8 @@ abstract class Proxy
 
     protected $middleware = [];
 
+    protected $context = [];
+
     final public function __construct(App $app, Gateway $gateway, $middleware)
     {
         $this->app        = $app;
@@ -31,14 +33,20 @@ abstract class Proxy
 
     final protected function proxyCall($method, $params)
     {
-        $protocol = Protocol::make($this->interface, $method, $params);
+        $protocol = Protocol::make($this->interface, $method, $params, $this->context);
 
         return Middleware::make($this->app, $this->middleware)
-            ->pipeline()
-            ->send($protocol)
-            ->then(function (Protocol $protocol) {
-                return $this->gateway->call($protocol);
-            });
+                         ->pipeline()
+                         ->send($protocol)
+                         ->then(function (Protocol $protocol) {
+                             return $this->gateway->call($protocol);
+                         });
+    }
+
+    final public function withContext($context): self
+    {
+        $this->context = $context;
+        return $this;
     }
 
     final public static function getClassName($client, $interface)
@@ -67,6 +75,9 @@ abstract class Proxy
             $reflection = new ReflectionClass($interface);
 
             foreach ($reflection->getMethods() as $methodRef) {
+                if ($methodRef->getDeclaringClass()->name == Service::class) {
+                    continue;
+                }
                 $method = (new Factory)->fromMethodReflection($methodRef);
                 $body   = "\$this->proxyCall('{$methodRef->getName()}', func_get_args());";
                 if ($method->getReturnType() != 'void') {

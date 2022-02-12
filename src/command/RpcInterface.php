@@ -10,6 +10,7 @@ use think\console\Command;
 use think\helper\Arr;
 use think\swoole\contract\rpc\ParserInterface;
 use think\swoole\rpc\client\Gateway;
+use think\swoole\rpc\client\Service;
 use think\swoole\rpc\JsonParser;
 use function Swoole\Coroutine\run;
 
@@ -43,11 +44,15 @@ class RpcInterface extends Command
 
                 $namespace = $file->addNamespace("rpc\\contract\\${name}");
 
+                $namespace->addUse(Service::class);
+
                 foreach ($result as $interface => $methods) {
 
                     $services[$name][] = $namespace->getName() . "\\{$interface}";
 
                     $class = $namespace->addInterface($interface);
+
+                    $class->addExtend(Service::class);
 
                     foreach ($methods as $methodName => ['parameters' => $parameters, 'returnType' => $returnType, 'comment' => $comment]) {
                         $method = $class->addMethod($methodName)

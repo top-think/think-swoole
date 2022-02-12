@@ -148,10 +148,10 @@ class Dispatcher
 
     /**
      * 调度
-     * @param App $app
-     * @param Connection $conn
+     * @param App          $app
+     * @param Connection   $conn
      * @param string|Error $data
-     * @param array $files
+     * @param array        $files
      */
     public function dispatch(App $app, Connection $conn, $data, $files = [])
     {
@@ -188,31 +188,74 @@ class Dispatcher
 
     protected function dispatchWithMiddleware(App $app, Protocol $protocol, $files)
     {
-        return Middleware::make($app, $this->middleware)
-            ->pipeline()
-            ->send($protocol)
-            ->then(function (Protocol $protocol) use ($app, $files) {
+        $interface = $protocol->getInterface();
+        $method    = $protocol->getMethod();
+        $params    = $protocol->getParams();
 
-                $interface = $protocol->getInterface();
-                $method    = $protocol->getMethod();
-                $params    = $protocol->getParams();
+        //文件参数
+        foreach ($params as $index => $param) {
+            if ($param === Protocol::FILE) {
+                $params[$index] = array_shift($files);
+            }
+        }
 
-                //文件参数
-                foreach ($params as $index => $param) {
-                    if ($param === Protocol::FILE) {
-                        $params[$index] = array_shift($files);
+        $service = $this->services[$interface] ?? null;
+        if (empty($service)) {
+            throw new RuntimeException(
+                sprintf('Service %s is not founded!', $interface),
+                self::METHOD_NOT_FOUND
+            );
+        }
+
+        $instance    = $app->make($service['class']);
+        $middlewares = array_merge($this->middleware, $this->getServiceMiddlewares($instance, $method));
+
+        return Middleware::make($app, $middlewares)
+                         ->pipeline()
+                         ->send($protocol)
+                         ->then(function () use ($instance, $method, $params) {
+                             return call_user_func_array([$instance, $method], $params);
+                         });
+    }
+
+    protected function getServiceMiddlewares($service, $method)
+    {
+        $middlewares = [];
+
+        $class = new ReflectionClass($service);
+
+        if ($class->hasProperty('middleware')) {
+            $reflectionProperty = $class->getProperty('middleware');
+            $reflectionProperty->setAccessible(true);
+
+            foreach ($reflectionProperty->getValue($service) as $key => $val) {
+                if (!is_int($key)) {
+                    $middleware = $key;
+                    $options    = $val;
+                } elseif (isset($val['middleware'])) {
+                    $middleware = $val['middleware'];
+                    $options    = $val['options'] ?? [];
+                } else {
+                    $middleware = $val;
+                    $options    = [];
+                }
+
+                if ((isset($options['only']) && !in_array($method, (array) $options['only'])) ||
+                    (!empty($options['except']) && in_array($method, (array) $options['except']))) {
+                    continue;
+                }
+
+                if (is_string($middleware) && strpos($middleware, ':')) {
+                    $middleware = explode(':', $middleware);
+                    if (count($middleware) > 1) {
+                        $middleware = [$middleware[0], array_slice($middleware, 1)];
                     }
                 }
 
-                $service = $this->services[$interface] ?? null;
-                if (empty($service)) {
-                    throw new RuntimeException(
-                        sprintf('Service %s is not founded!', $interface),
-                        self::METHOD_NOT_FOUND
-                    );
-                }
+                $middlewares[] = $middleware;
+            }
+        }
 
-                return call_user_func_array([$app->make($service['class']), $method], $params);
-            });
+        return $middlewares;
     }
 }
