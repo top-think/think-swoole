@@ -33,7 +33,7 @@ trait InteractsWithRpcClient
     {
         //引入rpc接口文件
         if (file_exists($rpc = $this->container->getBasePath() . 'rpc.php')) {
-            /** @noinspection PhpIncludeInspection */
+
             $rpcServices = (array) include $rpc;
 
             //绑定rpc接口
