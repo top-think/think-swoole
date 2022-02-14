@@ -25,11 +25,11 @@ trait WithRpcClient
             throw new \RuntimeException('Trait `WithRpcClient` only can be used in Command');
         }
         parent::__construct();
-        $this->bindRpcInterface();
     }
 
     protected function execute(Input $input, Output $output)
     {
+        $this->bindRpcInterface();
         run(function () {
             $this->app->invoke([$this, 'handle']);
         });
@@ -45,7 +45,7 @@ trait WithRpcClient
             try {
                 foreach ($rpcServices as $name => $abstracts) {
 
-                    $config = $this->app->config->get("rpc.client.{$name}", []);
+                    $config = $this->app->config->get("swoole.rpc.client.{$name}", []);
 
                     $parserClass = Arr::pull($config, 'parser', JsonParser::class);
                     $parser      = $this->app->make($parserClass);
