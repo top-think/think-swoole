@@ -6,6 +6,7 @@ use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
+use think\App;
 use think\Container;
 use think\Cookie;
 use think\Event;
@@ -13,7 +14,8 @@ use think\exception\Handle;
 use think\helper\Arr;
 use think\helper\Str;
 use think\Http;
-use think\swoole\App;
+use think\swoole\App as SwooleApp;
+use think\swoole\Http as SwooleHttp;
 use think\swoole\response\File as FileResponse;
 use Throwable;
 use function substr;
@@ -21,15 +23,17 @@ use function substr;
 /**
  * Trait InteractsWithHttp
  * @package think\swoole\concerns
- * @property App $app
+ * @property App       $app
  * @property Container $container
  */
 trait InteractsWithHttp
 {
-    use InteractsWithWebsocket;
+    use InteractsWithWebsocket, ModifyProperty;
 
     public function createHttpServer()
     {
+        $this->preloadHttp();
+
         $host    = $this->getConfig('http.host');
         $port    = $this->getConfig('http.port');
         $options = $this->getConfig('http.options', []);
@@ -46,6 +50,38 @@ trait InteractsWithHttp
         });
 
         $server->start();
+    }
+
+    protected function preloadHttp()
+    {
+        $http = $this->app->http;
+        $this->app->invokeMethod([$http, 'loadMiddleware'], [], true);
+
+        $middleware = clone $this->app->middleware;
+        $this->modifyProperty($middleware, null);
+        unset($this->app->middleware);
+
+        $this->app->resolving(SwooleHttp::class, function ($http, App $app) use ($middleware) {
+            $newMiddleware = clone $middleware;
+            $this->modifyProperty($newMiddleware, $app);
+            $app->instance('middleware', $newMiddleware);
+        });
+
+        if ($this->app->config->get('app.with_route', true)) {
+            $this->app->invokeMethod([$http, 'loadRoutes'], [], true);
+            $route = clone $this->app->route;
+            $this->modifyProperty($route, null);
+            unset($this->app->route);
+
+            $this->app->resolving(SwooleHttp::class, function ($http, App $app) use ($route) {
+                $newRoute = clone $route;
+                $this->modifyProperty($newRoute, $app);
+                $app->instance('route', $newRoute);
+            });
+        }
+
+        unset($this->app->http);
+        $this->app->bind(Http::class, SwooleHttp::class);
     }
 
     protected function isWebsocketRequest(Request $req)
@@ -74,12 +110,12 @@ trait InteractsWithHttp
     /**
      * "onRequest" listener.
      *
-     * @param Request $req
+     * @param Request  $req
      * @param Response $res
      */
     public function onRequest($req, $res)
     {
-        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, App $app) use ($req, $res) {
+        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, SwooleApp $app) use ($req, $res) {
             $app->setInConsole(false);
 
             $request = $this->prepareRequest($req);

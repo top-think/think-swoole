@@ -11,7 +11,6 @@ use think\App;
 use think\Config;
 use think\Container;
 use think\Event;
-use think\Http;
 use think\Model;
 use think\swoole\App as SwooleApp;
 use think\swoole\concerns\ModifyProperty;
@@ -70,8 +69,6 @@ class Sandbox
         Container::setInstance(function () {
             return $this->getApplication();
         });
-
-        $this->app->bind(Http::class, \think\swoole\Http::class);
 
         $this->setInitialConfig();
         $this->setInitialServices();
