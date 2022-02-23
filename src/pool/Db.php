@@ -28,13 +28,4 @@ class Db extends \think\Db
         }, $this->config->get('swoole.pool.db', []));
     }
 
-    protected function getConnectionConfig(string $name): array
-    {
-        $config = parent::getConnectionConfig($name);
-
-        //打开断线重连
-        $config['break_reconnect'] = true;
-        return $config;
-    }
-
 }

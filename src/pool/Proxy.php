@@ -3,23 +3,27 @@
 namespace think\swoole\pool;
 
 use Closure;
+use Exception;
 use RuntimeException;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\ConnectorInterface;
 use Swoole\Coroutine;
 use think\swoole\coroutine\Context;
 use think\swoole\Pool;
+use Throwable;
 
 abstract class Proxy
 {
     const KEY_RELEASED = '__released';
+
+    const KEY_DISCONNECTED = '__disconnected';
 
     protected $pool;
 
     /**
      * Proxy constructor.
      * @param Closure|ConnectorInterface $connector
-     * @param array $config
+     * @param array                      $config
      */
     public function __construct($connector, $config, array $connectionConfig = [])
     {
@@ -74,7 +78,12 @@ abstract class Proxy
             throw new RuntimeException('Connection already has been released!');
         }
 
-        return $connection->{$method}(...$arguments);
+        try {
+            return $connection->{$method}(...$arguments);
+        } catch (Exception|Throwable $e) {
+            $connection->{static::KEY_DISCONNECTED} = true;
+            throw $e;
+        }
     }
 
 }
