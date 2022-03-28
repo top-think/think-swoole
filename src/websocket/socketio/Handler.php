@@ -23,8 +23,8 @@ class Handler implements HandlerInterface
 
     protected $eio;
 
-    protected $pingTimeoutTimer  = null;
-    protected $pingIntervalTimer = null;
+    protected $pingTimeoutTimer  = 0;
+    protected $pingIntervalTimer = 0;
 
     protected $pingInterval;
     protected $pingTimeout;
