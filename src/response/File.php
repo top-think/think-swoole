@@ -22,7 +22,7 @@ class File extends Response
      */
     protected $file;
 
-    public function __construct($file, string $contentDisposition = null, bool $autoEtag = false, bool $autoLastModified = true, bool $autoContentType = true)
+    public function __construct($file, string $contentDisposition = null, bool $autoEtag = true, bool $autoLastModified = true, bool $autoContentType = true)
     {
         $this->setFile($file, $contentDisposition, $autoEtag, $autoLastModified, $autoContentType);
     }
@@ -32,7 +32,7 @@ class File extends Response
         return $this->file;
     }
 
-    public function setFile($file, string $contentDisposition = null, bool $autoEtag = false, bool $autoLastModified = true, bool $autoContentType = true)
+    public function setFile($file, string $contentDisposition = null, bool $autoEtag = true, bool $autoLastModified = true, bool $autoContentType = true)
     {
         if (!$file instanceof SplFileInfo) {
             $file = new SplFileInfo((string) $file);
@@ -94,7 +94,9 @@ class File extends Response
 
     public function setAutoEtag()
     {
-        return $this->eTag(base64_encode(hash_file('sha256', $this->file->getPathname(), true)));
+        $eTag = "W/\"" . sha1_file($this->file->getPathname()) . "\"";
+
+        return $this->eTag($eTag);
     }
 
     protected function sendData(string $data): void

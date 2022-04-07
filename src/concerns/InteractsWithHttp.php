@@ -219,15 +219,21 @@ trait InteractsWithHttp
 
     protected function sendFile(Response $res, \think\Request $request, FileResponse $response)
     {
-        $code     = $response->getCode();
-        $ifRange  = $request->header('If-Range');
-        $file     = $response->getFile();
+        $ifNoneMatch = $request->header('If-None-Match');
+        $ifRange     = $request->header('If-Range');
+
+        $code         = $response->getCode();
+        $file         = $response->getFile();
+        $eTag         = $response->getHeader('ETag');
+        $lastModified = $response->getHeader('Last-Modified');
+
         $fileSize = $file->getSize();
+        $offset   = 0;
+        $length   = -1;
 
-        $offset = 0;
-        $maxlen = -1;
-
-        if (!$ifRange || $ifRange === $response->getHeader('ETag') || $ifRange === $response->getHeader('Last-Modified')) {
+        if ($ifNoneMatch == $eTag) {
+            $code = 304;
+        } elseif (!$ifRange || $ifRange === $eTag || $ifRange === $lastModified) {
             $range = $request->header('Range', '');
             if (Str::startsWith($range, 'bytes=')) {
                 [$start, $end] = explode('-', substr($range, 6), 2) + [0];
@@ -249,7 +255,7 @@ trait InteractsWithHttp
                             'Content-Range' => sprintf('bytes */%s', $fileSize),
                         ]);
                     } elseif ($end - $start < $fileSize - 1) {
-                        $maxlen = $end < $fileSize ? $end - $start + 1 : -1;
+                        $length = $end < $fileSize ? $end - $start + 1 : -1;
                         $offset = $start;
                         $code   = 206;
                         $response->header([
@@ -264,8 +270,8 @@ trait InteractsWithHttp
         $this->setStatus($res, $code);
         $this->setHeader($res, $response->getHeader());
 
-        if ($code >= 200 && $code < 300 && $maxlen !== 0) {
-            $res->sendfile($file->getPathname(), $offset, $maxlen);
+        if ($code >= 200 && $code < 300 && $length !== 0) {
+            $res->sendfile($file->getPathname(), $offset, $length);
         } else {
             $res->end();
         }
