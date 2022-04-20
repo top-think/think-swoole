@@ -2,7 +2,6 @@
 
 namespace think\swoole\middleware;
 
-use Swoole\Coroutine;
 use think\swoole\rpc\Protocol;
 use think\tracing\Tracer;
 use Throwable;
@@ -41,10 +40,7 @@ class TraceRpcServer
             throw $e;
         } finally {
             $scope->close();
-
-            Coroutine::defer(function () {
-                $this->tracer->flush();
-            });
+            $this->tracer->flush();
         }
     }
 }

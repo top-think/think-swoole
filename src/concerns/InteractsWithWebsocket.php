@@ -10,7 +10,6 @@ use Swoole\Http\Response;
 use Swoole\WebSocket\CloseFrame;
 use Swoole\WebSocket\Frame;
 use think\App;
-use think\Container;
 use think\helper\Str;
 use think\swoole\contract\websocket\HandlerInterface;
 use think\swoole\contract\websocket\RoomInterface;
@@ -24,7 +23,7 @@ use think\swoole\websocket\Room;
  * @package think\swoole\concerns
  *
  * @property App $app
- * @property Container $container
+ * @property App $container
  */
 trait InteractsWithWebsocket
 {
@@ -98,7 +97,7 @@ trait InteractsWithWebsocket
                             $frame->finish = false;
                         }
 
-                        $frame->data .= $recv->data;
+                        $frame->data   .= $recv->data;
                         $frame->finish = $recv->finish;
 
                         if ($frame->finish) {

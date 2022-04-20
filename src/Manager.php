@@ -18,6 +18,7 @@ use think\swoole\concerns\InteractsWithRpcClient;
 use think\swoole\concerns\InteractsWithRpcServer;
 use think\swoole\concerns\InteractsWithServer;
 use think\swoole\concerns\InteractsWithSwooleTable;
+use think\swoole\concerns\InteractsWithTracing;
 use think\swoole\concerns\WithApplication;
 use think\swoole\concerns\WithContainer;
 
@@ -33,6 +34,7 @@ class Manager
         InteractsWithRpcClient,
         InteractsWithRpcServer,
         InteractsWithQueue,
+        InteractsWithTracing,
         WithContainer,
         WithApplication;
 
@@ -47,6 +49,7 @@ class Manager
         $this->prepareRpcServer();
         $this->prepareQueue();
         $this->prepareRpcClient();
+        $this->prepareTracing();
     }
 
 }

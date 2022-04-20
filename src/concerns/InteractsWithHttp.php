@@ -7,7 +7,6 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Status;
 use think\App;
-use think\Container;
 use think\Cookie;
 use think\Event;
 use think\exception\Handle;
@@ -23,8 +22,8 @@ use function substr;
 /**
  * Trait InteractsWithHttp
  * @package think\swoole\concerns
- * @property App       $app
- * @property Container $container
+ * @property App $app
+ * @property App $container
  */
 trait InteractsWithHttp
 {
@@ -110,7 +109,7 @@ trait InteractsWithHttp
     /**
      * "onRequest" listener.
      *
-     * @param Request  $req
+     * @param Request $req
      * @param Response $res
      */
     public function onRequest($req, $res)
