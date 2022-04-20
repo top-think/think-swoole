@@ -19,13 +19,8 @@ trait InteractsWithTracing
     protected function prepareTracing()
     {
         if (class_exists(Tracer::class)) {
-            $this->onEvent('workerStart', function () {
-                $this->bindTracingRedisPool();
-                $this->bindTracingRedisReporter();
-            });
-
-            $tracers = $this->container->config->get('tracing.tracers');
-
+            $tracers  = $this->container->config->get('tracing.tracers');
+            $hasAsync = false;
             foreach ($tracers as $name => $tracer) {
                 if (Arr::get($tracer, 'async', false)) {
                     $this->addWorker(function () use ($name) {
@@ -33,7 +28,15 @@ trait InteractsWithTracing
 
                         $tracer->report();
                     }, "tracing [{$name}]");
+                    $hasAsync = true;
                 }
+            }
+
+            if ($hasAsync) {
+                $this->onEvent('workerStart', function () {
+                    $this->bindTracingRedisPool();
+                    $this->bindTracingRedisReporter();
+                });
             }
         }
     }
