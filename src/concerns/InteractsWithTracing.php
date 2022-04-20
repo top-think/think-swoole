@@ -49,7 +49,6 @@ trait InteractsWithTracing
 
             $redis = Context::rememberData('tracing.redis', function () use ($pool) {
                 $redis = $pool->borrow();
-                dump(888);
                 Coroutine::defer(function () use ($pool, $redis) {
                     $pool->return($redis);
                 });
