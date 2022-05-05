@@ -86,8 +86,8 @@ trait InteractsWithHttp
     protected function isWebsocketRequest(Request $req)
     {
         $header = $req->header;
-        return strcasecmp(Arr::get($header, 'connection'), 'upgrade') === 0 &&
-            strcasecmp(Arr::get($header, 'upgrade'), 'websocket') === 0;
+        return strcasecmp(Arr::get($header, 'connection', ''), 'upgrade') === 0 &&
+            strcasecmp(Arr::get($header, 'upgrade', ''), 'websocket') === 0;
     }
 
     protected function prepareHttp()
