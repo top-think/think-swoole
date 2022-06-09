@@ -136,7 +136,10 @@ trait InteractsWithServer
      */
     protected function addHotUpdateProcess()
     {
-        $this->addWorker(function (Process\Pool $pool, Watcher $watcher) {
+        $this->addWorker(function (Process\Pool $pool) {
+
+            $watcher = $this->container->make(Watcher::class);
+
             $watcher->watch(function () use ($pool) {
                 Process::kill($pool->master_pid, SIGUSR1);
             });
