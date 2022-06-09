@@ -1,12 +1,12 @@
 <?php
 
-namespace think\swoole;
+namespace think\swoole\watcher;
 
 use Swoole\Timer;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
 
-class FileWatcher
+class Scan implements Driver
 {
     protected $finder;
 
@@ -38,7 +38,7 @@ class FileWatcher
     {
         $this->files = $this->findFiles();
 
-        Timer::tick(1000, function () use ($callback) {
+        Timer::tick(2000, function () use ($callback) {
 
             $files = $this->findFiles();
 

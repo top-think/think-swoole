@@ -9,7 +9,7 @@ use Swoole\Process;
 use Swoole\Process\Pool;
 use Swoole\Runtime;
 use think\App;
-use think\swoole\FileWatcher;
+use think\swoole\Watcher;
 
 /**
  * Trait InteractsWithServer
@@ -136,13 +136,7 @@ trait InteractsWithServer
      */
     protected function addHotUpdateProcess()
     {
-        $this->addWorker(function (Process\Pool $pool) {
-            $watcher = new FileWatcher(
-                $this->getConfig('hot_update.include', []),
-                $this->getConfig('hot_update.exclude', []),
-                $this->getConfig('hot_update.name', [])
-            );
-
+        $this->addWorker(function (Process\Pool $pool, Watcher $watcher) {
             $watcher->watch(function () use ($pool) {
                 Process::kill($pool->master_pid, SIGUSR1);
             });
