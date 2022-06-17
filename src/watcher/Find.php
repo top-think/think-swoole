@@ -2,13 +2,9 @@
 
 namespace think\swoole\watcher;
 
-use ArrayIterator;
 use InvalidArgumentException;
-use SplFileInfo;
 use Swoole\Coroutine\System;
 use Swoole\Timer;
-use Symfony\Component\Finder\Iterator\ExcludeDirectoryFilterIterator;
-use Symfony\Component\Finder\Iterator\FilenameFilterIterator;
 use think\helper\Str;
 
 class Find implements Driver
@@ -41,23 +37,36 @@ class Find implements Driver
 
         $dest = implode(' ', $this->directory);
 
-        Timer::tick($ms, function () use ($callback, $minutes, $dest) {
-            $ret = System::exec('find ' . $dest . ' -mmin ' . $minutes . ' -type f -print');
+        $name    = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn($v) => "-name \"{$v}\"", $this->name)) . ' \)';
+        $notName = '';
+        $notPath = '';
+        if (!empty($this->exclude)) {
+            $excludeDirs = $excludeFiles = [];
+            foreach ($this->exclude as $directory) {
+                $directory = rtrim($directory, '/');
+                if (is_dir($directory)) {
+                    $excludeDirs[] = $directory;
+                } else {
+                    $excludeFiles[] = $directory;
+                }
+            }
+
+            if (!empty($excludeFiles)) {
+                $notPath = ' -not \( ' . join(' -and ', array_map(fn($v) => "-name \"{$v}\"", $excludeFiles)) . ' \)';
+            }
+
+            if (!empty($excludeDirs)) {
+                $notPath = ' -not \( ' . join(' -and ', array_map(fn($v) => "-path \"{$v}/*\"", $excludeDirs)) . ' \)';
+            }
+        }
+
+        $command = "find {$dest}{$name}{$notName}{$notPath} -mmin {$minutes} -type f -print";
+
+        Timer::tick($ms, function () use ($callback, $command) {
+            $ret = System::exec($command);
             if ($ret['code'] === 0 && strlen($ret['output'])) {
                 $stdout = trim($ret['output']);
-
-                $files = explode(PHP_EOL, $stdout);
-
-                $iterator = new ArrayIterator();
-                foreach ($files as $file) {
-                    $file = new SplFileInfo($file);
-
-                    $iterator[$file->getPathname()] = $file;
-                }
-                $iterator = new ExcludeDirectoryFilterIterator($iterator, $this->exclude);
-                $iterator = new FilenameFilterIterator($iterator, $this->name, []);
-
-                if (iterator_count($iterator) > 0) {
+                if (!empty($stdout)) {
                     call_user_func($callback);
                 }
             }
