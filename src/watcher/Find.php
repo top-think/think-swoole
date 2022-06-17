@@ -37,7 +37,7 @@ class Find implements Driver
 
         $dest = implode(' ', $this->directory);
 
-        $name    = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn($v) => "-name \"{$v}\"", $this->name)) . ' \)';
+        $name    = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn ($v) => "-name \"{$v}\"", $this->name)) . ' \)';
         $notName = '';
         $notPath = '';
         if (!empty($this->exclude)) {
@@ -52,11 +52,11 @@ class Find implements Driver
             }
 
             if (!empty($excludeFiles)) {
-                $notPath = ' -not \( ' . join(' -and ', array_map(fn($v) => "-name \"{$v}\"", $excludeFiles)) . ' \)';
+                $notPath = ' -not \( ' . join(' -and ', array_map(fn ($v) => "-name \"{$v}\"", $excludeFiles)) . ' \)';
             }
 
             if (!empty($excludeDirs)) {
-                $notPath = ' -not \( ' . join(' -and ', array_map(fn($v) => "-path \"{$v}/*\"", $excludeDirs)) . ' \)';
+                $notPath = ' -not \( ' . join(' -and ', array_map(fn ($v) => "-path \"{$v}/*\"", $excludeDirs)) . ' \)';
             }
         }
 
