@@ -81,6 +81,11 @@ trait InteractsWithWebsocket
                 });
 
                 $this->runWithBarrier(function () use ($handler, $res) {
+
+                    $cid      = Coroutine::getCid();
+                    $messages = 0;
+                    $wait     = false;
+
                     $frame = null;
                     while (true) {
                         /** @var Frame|false|string $recv */
@@ -97,13 +102,28 @@ trait InteractsWithWebsocket
                             $frame->finish = false;
                         }
 
-                        $frame->data .= $recv->data;
+                        $frame->data   .= $recv->data;
                         $frame->finish = $recv->finish;
 
                         if ($frame->finish) {
-                            Coroutine::create([$handler, 'onMessage'], $frame);
+                            Coroutine::create(function () use (&$wait, &$messages, $cid, $frame, $handler) {
+                                ++$messages;
+                                Coroutine::defer(function () use (&$wait, &$messages, $cid) {
+                                    --$messages;
+                                    if ($wait) {
+                                        Coroutine::resume($cid);
+                                    }
+                                });
+                                $handler->onMessage($frame);
+                            });
                             $frame = null;
                         }
+                    }
+
+                    //等待消息执行完毕
+                    while ($messages > 0) {
+                        $wait = true;
+                        Coroutine::yield();
                     }
                 });
 
