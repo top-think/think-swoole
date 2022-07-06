@@ -3,9 +3,11 @@
 namespace think\swoole;
 
 use Closure;
+use Exception;
 use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
+use Swoole\Coroutine;
 use think\App;
 use think\Config;
 use think\Container;
@@ -66,7 +68,18 @@ class Sandbox
     protected function initialize()
     {
         Container::setInstance(function () {
-            return $this->getApplication();
+            try {
+                return $this->getApplication();
+            } catch (Throwable $e) { //协程逃逸处理
+                try {
+                    $cid = Coroutine::getCid();
+                    $this->init();
+                    return $this->snapshots[$cid];
+                } finally { //防止逃逸snapshot内存泄漏
+                    $this->clear();
+                }
+            }
+
         });
 
         $this->app->bind(Http::class, \think\swoole\Http::class);
@@ -135,22 +148,37 @@ class Sandbox
         throw new InvalidArgumentException('The app object has not been initialized');
     }
 
-    protected function getSnapshotId()
+    protected function getSnapshotId($init=false)
     {
         if ($fd = Context::getData('_fd')) {
             return 'fd_' . $fd;
         }
+        if ($init) {
+            Coroutine::getContext()->offsetSet('#root', true);
+            return Coroutine::getCid();
+        } else {
+            $cid = Coroutine::getCid();
+            while (!(Coroutine::getContext($cid)->offsetExists('#root'))) {
+                $cid = Coroutine::getPcid($cid);
+                if (Coroutine::getContext($cid) == null) {
+                    throw new Exception("发现逃逸协程:$cid");
+                }
+                if ($cid < 1) {
+                    break;
+                }
+            }
+            return $cid;
+        }
 
-        return Context::getCoroutineId();
     }
 
     /**
      * Get current snapshot.
      * @return App|null
      */
-    public function getSnapshot()
+    public function getSnapshot($init = false)
     {
-        return $this->snapshots[$this->getSnapshotId()] ?? null;
+        return $this->snapshots[$this->getSnapshotId($init)] ?? null;
     }
 
     public function setSnapshot(Container $snapshot)
