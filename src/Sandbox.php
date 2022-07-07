@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
 use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use think\App;
 use think\Config;
 use think\Container;
@@ -46,9 +47,11 @@ class Sandbox
     /** @var ResetterInterface[] */
     protected $resetters = [];
     protected $services  = [];
+    protected $ch;
 
     public function __construct(Container $app)
     {
+        $this->ch = new Channel();
         $this->setBaseApp($app);
         $this->initialize();
     }
@@ -117,15 +120,13 @@ class Sandbox
 
     public function clear($snapshot = true)
     {
-        if ($snapshot && $this->getSnapshot()) {
+        if ($snapshot && $s=$this->getSnapshot()) {
+            /**
+             * 增加动态超时时间控制.如果你觉得该请求会执行比较长的时间，在控制器入口处request()->gc_timeout=60,默认10s
+             */
+            $timeout = $s->make('request')->gc_timeout ?? 10;
+            $this->ch->pop($timeout);
             unset($this->snapshots[$this->getSnapshotId()]);
-
-            // 垃圾回收
-            $divisor     = $this->config->get('swoole.gc.divisor', 100);
-            $probability = $this->config->get('swoole.gc.probability', 1);
-            if (random_int(1, $divisor) <= $probability) {
-                gc_collect_cycles();
-            }
         }
 
         Context::clear();
