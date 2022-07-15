@@ -3,13 +3,13 @@
 namespace think\swoole\concerns;
 
 use Closure;
-use Throwable;
 use think\App;
 use think\swoole\App as SwooleApp;
 use think\swoole\Manager;
-use think\swoole\Sandbox;
 use think\swoole\pool\Cache;
 use think\swoole\pool\Db;
+use think\swoole\Sandbox;
+use Throwable;
 
 /**
  * Trait WithApplication
@@ -41,6 +41,7 @@ trait WithApplication
                 $this->app->bind('cache', Cache::class);
             }
             $this->app->initialize();
+            $this->app->instance('request', $this->container->request);
             $this->prepareConcretes();
         }
     }

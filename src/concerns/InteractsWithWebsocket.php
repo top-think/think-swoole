@@ -103,6 +103,7 @@ trait InteractsWithWebsocket
                         }
 
                         $frame->data .= $recv->data;
+
                         $frame->finish = $recv->finish;
 
                         if ($frame->finish) {
