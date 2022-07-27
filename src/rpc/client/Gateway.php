@@ -86,7 +86,7 @@ class Gateway
                 } catch (RpcResponseException $e) {
                     return $e;
                 }
-            }, 2);
+            }, $this->tries);
 
             if ($result instanceof RpcResponseException) {
                 throw $result;
