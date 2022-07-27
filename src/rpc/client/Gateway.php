@@ -25,18 +25,21 @@ class Gateway
     /** @var ParserInterface */
     protected $parser;
 
+    protected $tries;
+
     /**
      * Gateway constructor.
      * @param Connector|array $connector
      * @param ParserInterface $parser
      */
-    public function __construct($connector, ParserInterface $parser)
+    public function __construct($connector, ParserInterface $parser, $tries = 2)
     {
         if (is_array($connector)) {
             $connector = $this->createDefaultConnector($connector);
         }
         $this->connector = $connector;
         $this->parser    = $parser;
+        $this->tries     = $tries;
     }
 
     protected function encodeData(Protocol $protocol)
@@ -76,18 +79,23 @@ class Gateway
 
     public function call(Protocol $protocol)
     {
-        $result = backoff(function () use ($protocol) {
-            try {
-                return $this->sendAndRecv($this->encodeData($protocol));
-            } catch (RpcResponseException $e) {
-                return $e;
-            }
-        }, 2);
+        if ($this->tries > 1) {
+            $result = backoff(function () use ($protocol) {
+                try {
+                    return $this->sendAndRecv($this->encodeData($protocol));
+                } catch (RpcResponseException $e) {
+                    return $e;
+                }
+            }, 2);
 
-        if ($result instanceof RpcResponseException) {
-            throw $result;
+            if ($result instanceof RpcResponseException) {
+                throw $result;
+            }
+
+            return $result;
+        } else {
+            return $this->sendAndRecv($this->encodeData($protocol));
         }
-        return $result;
     }
 
     public function getServices()
