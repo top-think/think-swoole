@@ -132,11 +132,13 @@ class Gateway
                 if (!$this->isConnected()) {
                     $client = new Client(SWOOLE_SOCK_TCP);
 
-                    $host    = Arr::pull($this->config, 'host');
-                    $port    = Arr::pull($this->config, 'port');
-                    $timeout = Arr::pull($this->config, 'timeout', 5);
+                    $config = $this->config;
 
-                    $client->set($this->config);
+                    $host    = Arr::pull($config, 'host');
+                    $port    = Arr::pull($config, 'port');
+                    $timeout = Arr::pull($config, 'timeout', 5);
+
+                    $client->set($config);
 
                     if (!$client->connect($host, $port, $timeout)) {
                         throw new RpcClientException(
