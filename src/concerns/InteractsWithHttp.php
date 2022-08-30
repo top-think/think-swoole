@@ -56,16 +56,6 @@ trait InteractsWithHttp
         $http = $this->app->http;
         $this->app->invokeMethod([$http, 'loadMiddleware'], [], true);
 
-        $middleware = clone $this->app->middleware;
-        $this->modifyProperty($middleware, null);
-        unset($this->app->middleware);
-
-        $this->app->resolving(SwooleHttp::class, function ($http, App $app) use ($middleware) {
-            $newMiddleware = clone $middleware;
-            $this->modifyProperty($newMiddleware, $app);
-            $app->instance('middleware', $newMiddleware);
-        });
-
         if ($this->app->config->get('app.with_route', true)) {
             $this->app->invokeMethod([$http, 'loadRoutes'], [], true);
             $route = clone $this->app->route;
@@ -78,6 +68,16 @@ trait InteractsWithHttp
                 $app->instance('route', $newRoute);
             });
         }
+        
+        $middleware = clone $this->app->middleware;
+        $this->modifyProperty($middleware, null);
+        unset($this->app->middleware);
+
+        $this->app->resolving(SwooleHttp::class, function ($http, App $app) use ($middleware) {
+            $newMiddleware = clone $middleware;
+            $this->modifyProperty($newMiddleware, $app);
+            $app->instance('middleware', $newMiddleware);
+        });
 
         unset($this->app->http);
         $this->app->bind(Http::class, SwooleHttp::class);
