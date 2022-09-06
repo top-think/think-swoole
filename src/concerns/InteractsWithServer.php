@@ -103,6 +103,15 @@ trait InteractsWithServer
     {
         return $this->workerId;
     }
+    
+    /**
+     * 获取当前工作进程池对象
+     * @return Pool
+     */
+    public function getPool()
+    {
+        return $this->pool;
+    }
 
     public function sendMessage($workerId, $message)
     {
