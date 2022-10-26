@@ -2,13 +2,13 @@
 
 namespace think\swoole\resetters;
 
-use think\Container;
+use think\App;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\Sandbox;
 
 class ClearInstances implements ResetterInterface
 {
-    public function handle(Container $app, Sandbox $sandbox)
+    public function handle(App $app, Sandbox $sandbox)
     {
         $instances = ['log', 'session', 'view', 'response', 'cookie'];
 
