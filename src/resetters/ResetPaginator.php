@@ -12,13 +12,13 @@ class ResetPaginator implements ResetterInterface
 
     public function handle(App $app, Sandbox $sandbox)
     {
-        Paginator::currentPathResolver(function () use ($app) {
-            return $app->request->baseUrl();
+        Paginator::currentPathResolver(function () use ($sandbox) {
+            return $sandbox->getApplication()->request->baseUrl();
         });
 
-        Paginator::currentPageResolver(function ($varPage = 'page') use ($app) {
+        Paginator::currentPageResolver(function ($varPage = 'page') use ($sandbox) {
 
-            $page = $app->request->param($varPage);
+            $page = $sandbox->getApplication()->request->param($varPage);
 
             if (filter_var($page, FILTER_VALIDATE_INT) !== false && (int) $page >= 1) {
                 return (int) $page;
