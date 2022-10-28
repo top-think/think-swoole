@@ -68,7 +68,7 @@ trait InteractsWithHttp
                 $app->instance('route', $newRoute);
             });
         }
-        
+
         $middleware = clone $this->app->middleware;
         $this->modifyProperty($middleware, null);
         unset($this->app->middleware);
@@ -177,11 +177,33 @@ trait InteractsWithHttp
             ->withGet($req->get ?: [])
             ->withPost($req->post ?: [])
             ->withCookie($req->cookie ?: [])
-            ->withFiles($req->files ?: [])
+            ->withFiles($this->getFiles($req))
             ->withInput($req->rawContent())
             ->setBaseUrl($req->server['request_uri'])
             ->setUrl($req->server['request_uri'] . (!empty($req->server['query_string']) ? '?' . $req->server['query_string'] : ''))
             ->setPathinfo(ltrim($req->server['path_info'], '/'));
+    }
+
+    protected function getFiles(Request $req)
+    {
+        if (empty($req->files)) {
+            return [];
+        }
+
+        return array_map(function ($file) {
+            if (!Arr::isAssoc($file)) {
+                $files = [];
+                foreach ($file as $f) {
+                    $files['name'][]     = $f['name'];
+                    $files['type'][]     = $f['type'];
+                    $files['tmp_name'][] = $f['tmp_name'];
+                    $files['error'][]    = $f['error'];
+                    $files['size'][]     = $f['size'];
+                }
+                return $files;
+            }
+            return $file;
+        }, $req->files);
     }
 
     protected function setCookie(Response $res, Cookie $cookie)
