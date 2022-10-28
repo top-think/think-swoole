@@ -3,9 +3,12 @@
 namespace think\swoole;
 
 use Closure;
+use Exception;
 use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Channel;
 use think\App;
 use think\Config;
 use think\Container;
@@ -44,9 +47,11 @@ class Sandbox
     /** @var ResetterInterface[] */
     protected $resetters = [];
     protected $services  = [];
+    protected $ch;
 
     public function __construct(Container $app)
     {
+        $this->ch = new Channel();
         $this->setBaseApp($app);
         $this->initialize();
     }
@@ -66,7 +71,18 @@ class Sandbox
     protected function initialize()
     {
         Container::setInstance(function () {
-            return $this->getApplication();
+            try {
+                return $this->getApplication();
+            } catch (Throwable $e) { //协程逃逸处理
+                try {
+                    $cid = Coroutine::getCid();
+                    $this->init();
+                    return $this->snapshots[$cid];
+                } finally { //防止逃逸snapshot内存泄漏
+                    $this->clear();
+                }
+            }
+
         });
 
         $this->app->bind(Http::class, \think\swoole\Http::class);
@@ -104,15 +120,13 @@ class Sandbox
 
     public function clear($snapshot = true)
     {
-        if ($snapshot && $this->getSnapshot()) {
+        if ($snapshot && $s=$this->getSnapshot()) {
+            /**
+             * 增加动态超时时间控制.如果你觉得该请求会执行比较长的时间，在控制器入口处request()->gc_timeout=60,默认10s
+             */
+            $timeout = $s->make('request')->gc_timeout ?? 10;
+            $this->ch->pop($timeout);
             unset($this->snapshots[$this->getSnapshotId()]);
-
-            // 垃圾回收
-            $divisor     = $this->config->get('swoole.gc.divisor', 100);
-            $probability = $this->config->get('swoole.gc.probability', 1);
-            if (random_int(1, $divisor) <= $probability) {
-                gc_collect_cycles();
-            }
         }
 
         Context::clear();
@@ -135,22 +149,37 @@ class Sandbox
         throw new InvalidArgumentException('The app object has not been initialized');
     }
 
-    protected function getSnapshotId()
+    protected function getSnapshotId($init=false)
     {
         if ($fd = Context::getData('_fd')) {
             return 'fd_' . $fd;
         }
+        if ($init) {
+            Coroutine::getContext()->offsetSet('#root', true);
+            return Coroutine::getCid();
+        } else {
+            $cid = Coroutine::getCid();
+            while (!(Coroutine::getContext($cid)->offsetExists('#root'))) {
+                $cid = Coroutine::getPcid($cid);
+                if (Coroutine::getContext($cid) == null) {
+                    throw new Exception("发现逃逸协程:$cid");
+                }
+                if ($cid < 1) {
+                    break;
+                }
+            }
+            return $cid;
+        }
 
-        return Context::getCoroutineId();
     }
 
     /**
      * Get current snapshot.
      * @return App|null
      */
-    public function getSnapshot()
+    public function getSnapshot($init = false)
     {
-        return $this->snapshots[$this->getSnapshotId()] ?? null;
+        return $this->snapshots[$this->getSnapshotId($init)] ?? null;
     }
 
     public function setSnapshot(Container $snapshot)
