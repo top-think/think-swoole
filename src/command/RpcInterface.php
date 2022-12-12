@@ -42,7 +42,7 @@ class RpcInterface extends Command
 
                 $result = $gateway->getServices();
 
-                $namespace = $file->addNamespace("rpc\\contract\\${name}");
+                $namespace = $file->addNamespace("rpc\\contract\\{$name}");
 
                 $namespace->addUse(Service::class);
 
