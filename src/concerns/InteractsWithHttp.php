@@ -2,6 +2,7 @@
 
 namespace think\swoole\concerns;
 
+use Swoole\Coroutine;
 use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -114,21 +115,23 @@ trait InteractsWithHttp
      */
     public function onRequest($req, $res)
     {
-        $this->runWithBarrier([$this, 'runInSandbox'], function (Http $http, Event $event, SwooleApp $app) use ($req, $res) {
-            $app->setInConsole(false);
+        Coroutine::create(function () use ($req, $res) {
+            $this->runInSandbox(function (Http $http, Event $event, SwooleApp $app) use ($req, $res) {
+                $app->setInConsole(false);
 
-            $request = $this->prepareRequest($req);
+                $request = $this->prepareRequest($req);
 
-            try {
-                $response = $this->handleRequest($http, $request);
-            } catch (Throwable $e) {
-                $response = $this->app
-                    ->make(Handle::class)
-                    ->render($request, $e);
-            }
+                try {
+                    $response = $this->handleRequest($http, $request);
+                } catch (Throwable $e) {
+                    $response = $this->app
+                        ->make(Handle::class)
+                        ->render($request, $e);
+                }
 
-            $this->setCookie($res, $app->cookie);
-            $this->sendResponse($res, $request, $response);
+                $this->setCookie($res, $app->cookie);
+                $this->sendResponse($res, $request, $response);
+            });
         });
     }
 
