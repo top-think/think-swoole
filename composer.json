@@ -1,5 +1,5 @@
 {
-  "name": "topthink/think-swoole",
+  "name": "nature6016/think-swoole",
   "description": "Swoole extend for thinkphp5.1",
   "license": "Apache-2.0",
   "type": "think-extend",
