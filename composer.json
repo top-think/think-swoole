@@ -1,11 +1,11 @@
 {
-    "name": "topthink/think-swoole",
+    "name": "nature6016/think-swoole",
     "description": "Swoole extend for thinkphp5",
     "license": "Apache-2.0",
     "authors": [
         {
-            "name": "liu21st",
-            "email": "liu21st@gmail.com"
+            "name": "nature",
+            "email": "nature6016@gmail.com"
         }
     ],
     "require": {
