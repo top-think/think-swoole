@@ -12,6 +12,7 @@ use think\swoole\coroutine\Context;
 use think\swoole\Pool;
 use Throwable;
 
+#[\AllowDynamicProperties]
 abstract class Proxy
 {
     const KEY_RELEASED = '__released';
