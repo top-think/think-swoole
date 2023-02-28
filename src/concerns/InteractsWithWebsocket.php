@@ -57,9 +57,6 @@ trait InteractsWithWebsocket
 
             $websocket->setClient($res);
 
-            $request = $this->prepareRequest($req);
-            $request = $this->setRequestThroughMiddleware($app, $request);
-
             $fd = $this->wsIdAtomic->add();
 
             $this->wsMessageChannel[$fd] = new Channel(1);
@@ -77,8 +74,10 @@ trait InteractsWithWebsocket
                 $websocket->setSender($id);
                 $websocket->join($id);
 
-                $this->runWithBarrier(function () use ($request, $handler) {
+                $this->runWithBarrier(function () use ($req, $app, $handler) {
+                    $request = $this->prepareRequest($req);
                     try {
+                        $request = $this->setRequestThroughMiddleware($app, $request);
                         $handler->onOpen($request);
                     } catch (Throwable $e) {
                         $this->logServerError($e);
