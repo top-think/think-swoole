@@ -124,9 +124,9 @@ trait InteractsWithHttp
                 try {
                     $response = $this->handleRequest($http, $request);
                 } catch (Throwable $e) {
-                    $response = $this->app
-                        ->make(Handle::class)
-                        ->render($request, $e);
+                    $handle = $this->app->make(Handle::class);
+                    $handle->report($e);
+                    $response = $handle->render($request, $e);
                 }
 
                 $this->setCookie($res, $app->cookie);

@@ -120,7 +120,7 @@ class Websocket
     }
 
     /**
-     * @param Response $response
+     * @param Response|null $response
      */
     public function setClient($response)
     {

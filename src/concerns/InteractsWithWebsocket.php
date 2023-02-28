@@ -17,6 +17,7 @@ use think\swoole\Middleware;
 use think\swoole\Websocket;
 use think\swoole\websocket\message\PushMessage;
 use think\swoole\websocket\Room;
+use Throwable;
 
 /**
  * Trait InteractsWithWebsocket
@@ -77,7 +78,11 @@ trait InteractsWithWebsocket
                 $websocket->join($id);
 
                 $this->runWithBarrier(function () use ($request, $handler) {
-                    $handler->onOpen($request);
+                    try {
+                        $handler->onOpen($request);
+                    } catch (Throwable $e) {
+                        $this->logServerError($e);
+                    }
                 });
 
                 $this->runWithBarrier(function () use ($handler, $res) {
@@ -115,7 +120,11 @@ trait InteractsWithWebsocket
                                         Coroutine::resume($cid);
                                     }
                                 });
-                                $handler->onMessage($frame);
+                                try {
+                                    $handler->onMessage($frame);
+                                } catch (Throwable $e) {
+                                    $this->logServerError($e);
+                                }
                             });
                             $frame = null;
                         }
@@ -131,7 +140,11 @@ trait InteractsWithWebsocket
                 //关闭连接
                 $res->close();
                 $this->runWithBarrier(function () use ($handler) {
-                    $handler->onClose();
+                    try {
+                        $handler->onClose();
+                    } catch (Throwable $e) {
+                        $this->logServerError($e);
+                    }
                 });
             } finally {
                 // leave all rooms
