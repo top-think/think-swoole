@@ -61,10 +61,10 @@ trait InteractsWithWebsocket
 
             $this->wsMessageChannel[$fd] = new Channel(1);
 
-            Coroutine::create(function () use ($res, $fd) {
+            Coroutine::create(function () use ($websocket, $res, $fd) {
                 //推送消息
                 while ($message = $this->wsMessageChannel[$fd]->pop()) {
-                    $res->push($message);
+                    $websocket->setConnected($res->push($message));
                 }
             });
 
@@ -152,7 +152,7 @@ trait InteractsWithWebsocket
                     $this->wsMessageChannel[$fd]->close();
                     unset($this->wsMessageChannel[$fd]);
                 }
-                $websocket->setClient(null);
+                $websocket->setConnected(false);
             }
         });
     }
