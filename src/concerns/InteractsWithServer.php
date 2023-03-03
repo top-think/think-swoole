@@ -9,6 +9,7 @@ use Swoole\Process;
 use Swoole\Process\Pool;
 use Swoole\Runtime;
 use think\App;
+use think\swoole\coroutine\Barrier;
 use think\swoole\Watcher;
 
 /**
@@ -103,7 +104,7 @@ trait InteractsWithServer
     {
         return $this->workerId;
     }
-    
+
     /**
      * 获取当前工作进程池对象
      * @return Pool
@@ -127,17 +128,7 @@ trait InteractsWithServer
 
     public function runWithBarrier(callable $func, ...$params)
     {
-        $channel = new Coroutine\Channel(1);
-
-        Coroutine::create(function (...$params) use ($channel, $func) {
-            Coroutine::defer(function () use ($channel) {
-                $channel->close();
-            });
-
-            call_user_func_array($func, $params);
-        }, ...$params);
-
-        $channel->pop();
+        Barrier::run($func, ...$params);
     }
 
     /**
