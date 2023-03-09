@@ -9,7 +9,7 @@ namespace think\swoole;
 class Ipc extends \think\Manager
 {
 
-    protected $namespace = "\\think\\swoole\\ipc\\";
+    protected $namespace = "\\think\\swoole\\ipc\\driver\\";
 
     protected function resolveConfig(string $name)
     {

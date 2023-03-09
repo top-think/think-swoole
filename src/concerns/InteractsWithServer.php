@@ -86,10 +86,10 @@ trait InteractsWithServer
                 $this->pool->getProcess()->exit();
             });
 
-            $this->ipc->listenMessage($workerId);
-
             $this->clearCache();
             $this->prepareApplication($envName);
+
+            $this->ipc->listenMessage($workerId);
 
             $this->triggerEvent(Constant::EVENT_WORKER_START);
 
