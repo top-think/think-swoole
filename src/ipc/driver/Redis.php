@@ -49,6 +49,7 @@ class Redis extends Driver
 
         Coroutine::create(function () {
             $this->runWithRedis(function (PHPRedis $redis) {
+                $redis->setOption(PHPRedis::OPT_READ_TIMEOUT, -1);
                 $redis->subscribe([$this->getPrefix() . $this->workerId], function ($redis, $channel, $message) {
                     $this->manager->triggerEvent('message', unserialize($message));
                 });
