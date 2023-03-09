@@ -21,7 +21,7 @@ composer require topthink/think-swoole
 php think swoole
 ~~~
 
-启动完成后，默认会在0.0.0.0:80启动一个HTTP Server，可以直接访问当前的应用。
+启动完成后，默认会在0.0.0.0:8080启动一个HTTP Server，可以直接访问当前的应用。
 
 swoole的相关参数可以在`config/swoole.php`里面配置（具体参考配置文件内容）。
 
