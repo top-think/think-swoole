@@ -1,18 +1,16 @@
 <?php
 
-use think\swoole\websocket\socketio\Handler;
-
 return [
     'http'       => [
         'enable'     => true,
         'host'       => '0.0.0.0',
-        'port'       => 80,
+        'port'       => 8080,
         'worker_num' => swoole_cpu_num(),
         'options'    => [],
     ],
     'websocket'  => [
         'enable'        => false,
-        'handler'       => Handler::class,
+        'handler'       => \think\swoole\websocket\Handler::class,
         'ping_interval' => 25000,
         'ping_timeout'  => 60000,
         'room'          => [
@@ -67,6 +65,15 @@ return [
             'max_wait_time' => 5,
         ],
         //自定义连接池
+    ],
+    'ipc'        => [
+        'type'  => 'unix_socket',
+        'redis' => [
+            'host'          => '127.0.0.1',
+            'port'          => 6379,
+            'max_active'    => 3,
+            'max_wait_time' => 5,
+        ],
     ],
     'tables'     => [],
     //每个worker里需要预加载以共用的实例

@@ -3,13 +3,12 @@
 namespace think\swoole\concerns;
 
 use Swoole\Constant;
-use Swoole\Coroutine;
-use Swoole\Event;
 use Swoole\Process;
 use Swoole\Process\Pool;
 use Swoole\Runtime;
 use think\App;
 use think\swoole\coroutine\Barrier;
+use think\swoole\Ipc;
 use think\swoole\Watcher;
 
 /**
@@ -29,6 +28,9 @@ trait InteractsWithServer
 
     /** @var Pool */
     protected $pool;
+
+    /** @var Ipc */
+    protected $ipc;
 
     public function addBatchWorker(int $workerNum, callable $func, $name = null)
     {
@@ -60,7 +62,12 @@ trait InteractsWithServer
             $this->addHotUpdateProcess();
         }
 
-        $pool = new Pool(count($this->startFuncMap), SWOOLE_IPC_UNIXSOCK, 0, true);
+        $workerNum = count($this->startFuncMap);
+
+        //启动消息监听
+        $this->prepareIpc($workerNum);
+
+        $pool = new Pool($workerNum, $this->ipc->getType(), 0, true);
 
         $pool->on(Constant::EVENT_WORKER_START, function ($pool, $workerId) use ($envName) {
 
@@ -79,15 +86,7 @@ trait InteractsWithServer
                 $this->pool->getProcess()->exit();
             });
 
-            /** @var Coroutine\Socket $socket */
-            $socket = $this->pool->getProcess()->exportSocket();
-
-            //启动消息监听
-            Event::add($socket, function (Coroutine\Socket $socket) {
-                $recv    = $socket->recv();
-                $message = unserialize($recv);
-                $this->triggerEvent('message', $message);
-            });
+            $this->ipc->listenMessage($workerId);
 
             $this->clearCache();
             $this->prepareApplication($envName);
@@ -116,14 +115,13 @@ trait InteractsWithServer
 
     public function sendMessage($workerId, $message)
     {
-        if ($workerId === $this->workerId) {
-            $this->triggerEvent('message', $message);
-        } else {
-            /** @var Process $process */
-            $process = $this->pool->getProcess($workerId);
-            $socket  = $process->exportSocket();
-            $socket->send(serialize($message));
-        }
+        $this->ipc->sendMessage($workerId, $message);
+    }
+
+    protected function prepareIpc($workerNum)
+    {
+        $this->ipc = $this->container->make(Ipc::class);
+        $this->ipc->prepare($workerNum);
     }
 
     public function runWithBarrier(callable $func, ...$params)
