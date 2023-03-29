@@ -17,7 +17,7 @@
         "stechstudio/backoff": "^1.2",
         "swoole/ide-helper": "^4.3",
         "symfony/finder": "^4.3.2|^5.1",
-        "topthink/framework": "^6.0"
+        "topthink/framework": "^6.0|^8.0"
     },
     "require-dev": {
         "symfony/var-dumper": "^4.3|^5.1",
