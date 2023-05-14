@@ -56,9 +56,7 @@ trait WithApplication
         $concretes = array_merge($defaultConcretes, $this->getConfig('concretes', []));
 
         foreach ($concretes as $concrete) {
-            if ($this->app->has($concrete)) {
-                $this->app->make($concrete);
-            }
+            $this->app->make($concrete);
         }
     }
 
