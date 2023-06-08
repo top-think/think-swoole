@@ -4,9 +4,7 @@ namespace think\swoole\concerns;
 
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\PhpRedisConnector;
-use Swoole\Coroutine;
 use think\helper\Arr;
-use think\swoole\coroutine\Context;
 use think\swoole\Pool;
 use think\tracing\reporter\RedisReporter;
 use think\tracing\Tracer;
@@ -47,14 +45,24 @@ trait InteractsWithTracing
 
             $pool = $this->getPools()->get("tracing.redis");
 
-            $redis = Context::rememberData('tracing.redis', function () use ($pool) {
-                $redis = $pool->borrow();
-                Coroutine::defer(function () use ($pool, $redis) {
-                    $pool->return($redis);
-                });
+            $redis = new class($pool) {
+                protected $pool;
 
-                return $redis;
-            });
+                public function __construct($pool)
+                {
+                    $this->pool = $pool;
+                }
+
+                public function __call($name, $arguments)
+                {
+                    $client = $this->pool->borrow();
+                    try {
+                        return call_user_func_array([$client, $name], $arguments);
+                    } finally {
+                        $this->pool->return($client);
+                    }
+                }
+            };
 
             return new RedisReporter($name, $redis);
         });
