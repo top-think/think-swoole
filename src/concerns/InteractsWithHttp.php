@@ -17,6 +17,7 @@ use think\Http;
 use think\swoole\App as SwooleApp;
 use think\swoole\Http as SwooleHttp;
 use think\swoole\response\File as FileResponse;
+use think\swoole\response\Stream as StreamResponse;
 use Throwable;
 use function substr;
 
@@ -233,12 +234,27 @@ trait InteractsWithHttp
     protected function sendResponse(Response $res, \think\Request $request, \think\Response $response)
     {
         switch (true) {
+            case $response instanceof StreamResponse:
+                $this->sendStream($res, $response);
+                break;
             case $response instanceof FileResponse:
                 $this->sendFile($res, $request, $response);
                 break;
             default:
                 $this->sendContent($res, $response);
         }
+    }
+
+    protected function sendStream(Response $res, StreamResponse $response)
+    {
+        $this->setHeader($res, $response->getHeader());
+        $this->setStatus($res, $response->getCode());
+
+        while (!$response->eof()) {
+            $res->write($response->read());
+        }
+
+        $res->end();
     }
 
     protected function sendFile(Response $res, \think\Request $request, FileResponse $response)

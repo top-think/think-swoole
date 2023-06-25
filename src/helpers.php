@@ -24,7 +24,9 @@ namespace {
 
 namespace think\swoole\helper {
 
+    use Psr\Http\Message\StreamInterface;
     use think\swoole\response\File;
+    use think\swoole\response\Stream;
 
     function download(string $filename, string $name = '', $disposition = File::DISPOSITION_ATTACHMENT): File
     {
@@ -40,5 +42,10 @@ namespace think\swoole\helper {
     function file(string $filename)
     {
         return new File($filename);
+    }
+
+    function stream(StreamInterface $stream, int $chunkSize = 1024, bool $readByLine = false)
+    {
+        return new Stream($stream, $chunkSize, $readByLine);
     }
 }
