@@ -24,9 +24,9 @@ namespace {
 
 namespace think\swoole\helper {
 
-    use Psr\Http\Message\StreamInterface;
     use think\swoole\response\File;
-    use think\swoole\response\Stream;
+    use think\swoole\response\Iterator;
+    use Traversable;
 
     function download(string $filename, string $name = '', $disposition = File::DISPOSITION_ATTACHMENT): File
     {
@@ -44,8 +44,8 @@ namespace think\swoole\helper {
         return new File($filename);
     }
 
-    function stream(StreamInterface $stream, int $chunkSize = 1024, bool $readByLine = false)
+    function iterator(Traversable $iterator)
     {
-        return new Stream($stream, $chunkSize, $readByLine);
+        return new Iterator($iterator);
     }
 }

@@ -17,7 +17,7 @@ use think\Http;
 use think\swoole\App as SwooleApp;
 use think\swoole\Http as SwooleHttp;
 use think\swoole\response\File as FileResponse;
-use think\swoole\response\Stream as StreamResponse;
+use think\swoole\response\Iterator as IteratorResponse;
 use Throwable;
 use function substr;
 
@@ -118,6 +118,7 @@ trait InteractsWithHttp
     {
         Coroutine::create(function () use ($req, $res) {
             $this->runInSandbox(function (Http $http, Event $event, SwooleApp $app) use ($req, $res) {
+
                 $app->setInConsole(false);
 
                 $request = $this->prepareRequest($req);
@@ -234,8 +235,8 @@ trait InteractsWithHttp
     protected function sendResponse(Response $res, \think\Request $request, \think\Response $response)
     {
         switch (true) {
-            case $response instanceof StreamResponse:
-                $this->sendStream($res, $response);
+            case $response instanceof IteratorResponse:
+                $this->sendIterator($res, $response);
                 break;
             case $response instanceof FileResponse:
                 $this->sendFile($res, $request, $response);
@@ -245,15 +246,14 @@ trait InteractsWithHttp
         }
     }
 
-    protected function sendStream(Response $res, StreamResponse $response)
+    protected function sendIterator(Response $res, IteratorResponse $response)
     {
         $this->setHeader($res, $response->getHeader());
         $this->setStatus($res, $response->getCode());
 
-        while (!$response->eof()) {
-            $res->write($response->read());
+        foreach ($response as $content) {
+            $res->write($content);
         }
-
         $res->end();
     }
 
