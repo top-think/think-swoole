@@ -11,7 +11,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function has($name)
+    public function has($name): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -19,7 +19,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function get($name, $default = null)
+    public function get($name, $default = null): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -27,7 +27,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function set($name, $value, $expire = null)
+    public function set($name, $value, $expire = null): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -51,7 +51,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function delete($name)
+    public function delete($name): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -59,7 +59,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function clear()
+    public function clear(): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -75,7 +75,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function getMultiple($keys, $default = null)
+    public function getMultiple($keys, $default = null): iterable
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -83,7 +83,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function setMultiple($values, $ttl = null)
+    public function setMultiple($values, $ttl = null): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -91,7 +91,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function deleteMultiple($keys)
+    public function deleteMultiple($keys): bool
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
