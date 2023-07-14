@@ -18,9 +18,7 @@ class Scan implements Driver
         $this->finder
             ->files()
             ->name($name)
-            ->in(array_filter((array) $directory, function ($dir) {
-                return is_dir($dir);
-            }))
+            ->in($directory)
             ->exclude($exclude);
     }
 

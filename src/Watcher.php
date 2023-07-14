@@ -19,7 +19,9 @@ class Watcher extends \think\Manager
     protected function resolveParams($name): array
     {
         return [
-            $this->getConfig('include', []),
+            array_filter($this->getConfig('include', []), function ($dir) {
+                return is_dir($dir);
+            }),
             $this->getConfig('exclude', []),
             $this->getConfig('name', []),
         ];
