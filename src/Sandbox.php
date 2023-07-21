@@ -11,6 +11,7 @@ use think\App;
 use think\Config;
 use think\Container;
 use think\Event;
+use think\exception\Handle;
 use think\swoole\App as SwooleApp;
 use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
@@ -82,11 +83,11 @@ class Sandbox
     public function run(Closure $callable)
     {
         $this->init();
-
+        $app = $this->getApplication();
         try {
-            $this->getApplication()->invoke($callable, [$this]);
+            $app->invoke($callable, [$this]);
         } catch (Throwable $e) {
-            throw $e;
+            $app->make(Handle::class)->report($e);
         } finally {
             $this->clear();
         }
