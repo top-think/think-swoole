@@ -2,6 +2,7 @@
 
 namespace think\swoole;
 
+use RuntimeException;
 use Swoole\Http\Response;
 use think\Event;
 use think\swoole\websocket\Pusher;
@@ -152,6 +153,9 @@ class Websocket
      */
     public function getSender()
     {
+        if (empty($this->sender)) {
+            throw new RuntimeException('Cannot use websocket as current client before handshake!');
+        }
         return $this->sender;
     }
 }
