@@ -6,7 +6,6 @@ use Closure;
 use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
-use Swoole\Coroutine;
 use think\App;
 use think\Config;
 use think\Container;
@@ -129,20 +128,7 @@ class Sandbox
 
     protected function getSnapshotId($init = false)
     {
-        if ($init) {
-            Coroutine::getContext()->offsetSet('#root', true);
-            return Coroutine::getCid();
-        } else {
-            $cid = Coroutine::getCid();
-            while (!Coroutine::getContext($cid)->offsetExists('#root')) {
-                $cid = Coroutine::getPcid($cid);
-                if ($cid < 1) {
-                    break;
-                }
-            }
-
-            return $cid;
-        }
+        return Context::getRootId($init);
     }
 
     /**
