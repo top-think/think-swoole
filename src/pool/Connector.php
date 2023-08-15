@@ -7,10 +7,16 @@ use Smf\ConnectionPool\Connectors\ConnectorInterface;
 class Connector implements ConnectorInterface
 {
     protected $connector;
+    protected $checker;
 
     public function __construct($connector)
     {
         $this->connector = $connector;
+    }
+
+    public function setChecker($checker)
+    {
+        $this->checker = $checker;
     }
 
     public function connect(array $config)
@@ -25,7 +31,10 @@ class Connector implements ConnectorInterface
 
     public function isConnected($connection): bool
     {
-        return !property_exists($connection, Proxy::KEY_DISCONNECTED);
+        if ($this->checker) {
+            return call_user_func($this->checker, $connection);
+        }
+        return true;
     }
 
     public function reset($connection, array $config)
