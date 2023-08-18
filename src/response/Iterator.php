@@ -15,7 +15,7 @@ class Iterator extends Response implements IteratorAggregate
         $this->iterator = $iterator;
     }
 
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return $this->iterator;
     }
