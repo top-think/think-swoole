@@ -13,7 +13,7 @@
         "ext-json": "*",
         "ext-swoole": ">=4.6",
         "nette/php-generator": "^4.0",
-        "open-smf/connection-pool": "~1.0",
+        "open-smf/connection-pool": ">=1.0",
         "stechstudio/backoff": "^1.2",
         "swoole/ide-helper": "^4.3",
         "symfony/finder": "^4.3.2|^5.1",
