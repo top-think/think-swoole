@@ -20,9 +20,9 @@ class Error implements \JsonSerializable
     protected $data;
 
     /**
-     * @param int    $code
+     * @param int $code
      * @param string $message
-     * @param mixed  $data
+     * @param mixed $data
      *
      * @return Error
      */
@@ -61,6 +61,7 @@ class Error implements \JsonSerializable
         return $this->data;
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return [
