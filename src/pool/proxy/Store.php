@@ -2,11 +2,11 @@
 
 namespace think\swoole\pool\proxy;
 
-use Psr\SimpleCache\CacheInterface;
+use think\cache\TagSet;
 use think\contract\CacheHandlerInterface;
 use think\swoole\pool\Proxy;
 
-class Store extends Proxy implements CacheHandlerInterface, CacheInterface
+class Store extends Proxy implements CacheHandlerInterface
 {
     /**
      * @inheritDoc
@@ -35,7 +35,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function inc(string $name, int $step = 1)
+    public function inc($name, $step = 1)
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -43,7 +43,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function dec(string $name, int $step = 1)
+    public function dec($name, $step = 1)
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -67,7 +67,7 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function clearTag(array $keys)
+    public function clearTag($keys)
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
@@ -99,7 +99,23 @@ class Store extends Proxy implements CacheHandlerInterface, CacheInterface
     /**
      * @inheritDoc
      */
-    public function tag($name)
+    public function tag($name): TagSet
+    {
+        return $this->__call(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function pull($name)
+    {
+        return $this->__call(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function remember($name, $value, $expire = null)
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
