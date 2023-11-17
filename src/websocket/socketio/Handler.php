@@ -23,7 +23,7 @@ class Handler implements HandlerInterface
 
     protected $eio;
 
-    protected $pingTimeoutTimer  = 0;
+    protected $pingTimeoutTimer = 0;
     protected $pingIntervalTimer = 0;
 
     protected $pingInterval;
@@ -89,8 +89,8 @@ class Handler implements HandlerInterface
                         $this->onConnect($packet->data);
                         break;
                     case Packet::EVENT:
-                        $type   = array_shift($packet->data);
-                        $data   = $packet->data;
+                        $type = array_shift($packet->data);
+                        $data = $packet->data;
                         $result = $this->event->trigger('swoole.websocket.Event', new WsEvent($type, $data));
 
                         if ($packet->id !== null) {
@@ -113,9 +113,11 @@ class Handler implements HandlerInterface
                 }
                 break;
             case EnginePacket::PING:
+                $this->event->trigger('swoole.websocket.Ping');
                 $this->push(EnginePacket::pong($enginePacket->data));
                 break;
             case EnginePacket::PONG:
+                $this->event->trigger('swoole.websocket.Pong');
                 $this->schedulePing();
                 break;
             default:
