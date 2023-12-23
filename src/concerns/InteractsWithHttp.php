@@ -131,6 +131,8 @@ trait InteractsWithHttp
 
                 $this->setCookie($res, $app->cookie);
                 $this->sendResponse($res, $request, $response);
+
+                $http->end($response);
             });
         });
     }
@@ -142,15 +144,8 @@ trait InteractsWithHttp
 
         $response = $http->run($request);
 
-        $content = $response->getContent();
-
-        if (ob_get_level() == 0) {
-            ob_start();
-        }
-
-        $http->end($response);
-
         if (ob_get_length() > 0) {
+            $content = $response->getContent();
             $response->content(ob_get_contents() . $content);
         }
 
