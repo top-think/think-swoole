@@ -15,12 +15,12 @@
         "nette/php-generator": "^4.0",
         "open-smf/connection-pool": ">=1.0",
         "stechstudio/backoff": "^1.2",
-        "swoole/ide-helper": "^4.3",
-        "symfony/finder": "^4.3.2|^5.1",
+        "symfony/finder": "^4.3.2|^5.1|^6.0|^7.0",
         "topthink/framework": "^6.0|^8.0"
     },
     "require-dev": {
-        "symfony/var-dumper": "^4.3|^5.1",
+        "symfony/var-dumper": "^4.3|^5.1|^6.0|^7.0",
+        "swoole/ide-helper": "^4.6",
         "topthink/think-tracing": "^1.0",
         "topthink/think-queue": "^3.0",
         "phpunit/phpunit": "^9.5"
