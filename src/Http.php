@@ -18,36 +18,36 @@ class Http extends \think\Http
     /** @var Middleware */
     protected static $middleware;
 
-    /** @var Route */
+    /** @var Route[] */
     protected static $route;
 
     protected function loadMiddleware(): void
     {
-        if (!isset(self::$middleware)) {
+        if (!isset(self::$middleware[$this->app->http->name])) {
             parent::loadMiddleware();
-            self::$middleware = clone $this->app->middleware;
-            $this->modifyProperty(self::$middleware, null);
+            self::$middleware[$this->app->http->name] = clone $this->app->middleware;
+            $this->modifyProperty(self::$middleware[$this->app->http->name], null);
         }
 
-        $middleware = clone self::$middleware;
+        $middleware = clone self::$middleware[$this->app->http->name];
         $this->modifyProperty($middleware, $this->app);
         $this->app->instance("middleware", $middleware);
     }
 
     protected function loadRoutes(): void
     {
-        if (!isset(self::$route)) {
+        if (!isset(self::$route[$this->app->http->name])) {
             parent::loadRoutes();
-            self::$route = clone $this->app->route;
-            $this->modifyProperty(self::$route, null);
-            $this->modifyProperty(self::$route, null, 'request');
+            self::$route[$this->app->http->name] = clone $this->app->route;
+            $this->modifyProperty(self::$route[$this->app->http->name], null);
+            $this->modifyProperty(self::$route[$this->app->http->name], null, 'request');
         }
     }
 
     protected function dispatchToRoute($request)
     {
-        if (isset(self::$route)) {
-            $newRoute = clone self::$route;
+        if (isset(self::$route[$this->app->http->name])) {
+            $newRoute = clone self::$route[$this->app->http->name];
             $this->modifyProperty($newRoute, $this->app);
             $this->app->instance("route", $newRoute);
         }
