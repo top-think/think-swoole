@@ -15,7 +15,7 @@ class Http extends \think\Http
 {
     use ModifyProperty;
 
-    /** @var Middleware */
+    /** @var Middleware[] */
     protected static $middleware;
 
     /** @var Route[] */
