@@ -73,7 +73,7 @@ trait InteractsWithServer
 
             Runtime::enableCoroutine();
 
-            $this->pool     = $pool;
+            $this->pool = $pool;
             $this->workerId = $workerId;
 
             [$func, $name] = $this->startFuncMap[$workerId];

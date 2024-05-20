@@ -32,7 +32,7 @@ abstract class Proxy
      */
     public function __construct($connector, $config, array $connectionConfig = [])
     {
-        $this->released     = new WeakMap();
+        $this->released = new WeakMap();
         $this->disconnected = new WeakMap();
 
         if ($connector instanceof Closure) {

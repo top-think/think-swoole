@@ -8,12 +8,12 @@ use think\swoole\rpc\packer\File;
 
 class Packer
 {
-    public const HEADER_SIZE   = 8;
+    public const HEADER_SIZE = 8;
     public const HEADER_STRUCT = 'Nlength/Ntype';
-    public const HEADER_PACK   = 'NN';
+    public const HEADER_PACK = 'NN';
 
     public const TYPE_BUFFER = 0;
-    public const TYPE_FILE   = 1;
+    public const TYPE_FILE = 1;
 
     public static function pack($data, $type = self::TYPE_BUFFER)
     {

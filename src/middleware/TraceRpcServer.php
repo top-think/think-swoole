@@ -22,16 +22,16 @@ class TraceRpcServer
     public function handle(Protocol $protocol, $next)
     {
         $context = $this->tracer->extract(TEXT_MAP, $protocol->getContext());
-        $scope   = $this->tracer->startActiveSpan(
+        $scope = $this->tracer->startActiveSpan(
             'rpc.server:' . $protocol->getInterface() . '@' . $protocol->getMethod(),
             [
                 'child_of' => $context,
-                'tags'     => [
+                'tags' => [
                     SPAN_KIND => SPAN_KIND_RPC_SERVER,
                 ],
             ]
         );
-        $span    = $scope->getSpan();
+        $span = $scope->getSpan();
 
         try {
             return $next($protocol);
