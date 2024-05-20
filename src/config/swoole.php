@@ -75,6 +75,17 @@ return [
             'max_wait_time' => 5,
         ],
     ],
+    //锁
+    'lock'       => [
+        'enable' => false,
+        'type'   => 'table',
+        'redis'  => [
+            'host' => '127.0.0.1',
+            'port'          => 6379,
+            'max_active'    => 3,
+            'max_wait_time' => 5,
+        ],
+    ],
     'tables'     => [],
     //每个worker里需要预加载以共用的实例
     'concretes'  => [],
