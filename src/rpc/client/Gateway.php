@@ -38,8 +38,8 @@ class Gateway
             $connector = $this->createDefaultConnector($connector);
         }
         $this->connector = $connector;
-        $this->parser    = $parser;
-        $this->tries     = $tries;
+        $this->parser = $parser;
+        $this->tries = $tries;
     }
 
     protected function encodeData(Protocol $protocol)
@@ -134,8 +134,8 @@ class Gateway
 
                     $config = $this->config;
 
-                    $host    = Arr::pull($config, 'host');
-                    $port    = Arr::pull($config, 'port');
+                    $host = Arr::pull($config, 'host');
+                    $port = Arr::pull($config, 'port');
                     $timeout = Arr::pull($config, 'timeout', 5);
 
                     $client->set($config);

@@ -17,7 +17,7 @@ abstract class Driver
     public function __construct(Manager $manager, array $config)
     {
         $this->manager = $manager;
-        $this->config  = $config;
+        $this->config = $config;
     }
 
     public function listenMessage($workerId)

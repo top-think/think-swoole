@@ -10,10 +10,10 @@ use think\Response;
 class File extends Response
 {
     public const DISPOSITION_ATTACHMENT = 'attachment';
-    public const DISPOSITION_INLINE     = 'inline';
+    public const DISPOSITION_INLINE = 'inline';
 
     protected $header = [
-        'Content-Type'  => 'application/octet-stream',
+        'Content-Type' => 'application/octet-stream',
         'Accept-Ranges' => 'bytes',
     ];
 
