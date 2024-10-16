@@ -12,8 +12,8 @@ class Table implements RoomInterface
      * @var array
      */
     protected $config = [
-        'room_rows'   => 8192,
-        'room_size'   => 2048,
+        'room_rows' => 8192,
+        'room_size' => 2048,
         'client_rows' => 4096,
         'client_size' => 2048,
     ];
@@ -59,7 +59,7 @@ class Table implements RoomInterface
      */
     public function add($fd, $roomNames)
     {
-        $rooms     = $this->getRooms($fd);
+        $rooms = $this->getRooms($fd);
         $roomNames = is_array($roomNames) ? $roomNames : [$roomNames];
 
         foreach ($roomNames as $room) {
@@ -69,7 +69,7 @@ class Table implements RoomInterface
                 continue;
             }
 
-            $fds[]   = $fd;
+            $fds[] = $fd;
             $rooms[] = $room;
 
             $this->setClients($room, $fds);
@@ -86,9 +86,9 @@ class Table implements RoomInterface
      */
     public function delete($fd, $roomNames = [])
     {
-        $allRooms  = $this->getRooms($fd);
+        $allRooms = $this->getRooms($fd);
         $roomNames = is_array($roomNames) ? $roomNames : [$roomNames];
-        $rooms     = count($roomNames) ? $roomNames : $allRooms;
+        $rooms = count($roomNames) ? $roomNames : $allRooms;
 
         $removeRooms = [];
         foreach ($rooms as $room) {

@@ -14,7 +14,7 @@ class Buffer
 
     public function write(&$data)
     {
-        $size   = strlen($this->data);
+        $size = strlen($this->data);
         $string = substr($data, 0, $this->length - $size);
 
         $this->data .= $string;

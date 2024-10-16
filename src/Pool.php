@@ -66,10 +66,10 @@ class Pool
     public static function pullPoolConfig(&$config)
     {
         return [
-            'minActive'         => Arr::pull($config, 'min_active', 0),
-            'maxActive'         => Arr::pull($config, 'max_active', 10),
-            'maxWaitTime'       => Arr::pull($config, 'max_wait_time', 5),
-            'maxIdleTime'       => Arr::pull($config, 'max_idle_time', 20),
+            'minActive' => Arr::pull($config, 'min_active', 0),
+            'maxActive' => Arr::pull($config, 'max_active', 10),
+            'maxWaitTime' => Arr::pull($config, 'max_wait_time', 5),
+            'maxIdleTime' => Arr::pull($config, 'max_idle_time', 20),
             'idleCheckInterval' => Arr::pull($config, 'idle_check_interval', 10),
         ];
     }

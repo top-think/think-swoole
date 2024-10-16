@@ -45,7 +45,7 @@ class Sandbox
 
     /** @var ResetterInterface[] */
     protected $resetters = [];
-    protected $services  = [];
+    protected $services = [];
 
     public function __construct(Container $app)
     {
@@ -152,7 +152,7 @@ class Sandbox
         $app->instance('app', $app);
         $app->instance(Container::class, $app);
 
-        $reflectObject   = new ReflectionObject($app);
+        $reflectObject = new ReflectionObject($app);
         $reflectProperty = $reflectObject->getProperty('services');
         $reflectProperty->setAccessible(true);
         $services = $reflectProperty->getValue($app);
@@ -201,7 +201,7 @@ class Sandbox
 
         foreach ($services as $service) {
             if (class_exists($service) && !in_array($service, $this->services)) {
-                $serviceObj               = new $service($app);
+                $serviceObj = new $service($app);
                 $this->services[$service] = $serviceObj;
             }
         }
