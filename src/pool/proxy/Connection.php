@@ -239,7 +239,7 @@ class Connection extends Proxy implements ConnectionInterface
         return $this->__call(__FUNCTION__, func_get_args());
     }
 
-    public function getLastInsID(BaseQuery $query, string $sequence = null)
+    public function getLastInsID(BaseQuery $query, ?string $sequence = null)
     {
         return $this->__call(__FUNCTION__, func_get_args());
     }
