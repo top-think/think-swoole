@@ -9,7 +9,7 @@ class PushMessage
 
     public function __construct($fd, $data)
     {
-        $this->fd   = $fd;
+        $this->fd = $fd;
         $this->data = $data;
     }
 }
