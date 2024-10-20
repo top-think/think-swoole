@@ -30,9 +30,9 @@ class Error implements \JsonSerializable
     {
         $instance = new static();
 
-        $instance->code    = $code;
+        $instance->code = $code;
         $instance->message = $message;
-        $instance->data    = $data;
+        $instance->data = $data;
 
         return $instance;
     }
@@ -65,9 +65,9 @@ class Error implements \JsonSerializable
     public function jsonSerialize()
     {
         return [
-            'code'    => $this->code,
+            'code' => $this->code,
             'message' => $this->message,
-            'data'    => $this->data,
+            'data' => $this->data,
         ];
     }
 }

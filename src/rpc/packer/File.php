@@ -16,11 +16,11 @@ class File
     public function write(&$data)
     {
         if (!$this->handle) {
-            $this->name   = tempnam(sys_get_temp_dir(), 'swoole_rpc_');
+            $this->name = tempnam(sys_get_temp_dir(), 'swoole_rpc_');
             $this->handle = fopen($this->name, 'ab');
         }
 
-        $size   = fstat($this->handle)['size'];
+        $size = fstat($this->handle)['size'];
         $string = substr($data, 0, $this->length - $size);
 
         fwrite($this->handle, $string);

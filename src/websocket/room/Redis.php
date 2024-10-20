@@ -41,7 +41,7 @@ class Redis implements RoomInterface
     public function __construct(Manager $manager, array $config)
     {
         $this->manager = $manager;
-        $this->config  = $config;
+        $this->config = $config;
 
         if ($prefix = Arr::get($this->config, 'prefix')) {
             $this->prefix = $prefix;
@@ -61,7 +61,7 @@ class Redis implements RoomInterface
     protected function prepareRedis()
     {
         $this->manager->onEvent('workerStart', function () {
-            $config     = $this->config;
+            $config = $this->config;
             $this->pool = new ConnectionPool(
                 Pool::pullPoolConfig($config),
                 new PhpRedisConnector(),

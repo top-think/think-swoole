@@ -68,18 +68,18 @@ class Dispatcher
     {
         foreach ($services as $className) {
             $reflectionClass = new ReflectionClass($className);
-            $interfaces      = $reflectionClass->getInterfaceNames();
+            $interfaces = $reflectionClass->getInterfaceNames();
             if (!empty($interfaces)) {
                 foreach ($interfaces as $interface) {
                     $this->services[class_basename($interface)] = [
                         'interface' => $interface,
-                        'class'     => $className,
+                        'class' => $className,
                     ];
                 }
             } else {
                 $this->services[class_basename($className)] = [
                     'interface' => $className,
-                    'class'     => $className,
+                    'class' => $className,
                 ];
             }
         }
@@ -114,7 +114,7 @@ class Dispatcher
             $methods[$method->getName()] = [
                 'parameters' => $this->getParameters($method),
                 'returnType' => $returnType,
-                'comment'    => $method->getDocComment(),
+                'comment' => $method->getDocComment(),
             ];
         }
         return $methods;
@@ -165,7 +165,7 @@ class Dispatcher
                     break;
                 default:
                     $protocol = $this->parser->decode($data);
-                    $result   = $this->dispatchWithMiddleware($app, $protocol, $files);
+                    $result = $this->dispatchWithMiddleware($app, $protocol, $files);
             }
         } catch (Throwable $e) {
             $result = Error::make($e->getCode(), $e->getMessage());
@@ -189,8 +189,8 @@ class Dispatcher
     protected function dispatchWithMiddleware(App $app, Protocol $protocol, $files)
     {
         $interface = $protocol->getInterface();
-        $method    = $protocol->getMethod();
-        $params    = $protocol->getParams();
+        $method = $protocol->getMethod();
+        $params = $protocol->getParams();
 
         //文件参数
         foreach ($params as $index => $param) {
@@ -207,7 +207,7 @@ class Dispatcher
             );
         }
 
-        $instance    = $app->make($service['class']);
+        $instance = $app->make($service['class']);
         $middlewares = array_merge($this->middleware, $this->getServiceMiddlewares($instance, $method));
 
         return Middleware::make($app, $middlewares)
@@ -231,13 +231,13 @@ class Dispatcher
             foreach ($reflectionProperty->getValue($service) as $key => $val) {
                 if (!is_int($key)) {
                     $middleware = $key;
-                    $options    = $val;
+                    $options = $val;
                 } elseif (isset($val['middleware'])) {
                     $middleware = $val['middleware'];
-                    $options    = $val['options'] ?? [];
+                    $options = $val['options'] ?? [];
                 } else {
                     $middleware = $val;
-                    $options    = [];
+                    $options = [];
                 }
 
                 if ((isset($options['only']) && !in_array($method, (array) $options['only'])) ||
