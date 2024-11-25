@@ -16,7 +16,7 @@ trait InteractsWithRpcConnector
     protected function recv(Client $client, callable $decoder)
     {
         $handler = null;
-        $file    = null;
+        $file = null;
 
         while ($data = $client->recv()) {
             begin:

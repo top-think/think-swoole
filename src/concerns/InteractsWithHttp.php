@@ -36,8 +36,8 @@ trait InteractsWithHttp
     {
         $this->preloadHttp();
 
-        $host    = $this->getConfig('http.host');
-        $port    = $this->getConfig('http.port');
+        $host = $this->getConfig('http.host');
+        $port = $this->getConfig('http.port');
         $options = $this->getConfig('http.options', []);
 
         $server = new Server($host, $port, false, true);
@@ -203,11 +203,11 @@ trait InteractsWithHttp
             if (!Arr::isAssoc($file)) {
                 $files = [];
                 foreach ($file as $f) {
-                    $files['name'][]     = $f['name'];
-                    $files['type'][]     = $f['type'];
+                    $files['name'][] = $f['name'];
+                    $files['type'][] = $f['type'];
                     $files['tmp_name'][] = $f['tmp_name'];
-                    $files['error'][]    = $f['error'];
-                    $files['size'][]     = $f['size'];
+                    $files['error'][] = $f['error'];
+                    $files['size'][] = $f['size'];
                 }
                 return $files;
             }
@@ -264,16 +264,16 @@ trait InteractsWithHttp
     protected function sendFile(Response $res, \think\Request $request, FileResponse $response)
     {
         $ifNoneMatch = $request->header('If-None-Match');
-        $ifRange     = $request->header('If-Range');
+        $ifRange = $request->header('If-Range');
 
-        $code         = $response->getCode();
-        $file         = $response->getFile();
-        $eTag         = $response->getHeader('ETag');
+        $code = $response->getCode();
+        $file = $response->getFile();
+        $eTag = $response->getHeader('ETag');
         $lastModified = $response->getHeader('Last-Modified');
 
         $fileSize = $file->getSize();
-        $offset   = 0;
-        $length   = -1;
+        $offset = 0;
+        $length = -1;
 
         if ($ifNoneMatch == $eTag) {
             $code = 304;
@@ -286,7 +286,7 @@ trait InteractsWithHttp
 
                 if ('' === $start) {
                     $start = $fileSize - $end;
-                    $end   = $fileSize - 1;
+                    $end = $fileSize - 1;
                 } else {
                     $start = (int) $start;
                 }
@@ -301,9 +301,9 @@ trait InteractsWithHttp
                     } elseif ($end - $start < $fileSize - 1) {
                         $length = $end < $fileSize ? $end - $start + 1 : -1;
                         $offset = $start;
-                        $code   = 206;
+                        $code = 206;
                         $response->header([
-                            'Content-Range'  => sprintf('bytes %s-%s/%s', $start, $end, $fileSize),
+                            'Content-Range' => sprintf('bytes %s-%s/%s', $start, $end, $fileSize),
                             'Content-Length' => $end - $start + 1,
                         ]);
                     }
@@ -329,7 +329,7 @@ trait InteractsWithHttp
         $content = $response->getContent();
         if ($content) {
             $contentSize = strlen($content);
-            $chunkSize   = 8192;
+            $chunkSize = 8192;
 
             if ($contentSize > $chunkSize) {
                 $sendSize = 0;

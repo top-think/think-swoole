@@ -47,8 +47,8 @@ class Websocket
      */
     public function __construct(\think\App $app, Room $room, Event $event)
     {
-        $this->app   = $app;
-        $this->room  = $room;
+        $this->app = $app;
+        $this->room = $room;
         $this->event = $event;
     }
 

@@ -22,16 +22,16 @@ class JsonParser implements ParserInterface
      */
     public function encode(Protocol $protocol): string
     {
-        $interface  = $protocol->getInterface();
+        $interface = $protocol->getInterface();
         $methodName = $protocol->getMethod();
 
         $method = $interface . self::DELIMITER . $methodName;
-        $data   = [
+        $data = [
             'jsonrpc' => self::VERSION,
-            'method'  => $method,
-            'params'  => $protocol->getParams(),
+            'method' => $method,
+            'params' => $protocol->getParams(),
             'context' => $protocol->getContext(),
-            'id'      => '',
+            'id' => '',
         ];
 
         return json_encode($data, JSON_UNESCAPED_UNICODE);
@@ -54,8 +54,8 @@ class JsonParser implements ParserInterface
             );
         }
 
-        $method  = $data['method'] ?? '';
-        $params  = $data['params'] ?? [];
+        $method = $data['method'] ?? '';
+        $params = $data['params'] ?? [];
         $context = $data['context'] ?? [];
 
         if (empty($method)) {
@@ -98,9 +98,9 @@ class JsonParser implements ParserInterface
             return $data['result'];
         }
 
-        $code    = $data['error']['code'] ?? 0;
+        $code = $data['error']['code'] ?? 0;
         $message = $data['error']['message'] ?? '';
-        $data    = $data['error']['data'] ?? null;
+        $data = $data['error']['data'] ?? null;
 
         return Error::make($code, $message, $data);
     }
@@ -114,7 +114,7 @@ class JsonParser implements ParserInterface
     {
         $data = [
             'jsonrpc' => self::VERSION,
-            'id'      => '',
+            'id' => '',
         ];
 
         if ($result instanceof Error) {

@@ -5,7 +5,7 @@ namespace think\swoole\rpc;
 class Protocol
 {
     const ACTION_INTERFACE = '@action_interface';
-    const FILE             = '@file';
+    const FILE = '@file';
 
     /**
      * @var string
@@ -41,9 +41,9 @@ class Protocol
         $instance = new static();
 
         $instance->interface = $interface;
-        $instance->method    = $method;
-        $instance->params    = $params;
-        $instance->context   = $context;
+        $instance->method = $method;
+        $instance->params = $params;
+        $instance->context = $context;
 
         return $instance;
     }

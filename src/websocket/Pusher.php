@@ -26,7 +26,7 @@ class Pusher
     public function __construct(Manager $manager, Room $room, HandlerInterface $handler)
     {
         $this->manager = $manager;
-        $this->room    = $room;
+        $this->room = $room;
         $this->handler = $handler;
     }
 

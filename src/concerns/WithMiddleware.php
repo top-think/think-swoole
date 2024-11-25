@@ -16,7 +16,7 @@ trait WithMiddleware
 
         $this->middleware[] = [
             'middleware' => [$middleware, $params],
-            'options'    => &$options,
+            'options' => &$options,
         ];
 
         return new class($options) {

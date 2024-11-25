@@ -40,10 +40,10 @@ trait InteractsWithRpcClient
             try {
                 foreach ($rpcServices as $name => $abstracts) {
                     $parserClass = $this->getConfig("rpc.client.{$name}.parser", JsonParser::class);
-                    $tries       = $this->getConfig("rpc.client.{$name}.tries", 2);
-                    $middleware  = $this->getConfig("rpc.client.{$name}.middleware", []);
+                    $tries = $this->getConfig("rpc.client.{$name}.tries", 2);
+                    $middleware = $this->getConfig("rpc.client.{$name}.middleware", []);
 
-                    $parser  = $this->getApplication()->make($parserClass);
+                    $parser = $this->getApplication()->make($parserClass);
                     $gateway = new Gateway($this->createRpcConnector($name), $parser, $tries);
 
                     foreach ($abstracts as $abstract) {
