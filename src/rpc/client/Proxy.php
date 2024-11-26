@@ -26,8 +26,8 @@ abstract class Proxy implements Service
 
     final public function __construct(App $app, Gateway $gateway, $middleware)
     {
-        $this->app        = $app;
-        $this->gateway    = $gateway;
+        $this->app = $app;
+        $this->gateway = $gateway;
         $this->middleware = $middleware;
     }
 
@@ -79,7 +79,7 @@ abstract class Proxy implements Service
                     continue;
                 }
                 $method = (new Factory)->fromMethodReflection($methodRef);
-                $body   = "\$this->proxyCall('{$methodRef->getName()}', func_get_args());";
+                $body = "\$this->proxyCall('{$methodRef->getName()}', func_get_args());";
                 if ($method->getReturnType() != 'void') {
                     $body = "return {$body}";
                 }

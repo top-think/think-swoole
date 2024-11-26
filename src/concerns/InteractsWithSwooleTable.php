@@ -51,7 +51,7 @@ trait InteractsWithSwooleTable
         $tables = $this->container->make('config')->get('swoole.tables', []);
 
         foreach ($tables as $key => $value) {
-            $table   = new SwooleTable($value['size']);
+            $table = new SwooleTable($value['size']);
             $columns = $value['columns'] ?? [];
             foreach ($columns as $column) {
                 if (isset($column['size'])) {

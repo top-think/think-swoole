@@ -25,19 +25,19 @@ class Find implements Driver
         }
 
         $this->directory = $directory;
-        $this->exclude   = $exclude;
-        $this->name      = $name;
+        $this->exclude = $exclude;
+        $this->name = $name;
     }
 
     public function watch(callable $callback)
     {
-        $ms      = 2000;
+        $ms = 2000;
         $seconds = ceil(($ms + 1000) / 1000);
         $minutes = sprintf('-%.2f', $seconds / 60);
 
         $dest = implode(' ', $this->directory);
 
-        $name    = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn ($v) => "-name \"{$v}\"", $this->name)) . ' \)';
+        $name = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn ($v) => "-name \"{$v}\"", $this->name)) . ' \)';
         $notName = '';
         $notPath = '';
         if (!empty($this->exclude)) {

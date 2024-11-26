@@ -22,7 +22,7 @@ class TraceRpcClient
 
     public function handle(Protocol $protocol, $next)
     {
-        $scope   = $this->tracer->startActiveSpan(
+        $scope = $this->tracer->startActiveSpan(
             'rpc.client:' . $protocol->getInterface() . '@' . $protocol->getMethod(),
             [
                 'tags' => [
@@ -30,7 +30,7 @@ class TraceRpcClient
                 ],
             ]
         );
-        $span    = $scope->getSpan();
+        $span = $scope->getSpan();
         $context = $protocol->getContext();
         $this->tracer->inject($span->getContext(), TEXT_MAP, $context);
         $protocol->setContext($context);

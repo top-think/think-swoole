@@ -48,10 +48,10 @@ trait WithRpcClient
                     $config = $this->app->config->get("swoole.rpc.client.{$name}", []);
 
                     $parserClass = Arr::pull($config, 'parser', JsonParser::class);
-                    $tries       = Arr::pull($config, 'tries', 2);
-                    $middleware  = Arr::pull($config, 'middleware', []);
+                    $tries = Arr::pull($config, 'tries', 2);
+                    $middleware = Arr::pull($config, 'middleware', []);
 
-                    $parser  = $this->app->make($parserClass);
+                    $parser = $this->app->make($parserClass);
                     $gateway = new Gateway($config, $parser, $tries);
 
                     foreach ($abstracts as $abstract) {

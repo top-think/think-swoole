@@ -91,9 +91,9 @@ trait InteractsWithWebsocket
 
                 $this->runWithBarrier(function () use ($handler, $res) {
 
-                    $cid      = Coroutine::getCid();
+                    $cid = Coroutine::getCid();
                     $messages = 0;
-                    $wait     = false;
+                    $wait = false;
 
                     $frame = null;
                     while (true) {
@@ -104,10 +104,10 @@ trait InteractsWithWebsocket
                         }
 
                         if (empty($frame)) {
-                            $frame         = new Frame();
+                            $frame = new Frame();
                             $frame->opcode = $recv->opcode;
-                            $frame->flags  = $recv->flags;
-                            $frame->fd     = $recv->fd;
+                            $frame->flags = $recv->flags;
+                            $frame->fd = $recv->fd;
                             $frame->finish = false;
                         }
 

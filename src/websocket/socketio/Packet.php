@@ -43,9 +43,9 @@ class Packet
     const BINARY_ACK = 6;
 
     public $type;
-    public $nsp  = '/';
+    public $nsp = '/';
     public $data = null;
-    public $id   = null;
+    public $id = null;
 
     public function __construct(int $type)
     {
@@ -54,7 +54,7 @@ class Packet
 
     public static function create($type, array $decoded = [])
     {
-        $new     = new static($type);
+        $new = new static($type);
         $new->id = $decoded['id'] ?? null;
         if (isset($decoded['nsp'])) {
             $new->nsp = $decoded['nsp'] ?: '/';

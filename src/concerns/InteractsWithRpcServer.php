@@ -96,7 +96,7 @@ trait InteractsWithRpcServer
 
     protected function bindRpcDispatcher()
     {
-        $services   = $this->getConfig('rpc.server.services', []);
+        $services = $this->getConfig('rpc.server.services', []);
         $middleware = $this->getConfig('rpc.server.middleware', []);
 
         $this->app->make(Dispatcher::class, [$services, $middleware]);

@@ -31,11 +31,11 @@ class Handler implements HandlerInterface
 
     public function __construct(Event $event, Config $config, Websocket $websocket)
     {
-        $this->event        = $event;
-        $this->config       = $config;
-        $this->websocket    = $websocket;
+        $this->event = $event;
+        $this->config = $config;
+        $this->websocket = $websocket;
         $this->pingInterval = $this->config->get('swoole.websocket.ping_interval', 25000);
-        $this->pingTimeout  = $this->config->get('swoole.websocket.ping_timeout', 60000);
+        $this->pingTimeout = $this->config->get('swoole.websocket.ping_timeout', 60000);
     }
 
     /**
@@ -49,10 +49,10 @@ class Handler implements HandlerInterface
 
         $payload = json_encode(
             [
-                'sid'          => base64_encode(uniqid()),
-                'upgrades'     => [],
+                'sid' => base64_encode(uniqid()),
+                'upgrades' => [],
                 'pingInterval' => $this->pingInterval,
-                'pingTimeout'  => $this->pingTimeout,
+                'pingTimeout' => $this->pingTimeout,
             ]
         );
 
@@ -95,8 +95,8 @@ class Handler implements HandlerInterface
 
                         if ($packet->id !== null) {
                             $responsePacket = Packet::create(Packet::ACK, [
-                                'id'   => $packet->id,
-                                'nsp'  => $packet->nsp,
+                                'id' => $packet->id,
+                                'nsp' => $packet->nsp,
                                 'data' => $result,
                             ]);
 
