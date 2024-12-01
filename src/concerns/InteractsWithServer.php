@@ -3,6 +3,7 @@
 namespace think\swoole\concerns;
 
 use Swoole\Constant;
+use Swoole\Coroutine;
 use Swoole\Process;
 use Swoole\Process\Pool;
 use Swoole\Runtime;
@@ -53,6 +54,9 @@ trait InteractsWithServer
     public function start(string $envName): void
     {
         $this->setProcessName('manager process');
+
+        //协程配置
+        Coroutine::set($this->getConfig('coroutine', []));
 
         $this->initialize();
         $this->triggerEvent('init');
@@ -134,8 +138,12 @@ trait InteractsWithServer
      */
     protected function addHotUpdateProcess()
     {
-        $this->addWorker(function (Process\Pool $pool) {
+        //热更新时关闭协程死锁检查
+        Coroutine::set([
+            'enable_deadlock_check' => false,
+        ]);
 
+        $this->addWorker(function (Process\Pool $pool) {
             $watcher = $this->container->make(Watcher::class);
 
             $watcher->watch(function () use ($pool) {

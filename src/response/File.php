@@ -22,7 +22,7 @@ class File extends Response
      */
     protected $file;
 
-    public function __construct($file, string $contentDisposition = null, bool $autoEtag = true, bool $autoLastModified = true, bool $autoContentType = true)
+    public function __construct($file, ?string $contentDisposition = null, bool $autoEtag = true, bool $autoLastModified = true, bool $autoContentType = true)
     {
         $this->setFile($file, $contentDisposition, $autoEtag, $autoLastModified, $autoContentType);
     }
@@ -32,7 +32,7 @@ class File extends Response
         return $this->file;
     }
 
-    public function setFile($file, string $contentDisposition = null, bool $autoEtag = true, bool $autoLastModified = true, bool $autoContentType = true)
+    public function setFile($file, ?string $contentDisposition = null, bool $autoEtag = true, bool $autoLastModified = true, bool $autoContentType = true)
     {
         if (!$file instanceof SplFileInfo) {
             $file = new SplFileInfo((string) $file);

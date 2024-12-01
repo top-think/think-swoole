@@ -128,7 +128,7 @@ class Context
      * @param null $id
      * @return mixed
      */
-    public static function getPid($id = null)
+    public static function getPid($id = 0)
     {
         if (self::get($id)->offsetExists('#pid')) {
             return self::get($id)->offsetGet('#pid');
