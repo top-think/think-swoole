@@ -2,10 +2,10 @@
 
 namespace think\swoole;
 
-use think\swoole\watcher\Driver;
+use think\swoole\contract\WatcherInterface;
 
 /**
- * @mixin Driver
+ * @mixin WatcherInterface
  */
 class Watcher extends \think\Manager
 {

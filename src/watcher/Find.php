@@ -6,8 +6,9 @@ use InvalidArgumentException;
 use Swoole\Coroutine\System;
 use Swoole\Timer;
 use think\helper\Str;
+use think\swoole\contract\WatcherInterface;
 
-class Find implements Driver
+class Find implements WatcherInterface
 {
     protected $name;
     protected $directory;
@@ -37,7 +38,7 @@ class Find implements Driver
 
         $dest = implode(' ', $this->directory);
 
-        $name    = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn ($v) => "-name \"{$v}\"", $this->name)) . ' \)';
+        $name = empty($this->name) ? '' : ' \( ' . join(' -o ', array_map(fn($v) => "-name \"{$v}\"", $this->name)) . ' \)';
         $notName = '';
         $notPath = '';
         if (!empty($this->exclude)) {
@@ -52,11 +53,11 @@ class Find implements Driver
             }
 
             if (!empty($excludeFiles)) {
-                $notPath = ' -not \( ' . join(' -and ', array_map(fn ($v) => "-name \"{$v}\"", $excludeFiles)) . ' \)';
+                $notPath = ' -not \( ' . join(' -and ', array_map(fn($v) => "-name \"{$v}\"", $excludeFiles)) . ' \)';
             }
 
             if (!empty($excludeDirs)) {
-                $notPath = ' -not \( ' . join(' -and ', array_map(fn ($v) => "-path \"{$v}/*\"", $excludeDirs)) . ' \)';
+                $notPath = ' -not \( ' . join(' -and ', array_map(fn($v) => "-path \"{$v}/*\"", $excludeDirs)) . ' \)';
             }
         }
 

@@ -88,8 +88,12 @@ class File extends Response
 
     public function setAutoLastModified()
     {
-        $date = DateTime::createFromFormat('U', $this->file->getMTime());
-        return $this->lastModified($date->format('D, d M Y H:i:s') . ' GMT');
+        $mTime = $this->file->getMTime();
+        if ($mTime) {
+            $date = DateTime::createFromFormat('U', (string) $mTime);
+            $this->lastModified($date->format('D, d M Y H:i:s') . ' GMT');
+        }
+        return $this;
     }
 
     public function setAutoEtag()

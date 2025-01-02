@@ -101,7 +101,7 @@ trait InteractsWithWebsocket
 
                 $handler = $app->make(HandlerInterface::class);
 
-                $this->runWithBarrier(function () use ($app, $request, $handler) {
+                $this->runWithBarrier(function () use ($request, $handler) {
                     try {
                         $handler->onOpen($request);
                     } catch (Throwable $e) {

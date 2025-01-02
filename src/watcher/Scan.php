@@ -5,8 +5,9 @@ namespace think\swoole\watcher;
 use Swoole\Timer;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
+use think\swoole\contract\WatcherInterface;
 
-class Scan implements Driver
+class Scan implements WatcherInterface
 {
     protected $finder;
 
