@@ -1,20 +1,21 @@
 <?php
 
-namespace think\swoole\watcher;
+namespace think\swoole\watcher\driver;
 
 use InvalidArgumentException;
 use Swoole\Coroutine\System;
 use Swoole\Timer;
 use think\helper\Str;
-use think\swoole\contract\WatcherInterface;
+use think\swoole\watcher\Driver;
 
-class Find implements WatcherInterface
+class Find extends Driver
 {
     protected $name;
     protected $directory;
     protected $exclude;
+    protected $timer = null;
 
-    public function __construct($directory, $exclude, $name)
+    public function __construct($config)
     {
         $ret = System::exec('which find');
         if (empty($ret['output'])) {
@@ -25,9 +26,9 @@ class Find implements WatcherInterface
             throw new InvalidArgumentException('find version not support.');
         }
 
-        $this->directory = $directory;
-        $this->exclude   = $exclude;
-        $this->name      = $name;
+        $this->directory = $config['directory'];
+        $this->exclude   = $config['exclude'];
+        $this->name      = $config['name'];
     }
 
     public function watch(callable $callback)
@@ -63,15 +64,23 @@ class Find implements WatcherInterface
 
         $command = "find {$dest}{$name}{$notName}{$notPath} -mmin {$minutes} -type f -print";
 
-        Timer::tick($ms, function () use ($callback, $command) {
+        $this->timer = Timer::tick($ms, function () use ($callback, $command) {
             $ret = System::exec($command);
             if ($ret['code'] === 0 && strlen($ret['output'])) {
                 $stdout = trim($ret['output']);
                 if (!empty($stdout)) {
-                    call_user_func($callback);
+                    $files = array_filter(explode("\n", $stdout));
+                    call_user_func($callback, $files);
                 }
             }
         });
+    }
+
+    public function stop()
+    {
+        if ($this->timer) {
+            Timer::clear($this->timer);
+        }
     }
 
 }

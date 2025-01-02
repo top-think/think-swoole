@@ -2,11 +2,14 @@ parameters:
 	level: 5
 	paths:
 		- src
+		- tests
 	scanFiles:
 	    - vendor/topthink/framework/src/helper.php
 	scanDirectories:
 		- vendor/swoole/ide-helper/src/swoole_library/src
 	treatPhpDocTypesAsCertain: false
+	universalObjectCratesClasses:
+		- PHPUnit\Framework\TestCase
 	ignoreErrors:
 		-
 			identifier: while.alwaysTrue

@@ -1,26 +1,26 @@
 <?php
 
-namespace think\swoole\watcher;
+namespace think\swoole\watcher\driver;
 
 use Swoole\Timer;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
-use think\swoole\contract\WatcherInterface;
+use think\swoole\watcher\Driver;
 
-class Scan implements WatcherInterface
+class Scan extends Driver
 {
     protected $finder;
-
     protected $files = [];
+    protected $timer = null;
 
-    public function __construct($directory, $exclude, $name)
+    public function __construct($config)
     {
         $this->finder = new Finder();
         $this->finder
             ->files()
-            ->name($name)
-            ->in($directory)
-            ->exclude($exclude);
+            ->name($config['name'])
+            ->in($config['directory'])
+            ->exclude($config['exclude']);
     }
 
     protected function findFiles()
@@ -37,18 +37,25 @@ class Scan implements WatcherInterface
     {
         $this->files = $this->findFiles();
 
-        Timer::tick(2000, function () use ($callback) {
+        $this->timer = Timer::tick(2000, function () use ($callback) {
 
             $files = $this->findFiles();
 
             foreach ($files as $path => $time) {
                 if (empty($this->files[$path]) || $this->files[$path] != $time) {
-                    call_user_func($callback);
+                    call_user_func($callback, [$path]);
                     break;
                 }
             }
 
             $this->files = $files;
         });
+    }
+
+    public function stop()
+    {
+        if ($this->timer) {
+            Timer::clear($this->timer);
+        }
     }
 }
