@@ -263,11 +263,13 @@ trait InteractsWithHttp
 
     protected function sendFile(Response $res, \think\Request $request, FileResponse $response)
     {
-        $ifNoneMatch = $request->header('If-None-Match');
-        $ifRange     = $request->header('If-Range');
 
-        $code         = $response->getCode();
-        $file         = $response->getFile();
+        $header = $response->getHeader();
+        $code   = $response->getCode();
+        $file   = $response->getFile();
+
+        $ifNoneMatch            = $request->header('If-None-Match');
+        $ifRange                = $request->header('If-Range');
         $eTag         = $response->getHeader('ETag');
         $lastModified = $response->getHeader('Last-Modified');
 
@@ -277,6 +279,7 @@ trait InteractsWithHttp
 
         if ($ifNoneMatch == $eTag) {
             $code = 304;
+            unset($header['Content-Length']);
         } elseif (!$ifRange || $ifRange === $eTag || $ifRange === $lastModified) {
             $range = $request->header('Range', '');
             if (Str::startsWith($range, 'bytes=')) {
@@ -294,15 +297,15 @@ trait InteractsWithHttp
                 if ($start <= $end) {
                     $end = min($end, $fileSize - 1);
                     if ($start < 0 || $start > $end) {
-                        $code = 416;
-                        $response->header([
+                        $code   = 416;
+                        $header = array_merge($header, [
                             'Content-Range' => sprintf('bytes */%s', $fileSize),
                         ]);
                     } elseif ($end - $start < $fileSize - 1) {
                         $length = $end < $fileSize ? $end - $start + 1 : -1;
                         $offset = $start;
                         $code   = 206;
-                        $response->header([
+                        $header = array_merge($header, [
                             'Content-Range'  => sprintf('bytes %s-%s/%s', $start, $end, $fileSize),
                             'Content-Length' => $end - $start + 1,
                         ]);
@@ -312,7 +315,7 @@ trait InteractsWithHttp
         }
 
         $this->setStatus($res, $code);
-        $this->setHeader($res, $response->getHeader());
+        $this->setHeader($res, $header);
 
         if ($code >= 200 && $code < 300 && $length !== 0) {
             $res->sendfile($file->getPathname(), $offset, $length);

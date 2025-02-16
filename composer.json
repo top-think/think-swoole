@@ -11,7 +11,7 @@
     "require": {
         "php": "^8.0",
         "ext-json": "*",
-        "ext-swoole": "^4.0|^5.0",
+        "ext-swoole": "^4.0|^5.0|^6.0",
         "topthink/framework": "^6.0|^8.0",
         "nette/php-generator": "^4.0",
         "open-smf/connection-pool": ">=1.0",

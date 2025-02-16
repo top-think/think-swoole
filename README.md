@@ -120,3 +120,20 @@ class Controller {
     }
 }
 ```
+
+### 流式输出
+
+```php
+
+class Controller {
+
+    public function action(){
+        return \think\swoole\helper\iterator(value(function(){
+            foreach(range(1,10) as $i)
+                yield $i;
+                sleep(1);//模拟等待
+            }
+        }));
+    }
+}
+```
