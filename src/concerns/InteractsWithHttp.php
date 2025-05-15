@@ -2,6 +2,7 @@
 
 namespace think\swoole\concerns;
 
+use Generator;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Http\Server;
 use Swoole\Http\Request;
@@ -255,9 +256,20 @@ trait InteractsWithHttp
         $this->setHeader($res, $response->getHeader());
         $this->setStatus($res, $response->getCode());
 
-        foreach ($response as $content) {
-            $res->write($content);
+        $iterator = $response->getIterator();
+
+        if ($iterator instanceof Generator) {
+            while ($iterator->valid()) {
+                $content   = $iterator->current();
+                $connected = $res->write($content);
+                $iterator->send($connected);
+            }
+        } else {
+            foreach ($iterator as $content) {
+                $res->write($content);
+            }
         }
+
         $res->end();
     }
 
@@ -268,8 +280,8 @@ trait InteractsWithHttp
         $code   = $response->getCode();
         $file   = $response->getFile();
 
-        $ifNoneMatch            = $request->header('If-None-Match');
-        $ifRange                = $request->header('If-Range');
+        $ifNoneMatch = $request->header('If-None-Match');
+        $ifRange     = $request->header('If-Range');
         $eTag         = $response->getHeader('ETag');
         $lastModified = $response->getHeader('Last-Modified');
 

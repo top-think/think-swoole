@@ -4,6 +4,8 @@ namespace think\swoole\concerns;
 
 use Closure;
 use think\App;
+use think\Container;
+use think\Log;
 use think\swoole\App as SwooleApp;
 use think\swoole\Manager;
 use think\swoole\pool\Cache;
@@ -34,7 +36,9 @@ trait WithApplication
             if ($this->getConfig('pool.db.enable', true)) {
                 $this->app->bind('db', Db::class);
                 $this->app->resolving(Db::class, function (Db $db) {
-                    $db->setLog($this->container->log);
+                    $db->setLog(function ($type, $log) {
+                        Container::getInstance()->make(Log::class)->log($type, $log);
+                    });
                 });
             }
             if ($this->getConfig('pool.cache.enable', true)) {

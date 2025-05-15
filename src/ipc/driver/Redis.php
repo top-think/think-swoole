@@ -24,15 +24,6 @@ class Redis extends Driver
 
     public function prepare(\Swoole\Process\Pool $pool)
     {
-        $connector = new PhpRedisConnector();
-
-        $connection = $connector->connect($this->config);
-
-        if (count($keys = $connection->keys("{$this->getPrefix()}*"))) {
-            $connection->del($keys);
-        }
-
-        $connector->disconnect($connection);
     }
 
     public function subscribe()
