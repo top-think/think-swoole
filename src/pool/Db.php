@@ -14,7 +14,7 @@ use think\swoole\pool\proxy\Connection;
 class Db extends \think\Db
 {
 
-    protected function createConnection(string $name): ConnectionInterface
+    protected function createConnection($name): ConnectionInterface
     {
         return new Connection(new class(function () use ($name) {
             return parent::createConnection($name);
