@@ -2,6 +2,7 @@
 
 namespace think\swoole\concerns;
 
+use Swoole\Coroutine;
 use Swoole\Process;
 use Swoole\Timer;
 use think\helper\Arr;
@@ -35,6 +36,10 @@ trait InteractsWithQueue
 
                 while (true) {
                     $timer = Timer::after($timeout * 1000, function () use ($pool) {
+                        //关闭协程死锁检查
+                        Coroutine::set([
+                            'enable_deadlock_check' => false,
+                        ]);
                         $pool->getProcess()->exit();
                     });
 
