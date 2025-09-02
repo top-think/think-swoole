@@ -84,6 +84,9 @@ trait InteractsWithServer
                 $this->setProcessName($name);
             }
 
+            $this->clearCache();
+            $this->prepareApplication($envName);
+
             $this->ipc->listenMessage($workerId);
 
             Process::signal(SIGTERM, function () {
@@ -95,9 +98,6 @@ trait InteractsWithServer
                     $this->stopWorker();
                 }
             });
-
-            $this->clearCache();
-            $this->prepareApplication($envName);
 
             $this->triggerEvent(Constant::EVENT_WORKER_START, $name);
 
