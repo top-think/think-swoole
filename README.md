@@ -96,6 +96,7 @@ Route::get('path2','controller/action2');
 use \think\swoole\Websocket;
 use \think\swoole\websocket\Event;
 use \Swoole\WebSocket\Frame;
+use \think\swoole\websocket\Room;
 
 class Controller {
 
@@ -104,7 +105,16 @@ class Controller {
         return \think\swoole\helper\websocket()
             ->onOpen(...)
             ->onMessage(function(Websocket $websocket, Frame $frame){ //只可在事件响应这里注入websocket对象
-                ...
+                //...
+                $websocket->join('room_key'); //将当前连接加入到某个room，后续可以向该room发送消息 这个room里的都可以收到
+                //比如room_key可以直接使用这个用户的id，然后其他地方需要给某个用户发送消息，直接向这个room发送消息即可
+                //...
+                $websocket->push('message'); //给当前连接发送消息
+                //...
+                $websocket->emit('event_name', 'message'); //给当前连接发送事件
+                //...
+                $websocket->to('room_key')->push('message'); //给指定room的所有连接发送消息 在http请求的控制器中也可以注入Websocket对象这样发消息
+                //...
             })
             ->onClose(...);
     }
@@ -114,7 +124,7 @@ class Controller {
         return \think\swoole\helper\websocket()
             ->onOpen(...)
             ->onMessage(function(Websocket $websocket, Frame $frame){
-               ...
+               //...
             })
             ->onClose(...);
     }
