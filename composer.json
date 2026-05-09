@@ -18,7 +18,7 @@
         "stechstudio/backoff": "^1.2",
         "symfony/finder": ">=4.3",
         "symfony/process": ">=4.2",
-        "swoole/ide-helper": "^5.0"
+        "swoole/ide-helper": "^5.0|^6.0"
     },
     "require-dev": {
         "topthink/think-tracing": "^1.0",
