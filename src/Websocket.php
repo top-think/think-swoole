@@ -65,9 +65,9 @@ class Websocket
         return $this->makePusher()->to(...$values);
     }
 
-    public function push($data)
+    public function push($data, $opcode = WEBSOCKET_OPCODE_TEXT)
     {
-        $this->makePusher()->to($this->getSender())->push($data);
+        $this->makePusher()->to($this->getSender())->push($data, $opcode);
     }
 
     public function emit(string $event, ...$data)
