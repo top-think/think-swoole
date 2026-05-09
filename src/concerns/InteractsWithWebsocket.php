@@ -209,9 +209,13 @@ trait InteractsWithWebsocket
         $this->onEvent('message', function ($message) {
             if ($message instanceof PushMessage) {
                 if (isset($this->wsMessageChannel[$message->fd])) {
-                    $frame         = new Frame();
-                    $frame->data   = $message->data;
-                    $frame->opcode = $message->opcode;
+                    if ($message->data instanceof Frame) {
+                        $frame = $message->data;
+                    } else {
+                        $frame         = new Frame();
+                        $frame->data   = $message->data;
+                        $frame->opcode = $message->opcode;
+                    }
 
                     $this->wsMessageChannel[$message->fd]->push($frame);
                 }
