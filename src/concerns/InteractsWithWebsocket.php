@@ -227,6 +227,10 @@ trait InteractsWithWebsocket
             $this->bindWebsocketHandler();
             $this->prepareWebsocketListener();
         });
+
+        $this->onEvent('beforeWorkerStop', function () {
+            $this->wsRoom?->clear();
+        });
     }
 
     protected function prepareWebsocketIdAtomic()

@@ -221,4 +221,24 @@ class Table implements RoomInterface
             throw new InvalidArgumentException("Invalid table name: `{$table}`.");
         }
     }
+
+    /**
+     * Clear all rooms and clients.
+     *
+     * @return void
+     */
+    public function clear()
+    {
+        if ($this->rooms instanceof SwooleTable) {
+            foreach ($this->rooms as $key => $row) {
+                $this->rooms->del($key);
+            }
+        }
+
+        if ($this->fds instanceof SwooleTable) {
+            foreach ($this->fds as $key => $row) {
+                $this->fds->del($key);
+            }
+        }
+    }
 }

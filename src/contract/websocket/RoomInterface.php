@@ -58,4 +58,11 @@ interface RoomInterface
      * @return array
      */
     public function getRooms($fd);
+
+    /**
+     * Clear all rooms and clients.
+     *
+     * @return void
+     */
+    public function clear();
 }

@@ -247,4 +247,18 @@ class Redis implements RoomInterface
         return "{$this->prefix}{$table}:{$key}";
     }
 
+    /**
+     * Clear all rooms and clients.
+     *
+     * @return void
+     */
+    public function clear()
+    {
+        $this->runWithRedis(function (PHPRedis $redis) {
+            $keys = $redis->keys("{$this->prefix}*");
+            if (!empty($keys)) {
+                $redis->del($keys);
+            }
+        });
+    }
 }
