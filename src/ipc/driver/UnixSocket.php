@@ -61,8 +61,13 @@ class UnixSocket extends Driver
         });
     }
 
-    public function publish($workerId, $message)
+    public function publish($workerId, $message, ?string $nodeId = null)
     {
+        // UnixSocket 仅限于本机进程间通信，跨节点无法处理
+        if ($nodeId !== null && $nodeId !== $this->manager->getNodeId()) {
+            return;
+        }
+
         Barrier::run(function () use ($workerId, $message) {
             $socket = $this->getSocket($workerId);
 

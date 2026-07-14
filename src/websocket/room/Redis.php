@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use Redis as PHPRedis;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\PhpRedisConnector;
+use Swoole\Timer;
 use think\helper\Arr;
 use think\swoole\contract\websocket\RoomInterface;
 use think\swoole\Manager;
@@ -55,6 +56,7 @@ class Redis implements RoomInterface
     {
         $this->initData();
         $this->prepareRedis();
+        $this->addHeartbeatWorker();
         return $this;
     }
 
@@ -73,15 +75,13 @@ class Redis implements RoomInterface
 
     protected function initData()
     {
-        $connector = new PhpRedisConnector();
-
-        $connection = $connector->connect($this->config);
-
-        if (count($keys = $connection->keys("{$this->prefix}*"))) {
-            $connection->del($keys);
+        // prepare 阶段 pool 尚未初始化，使用独立连接清理当前节点旧数据
+        $redis = $this->createRedisConnection();
+        try {
+            $this->clearByFdPrefix($redis, $this->manager->getNodeId() . '.');
+        } finally {
+            (new PhpRedisConnector())->disconnect($redis);
         }
-
-        $connector->disconnect($connection);
     }
 
     /**
@@ -110,7 +110,7 @@ class Redis implements RoomInterface
     public function delete($fd, $rooms)
     {
         $rooms = is_array($rooms) ? $rooms : [$rooms];
-        $rooms = count($rooms) ? $rooms : $this->getRooms($fd);
+        $rooms = empty($rooms) ? $this->getRooms($fd) : $rooms;
 
         $this->removeValue($fd, $rooms, RoomInterface::DESCRIPTORS_KEY);
 
@@ -127,6 +127,14 @@ class Redis implements RoomInterface
         } finally {
             $this->pool->return($redis);
         }
+    }
+
+    /**
+     * 创建独立 Redis 连接（不经过连接池）
+     */
+    protected function createRedisConnection(): PHPRedis
+    {
+        return (new PhpRedisConnector())->connect($this->config);
     }
 
     /**
@@ -248,17 +256,108 @@ class Redis implements RoomInterface
     }
 
     /**
-     * Clear all rooms and clients.
-     *
-     * @return void
+     * Clear rooms and clients by node/worker prefix.
      */
-    public function clear()
+    public function clear(?string $nodeId = null, ?int $workerId = null)
     {
-        $this->runWithRedis(function (PHPRedis $redis) {
-            $keys = $redis->keys("{$this->prefix}*");
-            if (!empty($keys)) {
-                $redis->del($keys);
-            }
+        if ($nodeId === null) {
+            // 全量清理
+            $this->runWithRedis(function (PHPRedis $redis) {
+                $keys = $redis->keys("{$this->prefix}*");
+                if (!empty($keys)) {
+                    $redis->del($keys);
+                }
+            });
+            return;
+        }
+
+        $fdPrefix = $workerId !== null
+            ? "{$nodeId}.{$workerId}."
+            : "{$nodeId}.";
+
+        $this->runWithRedis(function (PHPRedis $redis) use ($fdPrefix) {
+            $this->clearByFdPrefix($redis, $fdPrefix);
         });
     }
+
+    /**
+     * 按 fd 前缀清理房间数据（先收集再 pipeline 执行）
+     */
+    protected function clearByFdPrefix(PHPRedis $redis, string $fdPrefix): void
+    {
+        $allKeys = $redis->keys("{$this->prefix}*");
+
+        $fdsToRemove = [];
+        $keysToDelete = [];
+
+        foreach ($allKeys as $key) {
+            $suffix = substr($key, strlen($this->prefix));
+
+            if (str_starts_with($suffix, 'rooms:')) {
+                $fds = $redis->smembers($key);
+                foreach ($fds as $fd) {
+                    if (str_starts_with($fd, $fdPrefix)) {
+                        $fdsToRemove[$key][] = $fd;
+                    }
+                }
+            } elseif (str_starts_with($suffix, 'fds:')) {
+                $fd = substr($suffix, 4);
+                if (str_starts_with($fd, $fdPrefix)) {
+                    $keysToDelete[] = $key;
+                }
+            }
+        }
+
+        $pipe = $redis->multi(PHPRedis::PIPELINE);
+        foreach ($fdsToRemove as $roomKey => $fds) {
+            foreach ($fds as $fd) {
+                $pipe->srem($roomKey, $fd);
+            }
+        }
+        foreach ($keysToDelete as $key) {
+            $pipe->del($key);
+        }
+        $pipe->exec();
+    }
+
+    /**
+     * 心跳 Worker：维护节点心跳 + 清理死节点房间数据
+     */
+    protected function addHeartbeatWorker(): void
+    {
+        $this->manager->addWorker(function () {
+            $nodeId = $this->manager->getNodeId();
+            $heartbeatKey = "{$this->prefix}heartbeat:{$nodeId}";
+            $nodesKey = "{$this->prefix}nodes";
+            $interval = 5;
+            $ttl = 15;
+
+            // 独立 Redis 连接用于心跳操作（长连接，不断开）
+            $redis = $this->createRedisConnection();
+
+            // 注册本节点
+            $redis->setex($heartbeatKey, $ttl, 1);
+            $redis->sadd($nodesKey, $nodeId);
+
+            Timer::tick($interval * 1000, function () use ($redis, $nodeId, $heartbeatKey, $ttl, $nodesKey) {
+                // 更新心跳
+                $redis->setex($heartbeatKey, $ttl, 1);
+
+                // 检查死节点并清理
+                $knownNodes = $redis->smembers($nodesKey);
+                foreach ($knownNodes as $knownNodeId) {
+                    if ($knownNodeId === $nodeId) {
+                        continue;
+                    }
+                    if (!$redis->exists("{$this->prefix}heartbeat:{$knownNodeId}")) {
+                        // 只有 srem 成功的节点才执行清理，避免多节点重复操作
+                        if ($redis->srem($nodesKey, $knownNodeId) > 0) {
+                            $this->clearByFdPrefix($redis, $knownNodeId . '.');
+                        }
+                    }
+                }
+            });
+        }, 'websocket heartbeat');
+    }
+
 }

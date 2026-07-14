@@ -94,7 +94,8 @@ trait InteractsWithWebsocket
             });
 
             try {
-                $id = "{$this->workerId}.{$fd}";
+                // {nodeId}.{workerId}.{fd}
+                $id = "{$this->getNodeId()}.{$this->workerId}.{$fd}";
 
                 $websocket->setSender($id);
                 $websocket->join($id);
@@ -229,7 +230,7 @@ trait InteractsWithWebsocket
         });
 
         $this->onEvent('beforeWorkerStop', function () {
-            $this->wsRoom?->clear();
+            $this->wsRoom?->clear($this->getNodeId(), $this->workerId);
         });
     }
 

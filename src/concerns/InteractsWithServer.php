@@ -34,6 +34,26 @@ trait InteractsWithServer
     /** @var Ipc */
     protected $ipc;
 
+    /**
+     * @var string
+     */
+    protected $nodeId;
+
+    /**
+     * 获取当前节点 ID
+     * 未配置时自动使用 hostname
+     *
+     * @return string
+     */
+    public function getNodeId(): string
+    {
+        if ($this->nodeId === null) {
+            $nodeId       = $this->getConfig('node_id');
+            $this->nodeId = $nodeId ?: gethostname();
+        }
+        return $this->nodeId;
+    }
+
     public function addBatchWorker(int $workerNum, callable $func, $name = null)
     {
         for ($i = 0; $i < $workerNum; $i++) {
@@ -127,9 +147,9 @@ trait InteractsWithServer
         return $this->pool;
     }
 
-    public function sendMessage($workerId, $message)
+    public function sendMessage($workerId, $message, ?string $nodeId = null)
     {
-        $this->ipc->sendMessage($workerId, $message);
+        $this->ipc->sendMessage($workerId, $message, $nodeId);
     }
 
     protected function createPool($workerNum)
