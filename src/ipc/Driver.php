@@ -28,12 +28,13 @@ abstract class Driver
         $this->subscribe();
     }
 
-    public function sendMessage($workerId, $message)
+    public function sendMessage($workerId, $message, ?string $nodeId = null)
     {
-        if ($workerId === $this->workerId) {
+        // 同一节点 && 同一 worker → 直接触发；其余 → IPC 发布
+        if (($nodeId === null || $nodeId === $this->manager->getNodeId()) && $workerId === $this->workerId) {
             $this->manager->triggerEvent('message', $message);
         } else {
-            $this->publish($workerId, $message);
+            $this->publish($workerId, $message, $nodeId);
         }
     }
 
@@ -43,5 +44,5 @@ abstract class Driver
 
     abstract public function subscribe();
 
-    abstract public function publish($workerId, $message);
+    abstract public function publish($workerId, $message, ?string $nodeId = null);
 }

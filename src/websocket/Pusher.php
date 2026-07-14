@@ -60,9 +60,11 @@ class Pusher
         }
 
         foreach (array_unique($fds) as $fd) {
-            [$workerId, $fd] = explode('.', $fd);
-            $data = $this->handler->encodeMessage($data);
-            $this->manager->sendMessage((int)$workerId, new PushMessage((int)$fd, $data, $opcode));
+            $parts = explode('.', $fd);
+            [$nodeId, $workerId, $localFd] = $parts;
+            $data    = $this->handler->encodeMessage($data);
+            $pushMsg = new PushMessage((int) $localFd, $data, $opcode);
+            $this->manager->sendMessage((int) $workerId, $pushMsg, $nodeId ?: null);
         }
     }
 

@@ -60,9 +60,11 @@ interface RoomInterface
     public function getRooms($fd);
 
     /**
-     * Clear all rooms and clients.
+     * Clear rooms and clients.
      *
+     * @param string|null $nodeId  指定节点ID时只清理该节点的连接
+     * @param int|null    $workerId 指定workerID时只清理该worker的连接
      * @return void
      */
-    public function clear();
+    public function clear(?string $nodeId = null, ?int $workerId = null);
 }

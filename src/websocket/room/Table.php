@@ -223,22 +223,36 @@ class Table implements RoomInterface
     }
 
     /**
-     * Clear all rooms and clients.
-     *
-     * @return void
+     * Clear rooms and clients.
      */
-    public function clear()
+    public function clear(?string $nodeId = null, ?int $workerId = null)
     {
+        $fdPrefix = $this->buildFdPrefix($nodeId, $workerId);
+
         if ($this->rooms instanceof SwooleTable) {
             foreach ($this->rooms as $key => $row) {
+                if ($fdPrefix && !str_starts_with($key, $fdPrefix)) {
+                    continue;
+                }
                 $this->rooms->del($key);
             }
         }
 
         if ($this->fds instanceof SwooleTable) {
             foreach ($this->fds as $key => $row) {
+                if ($fdPrefix && !str_starts_with($key, $fdPrefix)) {
+                    continue;
+                }
                 $this->fds->del($key);
             }
         }
+    }
+
+    protected function buildFdPrefix(?string $nodeId, ?int $workerId): string
+    {
+        if ($nodeId === null) {
+            return '';
+        }
+        return $workerId !== null ? "{$nodeId}.{$workerId}." : "{$nodeId}.";
     }
 }

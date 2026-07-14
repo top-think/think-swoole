@@ -41,18 +41,26 @@ class Redis extends Driver
         Coroutine::create(function () {
             $this->runWithRedis(function (PHPRedis $redis) {
                 $redis->setOption(PHPRedis::OPT_READ_TIMEOUT, -1);
-                $redis->subscribe([$this->getPrefix() . $this->workerId], function ($redis, $channel, $message) {
+                $redis->subscribe([$this->getChannel($this->workerId)], function ($redis, $channel, $message) {
                     $this->manager->triggerEvent('message', unserialize($message));
                 });
             });
         });
     }
 
-    public function publish($workerId, $message)
+    public function publish($workerId, $message, ?string $nodeId = null)
     {
-        $this->runWithRedis(function (PHPRedis $redis) use ($message, $workerId) {
-            $redis->publish($this->getPrefix() . $workerId, serialize($message));
+        $this->runWithRedis(function (PHPRedis $redis) use ($message, $workerId, $nodeId) {
+            $redis->publish($this->getChannel($workerId, $nodeId), serialize($message));
         });
+    }
+
+    /**
+     * 获取 Redis 频道名：{prefix}{nodeId}:{workerId}
+     */
+    protected function getChannel(int $workerId, ?string $nodeId = null): string
+    {
+        return $this->getPrefix() . ($nodeId ?? $this->manager->getNodeId()) . ':' . $workerId;
     }
 
     protected function getPrefix()
