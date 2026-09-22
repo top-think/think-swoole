@@ -87,6 +87,11 @@ return [
             'max_wait_time' => 5,
         ],
     ],
+    //协程作用域
+    'scope'      => [
+        //root 协程收尾等待后代协程超过该时长(秒)时输出告警，0 表示不告警
+        'wait_warning' => 30,
+    ],
     'tables'     => [],
     //每个worker里需要预加载以共用的实例
     'concretes'  => [],

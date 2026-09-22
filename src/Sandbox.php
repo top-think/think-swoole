@@ -6,13 +6,16 @@ use Closure;
 use InvalidArgumentException;
 use ReflectionObject;
 use RuntimeException;
+use Swoole\Timer;
 use think\Config;
 use think\Container;
 use think\Event;
 use think\exception\Handle;
+use think\Log;
 use think\swoole\concerns\ModifyProperty;
 use think\swoole\contract\ResetterInterface;
 use think\swoole\coroutine\Context;
+use think\swoole\coroutine\Scope;
 use think\swoole\resetters\ClearInstances;
 use think\swoole\resetters\ResetConfig;
 use think\swoole\resetters\ResetEvent;
@@ -76,13 +79,48 @@ class Sandbox
     public function run(Closure $callable)
     {
         $this->init();
+
+        $scope = new Scope();
+        //作用域只保存在 root 上，后代协程通过 Context::getScope() 沿链解析
+        Context::setScope($scope);
+
         $app = $this->getApplication();
         try {
             $app->invoke($callable, [$this]);
         } catch (Throwable $e) {
             $app->make(Handle::class)->report($e);
         } finally {
+            //后代协程全部退出前 root 协程不会结束，沙箱在此期间保持有效
+            $this->waitScope($scope, $app);
+
             $this->clear();
+        }
+    }
+
+    /**
+     * 等待所有后代协程退出
+     * @param Scope $scope
+     * @param App $app
+     */
+    protected function waitScope(Scope $scope, App $app)
+    {
+        $warning = (float) $this->getConfig()->get('swoole.scope.wait_warning', 30);
+
+        //等待过久时输出告警，便于排查一直没有退出的后代协程
+        $timer = $warning > 0
+            ? Timer::after((int) ($warning * 1000), function () use ($app, $scope, $warning) {
+                $app->make(Log::class)->warning(
+                    "sandbox has waited {$warning}s: {$scope->getCount()} descendant coroutine(s) still running"
+                );
+            })
+            : null;
+
+        try {
+            $scope->wait();
+        } finally {
+            if ($timer) {
+                Timer::clear($timer);
+            }
         }
     }
 

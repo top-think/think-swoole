@@ -126,14 +126,19 @@ class Context
     /**
      * 获取父级协程ID
      * @param int $id
-     * @return mixed
+     * @return int
      */
     public static function getPid($id = 0)
     {
-        if (self::get($id)->offsetExists('#pid')) {
-            return self::get($id)->offsetGet('#pid');
+        $context = self::get($id);
+
+        if ($context && $context->offsetExists('#pid')) {
+            return (int) $context->offsetGet('#pid');
         }
-        return Coroutine::getPcid($id);
+
+        $pid = Coroutine::getPcid($id);
+
+        return $pid === false ? -1 : (int) $pid;
     }
 
     /**
@@ -146,26 +151,100 @@ class Context
     }
 
     /**
+     * 绑定根协程ID
+     * @param int $id
+     */
+    public static function setRootId($id)
+    {
+        if ($context = self::get()) {
+            $context->offsetSet('#root-id', $id);
+        }
+    }
+
+    /**
      * 获取根协程ID
      * @param bool $init
-     * @return mixed
+     * @return int
      */
     public static function getRootId($init = false)
     {
-        if ($init) {
-            self::get()->offsetSet('#root', true);
-            return self::getId();
-        } else {
-            $cid = self::getId();
-            while (!self::get($cid)->offsetExists('#root')) {
-                $cid = self::getPid($cid);
+        $context = self::get();
 
-                if ($cid < 1) {
-                    break;
-                }
+        //非协程环境
+        if (!$context) {
+            return -1;
+        }
+
+        if ($init) {
+            $context->offsetSet('#root', true);
+            $context->offsetUnset('#root-id');
+            return self::getId();
+        }
+
+        if ($context->offsetExists('#root')) {
+            return self::getId();
+        }
+
+        //创建协程时继承下来的，或之前查找过并缓存的根协程ID
+        if ($context->offsetExists('#root-id')) {
+            return (int) $context->offsetGet('#root-id');
+        }
+
+        $cid = self::getId();
+        while (($pid = self::getPid($cid)) > 0) {
+            $parent = self::get($pid);
+
+            //祖先协程已退出，无法继续向上查找
+            if (!$parent) {
+                break;
             }
 
-            return $cid;
+            if ($parent->offsetExists('#root')) {
+                //缓存查找结果，后续调用与后代协程不再向上查找
+                $context->offsetSet('#root-id', $pid);
+                return $pid;
+            }
+
+            $cid = $pid;
+        }
+
+        return -1;
+    }
+
+    /**
+     * 获取当前协程所属的作用域
+     *
+     * 作用域只保存在 root 协程上，根据根协程ID直接读取，
+     * 因此凡是能定位到 root 的协程都能拿到作用域。
+     *
+     * @param int|null $rootId 已解析的根协程ID，未传时自动解析
+     * @return Scope|null
+     */
+    public static function getScope($rootId = null)
+    {
+        if ($rootId === null) {
+            $rootId = self::getRootId();
+        }
+
+        if ($rootId > 0) {
+            $root = self::get($rootId);
+
+            if ($root && $root->offsetExists('#scope')) {
+                return $root->offsetGet('#scope');
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 绑定作用域（仅 root 协程需要）
+     * @param Scope $scope
+     */
+    public static function setScope(Scope $scope)
+    {
+        if ($context = self::get()) {
+            $context->offsetSet('#scope', $scope);
         }
     }
 }
