@@ -26,6 +26,7 @@ namespace think\swoole\helper {
 
     use think\swoole\response\File;
     use think\swoole\response\Iterator;
+    use think\swoole\response\Stream;
     use think\swoole\response\Websocket;
     use Traversable;
 
@@ -48,6 +49,11 @@ namespace think\swoole\helper {
     function iterator(Traversable $iterator)
     {
         return new Iterator($iterator);
+    }
+
+    function stream($stream, int $chunkSize = 8192, bool $autoClose = true): Stream
+    {
+        return new Stream($stream, $chunkSize, $autoClose);
     }
 
     function websocket()

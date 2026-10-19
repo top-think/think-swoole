@@ -196,3 +196,26 @@ class Controller {
     }
 }
 ```
+
+也可以直接传入一个文件或其他可读的流资源：
+
+```php
+public function download()
+{
+    $stream = fopen(runtime_path() . 'large-file.zip', 'rb');
+
+    return \think\swoole\helper\stream($stream)
+        ->header([
+            'Content-Type'        => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="large-file.zip"',
+        ]);
+}
+```
+
+流响应默认每 8192 字节读取一次，并在发送完成后关闭传入的资源。如果资源由其他代码管理，可以将第三个参数设为 `false`：
+
+```php
+\think\swoole\helper\stream($stream, 8192, false);
+```
+
+对于服务器上的本地文件，应优先使用 `\think\swoole\helper\file()` 或 `download()`，它们会使用 Swoole 的 `sendfile`，并支持 Range、ETag 和 Last-Modified。
