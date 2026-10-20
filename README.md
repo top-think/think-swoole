@@ -128,7 +128,7 @@ return [
 ];
 ```
 
-异步链路追踪在 `tracing.redis` 中选择连接，它的 key 前缀由 Tracing 自身维护：
+异步链路追踪在 `tracing.redis` 中选择连接，它的 key 前缀由 Tracing 自身维护。所有 `async` tracer 共用一个上报 Worker，每个 tracer 使用独立协程消费自己的队列：
 
 ```php
 return [
