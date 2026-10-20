@@ -101,6 +101,8 @@ class TaskTestService extends Task
 
     public $reported = [];
 
+    public $coroutineCalls = 0;
+
     protected $testStore;
 
     public function __construct(Manager $manager, TaskStoreInterface $store)
@@ -122,6 +124,8 @@ class TaskTestService extends Task
 
     protected function runInCoroutine(callable $callback): int
     {
+        $this->coroutineCalls++;
+
         if ($this->executeCoroutine) {
             $callback();
         }
@@ -188,8 +192,39 @@ it('tracks a task until it completes', function () {
     expect($id)->toBe('generated-id')
         ->and($store->starts)->toBe(1)
         ->and($store->stops)->toBe(1)
+        ->and($task->coroutineCalls)->toBe(1)
         ->and($task->clearedTimers)->toBe([99])
         ->and($task->isRunning($id))->toBeFalse();
+});
+
+it('runs a task synchronously in the current coroutine', function () {
+    $store         = new TaskTestStore();
+    $task          = makeTaskTestService($store);
+    $runningDuring = false;
+
+    $task->run('sync-task', function () use ($task, &$runningDuring) {
+        $runningDuring = $task->isRunning('sync-task');
+    });
+
+    expect($runningDuring)->toBeTrue()
+        ->and($task->coroutineCalls)->toBe(0)
+        ->and($store->starts)->toBe(1)
+        ->and($store->stops)->toBe(1)
+        ->and($task->isRunning('sync-task'))->toBeFalse();
+});
+
+it('logs a synchronous task exception and removes the heartbeat', function () {
+    $store     = new TaskTestStore();
+    $task      = makeTaskTestService($store);
+    $exception = new RuntimeException('sync task failed');
+
+    $task->run('sync-task', function () use ($exception) {
+        throw $exception;
+    });
+
+    expect($task->reported)->toBe([$exception])
+        ->and($store->stops)->toBe(1)
+        ->and($task->isRunning('sync-task'))->toBeFalse();
 });
 
 it('logs task exceptions and removes the heartbeat', function () {
@@ -338,6 +373,10 @@ it('proxies facade calls to one shared task service', function () {
             return 'facade-task';
         }
 
+        public function run(string $id, callable $callback): void
+        {
+        }
+
         public function isRunning(string $id): bool
         {
             return true;
@@ -350,6 +389,9 @@ it('proxies facade calls to one shared task service', function () {
     Container::setInstance($container);
 
     try {
+        TaskFacade::run('facade-task', function () {
+        });
+
         expect(TaskFacade::create(function () {
         }))->toBe('facade-task')
             ->and(TaskFacade::isRunning('facade-task'))->toBeTrue()

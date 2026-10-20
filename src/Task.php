@@ -38,9 +38,24 @@ class Task
      */
     public function create(callable $callback, ?string $id = null): string
     {
+        $id = $this->normalizeId($id);
+        $this->execute($id, $callback, true);
+
+        return $id;
+    }
+
+    /**
+     * 在当前协程中同步执行任务
+     */
+    public function run(string $id, callable $callback): void
+    {
+        $this->execute($this->normalizeId($id), $callback, false);
+    }
+
+    protected function execute(string $id, callable $callback, bool $async): void
+    {
         $config     = $this->getConfig();
         $store      = $this->getStore($config);
-        $id         = $this->normalizeId($id);
         $heartbeat  = (int) ($config['heartbeat_interval'] ?? 5);
         $leaseTtl   = (int) ($config['lease_ttl'] ?? 15);
         $owner      = bin2hex(random_bytes(16));
@@ -68,9 +83,11 @@ class Task
                 }
             };
 
-            $this->runInCoroutine($runner);
-
-            return $id;
+            if ($async) {
+                $this->runInCoroutine($runner);
+            } else {
+                $runner();
+            }
         } catch (Throwable $e) {
             if ($timerId !== null) {
                 $this->clearTimer($timerId);

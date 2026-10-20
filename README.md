@@ -211,6 +211,14 @@ if (!Task::isRunning($taskId)) {
 Task::create($callback, 'order:' . $orderId);
 ```
 
+需要同步阻塞当前协程执行时使用 `run()`，任务 ID 必须由业务提供：
+
+```php
+Task::run('order:' . $orderId, function () use ($orderId) {
+    // 在当前协程中同步执行
+});
+```
+
 默认每 5 秒续租、租约 15 秒，可通过 `swoole.task` 配置：
 
 ```php
@@ -226,7 +234,7 @@ return [
 ];
 ```
 
-任务正常结束时会立即删除心跳 key；进程崩溃时心跳停止，key 在 `lease_ttl` 后自动过期。两种情况下 `isRunning()` 最终都会返回 `false`，调用方再结合任务自身写入的业务状态判断完成、失败或中断。
+`create()` 创建子协程并立即返回任务 ID；`run()` 直接阻塞当前协程，直到 callback 完成。任务正常结束时会立即删除心跳 key；进程崩溃时心跳停止，key 在 `lease_ttl` 后自动过期。两种情况下 `isRunning()` 最终都会返回 `false`，调用方再结合任务自身写入的业务状态判断完成、失败或中断。
 
 任务异常会直接写入应用错误日志，不额外保存异常状态。框架不会自动重试；业务确认任务中断后需要自行重新提交，并保证副作用幂等。
 
