@@ -180,6 +180,26 @@ class Controller {
 }
 ```
 
+#### 静态推送
+
+在 HTTP 控制器、事件监听器或其他业务代码中，可以直接使用 `Pusher` 门面向指定房间推送消息，无需注入 `Websocket`：
+
+```php
+use think\swoole\facade\Pusher;
+
+// 向单个房间推送消息
+Pusher::to('room_key')->push('message');
+
+// 同时向多个房间推送
+Pusher::to('room_a', 'room_b')->push('message');
+Pusher::to(['room_a', 'room_b'])->push('message');
+
+// 向房间推送事件
+Pusher::to('user_1001')->emit('notice', ['content' => 'message']);
+```
+
+> 每次静态调用都会创建一个独立的 `Pusher` 实例，上一次 `to()` 设置的目标不会影响下一次推送。
+
 ### 流式输出
 
 ```php
