@@ -4,13 +4,11 @@ namespace think\swoole\websocket\room;
 
 use InvalidArgumentException;
 use Redis as PHPRedis;
-use Smf\ConnectionPool\ConnectionPool;
-use Smf\ConnectionPool\Connectors\PhpRedisConnector;
 use Swoole\Timer;
 use think\helper\Arr;
 use think\swoole\contract\websocket\RoomInterface;
 use think\swoole\Manager;
-use think\swoole\Pool;
+use think\swoole\redis\Connection;
 
 /**
  * Class RedisRoom
@@ -30,8 +28,8 @@ class Redis implements RoomInterface
     /** @var Manager */
     protected $manager;
 
-    /** @var ConnectionPool */
-    protected $pool;
+    /** @var Connection */
+    protected $redis;
 
     /**
      * RedisRoom constructor.
@@ -47,6 +45,8 @@ class Redis implements RoomInterface
         if ($prefix = Arr::get($this->config, 'prefix')) {
             $this->prefix = $prefix;
         }
+
+        $this->redis = $this->manager->getRedis()->connectionFor($this->config, 'websocket.room');
     }
 
     /**
@@ -55,33 +55,16 @@ class Redis implements RoomInterface
     public function prepare(): RoomInterface
     {
         $this->initData();
-        $this->prepareRedis();
         $this->addHeartbeatWorker();
         return $this;
     }
 
-    protected function prepareRedis()
-    {
-        $this->manager->onEvent('workerStart', function () {
-            $config     = $this->config;
-            $this->pool = new ConnectionPool(
-                Pool::pullPoolConfig($config),
-                new PhpRedisConnector(),
-                $config
-            );
-            $this->manager->getPools()->add('websocket.room', $this->pool);
-        });
-    }
-
     protected function initData()
     {
-        // prepare 阶段 pool 尚未初始化，使用独立连接清理当前节点旧数据
-        $redis = $this->createRedisConnection();
-        try {
+        // prepare 阶段连接池尚未初始化，使用独占连接清理当前节点旧数据
+        $this->redis->dedicated(function (PHPRedis $redis) {
             $this->clearByFdPrefix($redis, $this->manager->getNodeId() . '.');
-        } finally {
-            (new PhpRedisConnector())->disconnect($redis);
-        }
+        });
     }
 
     /**
@@ -121,20 +104,7 @@ class Redis implements RoomInterface
 
     protected function runWithRedis(\Closure $callable)
     {
-        $redis = $this->pool->borrow();
-        try {
-            return $callable($redis);
-        } finally {
-            $this->pool->return($redis);
-        }
-    }
-
-    /**
-     * 创建独立 Redis 连接（不经过连接池）
-     */
-    protected function createRedisConnection(): PHPRedis
-    {
-        return (new PhpRedisConnector())->connect($this->config);
+        return $this->redis->run($callable);
     }
 
     /**
@@ -287,7 +257,7 @@ class Redis implements RoomInterface
     {
         $allKeys = $redis->keys("{$this->prefix}*");
 
-        $fdsToRemove = [];
+        $fdsToRemove  = [];
         $keysToDelete = [];
 
         foreach ($allKeys as $key) {
@@ -326,36 +296,37 @@ class Redis implements RoomInterface
     protected function addHeartbeatWorker(): void
     {
         $this->manager->addWorker(function () {
-            $nodeId = $this->manager->getNodeId();
+            $nodeId       = $this->manager->getNodeId();
             $heartbeatKey = "{$this->prefix}heartbeat:{$nodeId}";
-            $nodesKey = "{$this->prefix}nodes";
-            $interval = 5;
-            $ttl = 15;
-
-            // 独立 Redis 连接用于心跳操作（长连接，不断开）
-            $redis = $this->createRedisConnection();
+            $nodesKey     = "{$this->prefix}nodes";
+            $interval     = 5;
+            $ttl          = 15;
 
             // 注册本节点
-            $redis->setex($heartbeatKey, $ttl, 1);
-            $redis->sadd($nodesKey, $nodeId);
-
-            Timer::tick($interval * 1000, function () use ($redis, $nodeId, $heartbeatKey, $ttl, $nodesKey) {
-                // 更新心跳
+            $this->runWithRedis(function (PHPRedis $redis) use ($heartbeatKey, $ttl, $nodesKey, $nodeId) {
                 $redis->setex($heartbeatKey, $ttl, 1);
+                $redis->sadd($nodesKey, $nodeId);
+            });
 
-                // 检查死节点并清理
-                $knownNodes = $redis->smembers($nodesKey);
-                foreach ($knownNodes as $knownNodeId) {
-                    if ($knownNodeId === $nodeId) {
-                        continue;
-                    }
-                    if (!$redis->exists("{$this->prefix}heartbeat:{$knownNodeId}")) {
-                        // 只有 srem 成功的节点才执行清理，避免多节点重复操作
-                        if ($redis->srem($nodesKey, $knownNodeId) > 0) {
-                            $this->clearByFdPrefix($redis, $knownNodeId . '.');
+            Timer::tick($interval * 1000, function () use ($nodeId, $heartbeatKey, $ttl, $nodesKey) {
+                $this->runWithRedis(function (PHPRedis $redis) use ($nodeId, $heartbeatKey, $ttl, $nodesKey) {
+                    // 更新心跳
+                    $redis->setex($heartbeatKey, $ttl, 1);
+
+                    // 检查死节点并清理
+                    $knownNodes = $redis->smembers($nodesKey);
+                    foreach ($knownNodes as $knownNodeId) {
+                        if ($knownNodeId === $nodeId) {
+                            continue;
+                        }
+                        if (!$redis->exists("{$this->prefix}heartbeat:{$knownNodeId}")) {
+                            // 只有 srem 成功的节点才执行清理，避免多节点重复操作
+                            if ($redis->srem($nodesKey, $knownNodeId) > 0) {
+                                $this->clearByFdPrefix($redis, $knownNodeId . '.');
+                            }
                         }
                     }
-                }
+                });
             });
         }, 'websocket heartbeat');
     }

@@ -23,10 +23,7 @@ return [
                 'client_size' => 2048,
             ],
             'redis' => [
-                'host'          => '127.0.0.1',
-                'port'          => 6379,
-                'max_active'    => 3,
-                'max_wait_time' => 5,
+                'prefix' => 'swoole:room:',
             ],
         ],
         'listen'        => [],
@@ -46,6 +43,15 @@ return [
     'queue'      => [
         'enable'  => false,
         'workers' => [],
+    ],
+    //任务
+    'task'       => [
+        'heartbeat_interval' => 5,
+        'lease_ttl'          => 15,
+        'redis'              => [
+            'connection' => 'default',
+            'prefix'     => 'swoole:task:',
+        ],
     ],
     'hot_update' => [
         'enable'  => env('APP_DEBUG', false),
@@ -70,10 +76,7 @@ return [
     'ipc'        => [
         'type'  => 'unix_socket',
         'redis' => [
-            'host'          => '127.0.0.1',
-            'port'          => 6379,
-            'max_active'    => 3,
-            'max_wait_time' => 5,
+            'prefix' => 'swoole:ipc:',
         ],
     ],
     //锁
@@ -81,16 +84,26 @@ return [
         'enable' => false,
         'type'   => 'table',
         'redis'  => [
-            'host'          => '127.0.0.1',
-            'port'          => 6379,
-            'max_active'    => 3,
-            'max_wait_time' => 5,
+            'connection' => 'default',
+            'prefix'     => 'swoole:lock:',
         ],
     ],
     //协程作用域
     'scope'      => [
         //root 协程收尾等待后代协程超过该时长(秒)时输出告警，0 表示不告警
         'wait_warning' => 30,
+    ],
+    //Redis 连接
+    'redis'      => [
+        'default'     => 'default',
+        'connections' => [
+            'default' => [
+                'host'          => '127.0.0.1',
+                'port'          => 6379,
+                'max_active'    => 3,
+                'max_wait_time' => 5,
+            ],
+        ],
     ],
     'tables'     => [],
     //每个worker里需要预加载以共用的实例

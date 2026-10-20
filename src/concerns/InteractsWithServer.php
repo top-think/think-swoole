@@ -106,6 +106,7 @@ trait InteractsWithServer
 
             $this->clearCache();
             $this->prepareApplication($envName);
+            $this->bindRedis();
 
             $this->ipc->listenMessage($workerId);
 

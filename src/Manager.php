@@ -15,6 +15,7 @@ use think\swoole\concerns\InteractsWithHttp;
 use think\swoole\concerns\InteractsWithLock;
 use think\swoole\concerns\InteractsWithPools;
 use think\swoole\concerns\InteractsWithQueue;
+use think\swoole\concerns\InteractsWithRedis;
 use think\swoole\concerns\InteractsWithRpcClient;
 use think\swoole\concerns\InteractsWithRpcServer;
 use think\swoole\concerns\InteractsWithServer;
@@ -35,6 +36,7 @@ class Manager
         InteractsWithRpcClient,
         InteractsWithRpcServer,
         InteractsWithQueue,
+        InteractsWithRedis,
         InteractsWithTracing,
         InteractsWithLock,
         WithContainer,
@@ -45,6 +47,7 @@ class Manager
      */
     protected function initialize(): void
     {
+        $this->prepareRedis();
         $this->prepareTables();
         $this->preparePools();
         $this->prepareHttp();

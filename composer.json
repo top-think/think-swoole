@@ -26,6 +26,9 @@
         "phpstan/phpstan": "^2.0",
         "pestphp/pest": "^3.7"
     },
+    "suggest": {
+        "ext-redis": "Required when using the Redis IPC driver, WebSocket Redis rooms, reliable tasks or async tracing."
+    },
     "autoload": {
         "psr-4": {
             "think\\swoole\\": "src"

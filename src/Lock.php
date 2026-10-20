@@ -4,6 +4,7 @@ namespace think\swoole;
 
 /**
  * @mixin \think\swoole\lock\Table
+ * @mixin \think\swoole\lock\Redis
  */
 class Lock extends \think\Manager
 {

@@ -4,6 +4,7 @@ namespace think\swoole\concerns;
 
 use think\App;
 use think\swoole\Lock;
+use think\swoole\Manager;
 
 /**
  * Trait InteractsWithLock
@@ -22,6 +23,7 @@ trait InteractsWithLock
     protected function prepareLock()
     {
         if ($this->getConfig('lock.enable', false)) {
+            $this->container->instance(Manager::class, $this);
             $this->lock = $this->container->make(Lock::class);
             $this->lock->prepare();
 

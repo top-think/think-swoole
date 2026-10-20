@@ -76,6 +76,162 @@ Timer::after(1000, function () use ($manager, $task) {
 
 独立沙箱是一个全新的应用环境，不包含注册时的请求上下文（request、鉴权、租户等），需要的数据请在注册时通过闭包显式传入；同理也不要捕获请求对象，避免延长其生命周期。
 
+### Redis 连接共享
+
+IPC、WebSocket Room、可靠任务和异步链路追踪统一使用 `swoole.redis` 中定义的命名连接。同一个 Worker 内，相同连接名只创建一个连接池：
+
+```php
+return [
+    'redis' => [
+        'default'     => 'default',
+        'connections' => [
+            'default' => [
+                'host'                => '127.0.0.1',
+                'port'                => 6379,
+                'password'            => '',
+                'database'            => 0,
+                'timeout'             => 10,
+                'max_active'          => 10,
+                'max_wait_time'       => 5,
+                'max_idle_time'       => 20,
+                'idle_check_interval' => 10,
+            ],
+        ],
+    ],
+];
+```
+
+模块默认使用 `default` 连接，也可以指定其他连接名：
+
+```php
+return [
+    'ipc' => [
+        'redis' => [
+            'connection' => 'default',
+            'prefix'     => 'swoole:ipc:',
+        ],
+    ],
+    'websocket' => [
+        'room' => [
+            'redis' => [
+                'connection' => 'default',
+                'prefix'     => 'swoole:room:',
+            ],
+        ],
+    ],
+    'task' => [
+        'redis' => [
+            'connection' => 'default',
+            'prefix'     => 'swoole:task:',
+        ],
+    ],
+];
+```
+
+异步链路追踪在 `tracing.redis` 中选择连接，它的 key 前缀由 Tracing 自身维护：
+
+```php
+return [
+    'redis' => [
+        'connection' => 'default',
+    ],
+];
+```
+
+业务代码可以通过服务或门面使用共享连接池：
+
+```php
+use think\swoole\facade\Redis;
+
+$value = Redis::connection()->run(function (\Redis $client) {
+    return $client->get('key');
+});
+
+Redis::connection()->set('key', 'value');
+
+// SUBSCRIBE、MONITOR 等阻塞或独占命令
+Redis::connection()->dedicated(function (\Redis $client) {
+    // ...
+});
+```
+
+`run()` 会在回调结束后归还连接，事务和管道应完整写在回调中。阻塞命令必须使用 `dedicated()`。旧模块内联的 `host`、`port` 等配置仍兼容，并会注册为独立的 `legacy.*` 连接；迁移到 `connection` 配置后才会与其他模块共用连接池。
+
+### Redis 分布式锁
+
+Lock 默认使用 Worker 内的 Table 驱动，也可以切换为 Redis 让不同节点共享同一把锁：
+
+```php
+return [
+    'lock' => [
+        'enable' => true,
+        'type'   => 'redis',
+        'redis'  => [
+            'connection' => 'default',
+            'prefix'     => 'swoole:lock:',
+        ],
+    ],
+];
+```
+
+```php
+use think\swoole\Lock;
+
+$lock = app(Lock::class);
+$lock->lock('order:' . $orderId, 30);
+
+try {
+    // 临界区必须短于 30 秒
+} finally {
+    $lock->unlock('order:' . $orderId);
+}
+```
+
+Table 和 Redis 驱动都会为每次获取保存协程级 owner token，释放时校验所有权，避免误删其他协程持有的锁。Redis 锁使用 `SET NX EX` 自动过期，并通过 Lua compare-and-delete 释放。锁固定 TTL，不会自动续期，也不支持重入。Redis Lock 依赖 Think-Swoole 的协程环境，不支持普通非协程 PHP 进程。
+
+### 任务存活心跳
+
+需要跨进程判断子协程是否仍在执行时，可以使用 `Task` 服务。框架只在 Redis 中维护一个带 TTL 的心跳 key，不保存任务业务状态：
+
+```php
+use think\swoole\facade\Task;
+
+$taskId = Task::create(function () use ($task) {
+    $task();
+});
+
+if (!Task::isRunning($taskId)) {
+    // 最近一个租约周期内没有心跳，任务已结束或执行进程已失联
+}
+```
+
+任务可以使用框架生成的任务 ID，也可以传入唯一业务 ID：
+
+```php
+Task::create($callback, 'order:' . $orderId);
+```
+
+默认每 5 秒续租、租约 15 秒，可通过 `swoole.task` 配置：
+
+```php
+return [
+    'task' => [
+        'heartbeat_interval' => 5,
+        'lease_ttl'          => 15,
+        'redis'              => [
+            'connection' => 'default',
+            'prefix'     => 'swoole:task:',
+        ],
+    ],
+];
+```
+
+任务正常结束时会立即删除心跳 key；进程崩溃时心跳停止，key 在 `lease_ttl` 后自动过期。两种情况下 `isRunning()` 最终都会返回 `false`，调用方再结合任务自身写入的业务状态判断完成、失败或中断。
+
+任务异常会直接写入应用错误日志，不额外保存异常状态。框架不会自动重试；业务确认任务中断后需要自行重新提交，并保证副作用幂等。
+
+可靠任务仍通过 `Coroutine::create()` 在当前 Sandbox 中运行，因此请求会等待任务结束。任务 ID 需要在启动后持久化，才能在进程崩溃后继续查询。
+
 ## 访问静态文件
 > 4.0开始协程风格服务端默认不支持静态文件访问，建议使用nginx来支持静态文件访问，也可使用路由输出文件内容，下面是示例，可参照修改
 1. 添加静态文件路由：
