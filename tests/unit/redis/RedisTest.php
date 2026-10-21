@@ -128,6 +128,73 @@ it('uses a dedicated connection outside the pool and closes it on failure', func
         ->and($connector->disconnections)->toBe(1);
 });
 
+it('keeps a dedicated connection open while a Redis stream is consumed', function () {
+    $connector  = new RedisTestConnector();
+    $connection = new Connection('default', [], $connector);
+
+    $stream = $connection->stream(function () {
+        yield 1;
+        yield 2;
+    });
+
+    expect($connector->connections)->toBe(0)
+        ->and(iterator_to_array($stream))->toBe([1, 2])
+        ->and($connector->connections)->toBe(1)
+        ->and($connector->disconnections)->toBe(1);
+});
+
+it('closes a dedicated stream connection when consumption fails', function () {
+    $connector  = new RedisTestConnector();
+    $connection = new Connection('default', [], $connector);
+    $stream     = $connection->stream(function () {
+        yield 1;
+        throw new RuntimeException('stream failed');
+    });
+
+    expect(fn () => iterator_to_array($stream))
+        ->toThrow(RuntimeException::class, 'stream failed')
+        ->and($connector->connections)->toBe(1)
+        ->and($connector->disconnections)->toBe(1);
+});
+
+it('rejects generator callbacks from dedicated Redis APIs', function () {
+    $connector  = new RedisTestConnector();
+    $connection = new Connection('default', [], $connector);
+    $callback   = fn () => (function () {
+        yield 1;
+    })();
+
+    expect(fn () => $connection->dedicated($callback))
+        ->toThrow(LogicException::class, 'must not return a Generator')
+        ->and($connector->connections)->toBe(1)
+        ->and($connector->disconnections)->toBe(1);
+});
+
+it('rejects generator callbacks from pooled Redis run', function () {
+    if (!function_exists('Swoole\\Coroutine\\run')) {
+        $this->markTestSkipped('Swoole coroutine runtime is required.');
+    }
+
+    $connector  = new RedisTestConnector();
+    $connection = new Connection('default', [], $connector);
+    $callback   = fn () => (function () {
+        yield 1;
+    })();
+
+    \Swoole\Coroutine\run(function () use ($connection, $callback) {
+        try {
+            expect(fn () => $connection->run($callback))
+                ->toThrow(LogicException::class, 'must not return a Generator');
+        } finally {
+            $pool = (new ReflectionMethod($connection, 'getPool'))->invoke($connection);
+            $pool->close();
+        }
+    });
+
+    expect($connector->connections)->toBe(1)
+        ->and($connector->disconnections)->toBe(1);
+});
+
 it('requires blocking commands to use explicitly supported call paths', function () {
     $connection = new Connection('default', [], new RedisTestConnector());
 

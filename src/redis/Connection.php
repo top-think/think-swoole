@@ -2,6 +2,7 @@
 
 namespace think\swoole\redis;
 
+use Generator;
 use LogicException;
 use Redis as PHPRedis;
 use Smf\ConnectionPool\ConnectionPool;
@@ -55,7 +56,7 @@ class Connection
         $redis = $pool->borrow();
 
         try {
-            return $callback($redis);
+            return $this->ensureSynchronousResult($callback($redis), 'run');
         } finally {
             $pool->return($redis);
         }
@@ -69,10 +70,32 @@ class Connection
         $redis = $this->connector->connect($this->config);
 
         try {
-            return $callback($redis);
+            return $this->ensureSynchronousResult($callback($redis), 'dedicated');
         } finally {
             $this->connector->disconnect($redis);
         }
+    }
+
+    /**
+     * 使用独占连接执行流式回调，连接会保持到生成器结束
+     */
+    public function stream(callable $callback): Generator
+    {
+        return (function () use ($callback): Generator {
+            $redis = $this->connector->connect($this->config);
+
+            try {
+                $result = $callback($redis);
+
+                if (!$result instanceof Generator) {
+                    throw new LogicException('Redis stream callback must return a Generator.');
+                }
+
+                yield from $result;
+            } finally {
+                $this->connector->disconnect($redis);
+            }
+        })();
     }
 
     public function __call($method, $arguments)
@@ -84,6 +107,17 @@ class Connection
         return $this->run(function (PHPRedis $redis) use ($method, $arguments) {
             return $redis->{$method}(...$arguments);
         });
+    }
+
+    protected function ensureSynchronousResult($result, string $method)
+    {
+        if ($result instanceof Generator) {
+            throw new LogicException(
+                "Redis callback [{$method}] must not return a Generator; use stream() for long-lived streams."
+            );
+        }
+
+        return $result;
     }
 
     protected function getPool(): ConnectionPool

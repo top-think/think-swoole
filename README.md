@@ -153,9 +153,18 @@ Redis::connection()->set('key', 'value');
 Redis::connection()->dedicated(function (\Redis $client) {
     // ...
 });
+
+// 需要在生成器迭代期间持续持有连接的流式读取
+$stream = Redis::connection()->stream(function (\Redis $client) {
+    yield $client->xread(['events' => '$'], 10, 30_000);
+});
+
+foreach ($stream as $result) {
+    // ...
+}
 ```
 
-`run()` 会在回调结束后归还连接，事务和管道应完整写在回调中。阻塞命令必须使用 `dedicated()`。旧模块内联的 `host`、`port` 等配置仍兼容，并会注册为独立的 `legacy.*` 连接；迁移到 `connection` 配置后才会与其他模块共用连接池。
+`run()` 会在同步回调结束后归还连接，事务和管道应完整写在回调中。阻塞命令使用 `dedicated()`；返回 Generator 的流式读取必须使用 `stream()`，连接会保持到生成器结束或销毁。`run()` 和 `dedicated()` 会拒绝返回 Generator 的回调，避免连接在生成器实际执行前被释放。旧模块内联的 `host`、`port` 等配置仍兼容，并会注册为独立的 `legacy.*` 连接；迁移到 `connection` 配置后才会与其他模块共用连接池。
 
 ### Redis 分布式锁
 
